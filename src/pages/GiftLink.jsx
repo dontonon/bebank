@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { ConnectButton } from '@rainbow-me/rainbowkit'
+import Header from '../components/Header'
+import Sidebar from '../components/Sidebar'
 
 export default function GiftLink() {
   const { giftId } = useParams()
@@ -26,17 +27,12 @@ export default function GiftLink() {
   const randomMessage = shareMessages[Math.floor(Math.random() * shareMessages.length)]
 
   return (
-    <div className="min-h-screen bg-dark flex flex-col">
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-dark-card">
-        <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold gradient-text">PASS IT ON</h1>
-          <ConnectButton />
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-dark flex">
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex flex-col">
+        <Header />
+
+        <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
           {/* Success Message */}
           <div className="text-center mb-12">
@@ -145,6 +141,9 @@ export default function GiftLink() {
           </div>
         </div>
       </main>
+      </div>
+
+      <Sidebar />
     </div>
   )
 }
