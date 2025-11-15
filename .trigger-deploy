@@ -1,3 +1,6 @@
 Deploy trigger - force rebuild
-Timestamp: 2025-11-15
+Timestamp: 2025-11-15 14:45:00
 Fix: GiftLink ConnectButton import issue resolved
+All components updated to use shared Header
+About page added with navigation menu
+REBUILD NOW
