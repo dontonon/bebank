@@ -11,7 +11,7 @@ export const config = getDefaultConfig({
 // Contract addresses (update after deployment)
 export const CONTRACTS = {
   [base.id]: '0x0000000000000000000000000000000000000000', // Production Base
-  [baseSepolia.id]: '0xbb6c32EcE2DE9243330f50ACa8a6694396358D4B', // Testnet - DEPLOYED!
+  [baseSepolia.id]: '0x28e763e348B87DB401bE3FFe44BbDfE152B9f003', // Testnet - DEPLOYED! ✅
 }
 
 export const getContractAddress = (chainId) => {
