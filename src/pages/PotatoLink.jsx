@@ -155,4 +155,4 @@ export default function PotatoLink() {
       <Sidebar />
     </div>
   )
-}git apply hotpotato.diff
+}
