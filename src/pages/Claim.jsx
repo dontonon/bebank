@@ -7,6 +7,7 @@ import RevealAnimation from '../components/RevealAnimation'
 import { TOKENS, getTokenByAddress, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
 import { parseUnits, formatUnits } from 'viem'
+import { ERC20_ABI } from '../config/abis'
 
 const CLAIM_GIFT_ABI = [
   {
@@ -51,22 +52,34 @@ export default function Claim() {
   const [selectedToken, setSelectedToken] = useState(TOKENS[0])
   const [amount, setAmount] = useState('')
   const [isClaiming, setIsClaiming] = useState(false)
+  const [isApproving, setIsApproving] = useState(false)
   const [showReveal, setShowReveal] = useState(false)
   const [revealedGift, setRevealedGift] = useState(null)
+  const [claimError, setClaimError] = useState(null)
 
   // Read gift data
   const { data: giftData, isLoading: isLoadingGift } = useReadContract({
     address: getContractAddress(chain?.id),
     abi: GET_GIFT_ABI,
     functionName: 'getGift',
-    args: [BigInt(giftId)],
-    enabled: isConnected && !!chain
+    args: [BigInt(giftId || 0)],
+    enabled: isConnected && !!chain && !!giftId
+  })
+
+  // Check ERC20 allowance
+  const { data: allowance } = useReadContract({
+    address: selectedToken.address,
+    abi: ERC20_ABI,
+    functionName: 'allowance',
+    args: [address, getContractAddress(chain?.id)],
+    enabled: !isNativeToken(selectedToken.address) && isConnected && !!chain && !!amount
   })
 
   const { writeContract, data: hash } = useWriteContract()
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
-  // Check if gift is already claimed
+  // Check if gift exists and is claimed
+  const giftExists = giftData && giftData[2] !== '0x0000000000000000000000000000000000000000'
   const isGiftClaimed = giftData && giftData[3] // claimed boolean
 
   useEffect(() => {
@@ -80,16 +93,50 @@ export default function Claim() {
         amount: receivedAmount
       })
       setShowReveal(true)
+      setIsClaiming(false)
     }
   }, [isSuccess, giftData])
 
+  const needsApproval = () => {
+    if (isNativeToken(selectedToken.address)) return false
+    if (!amount || !allowance) return true
+
+    const amountInWei = parseUnits(amount, selectedToken.decimals)
+    return BigInt(allowance) < BigInt(amountInWei)
+  }
+
+  const handleApprove = async () => {
+    setIsApproving(true)
+    setClaimError(null)
+
+    try {
+      const amountInWei = parseUnits(amount, selectedToken.decimals)
+      const contractAddress = getContractAddress(chain.id)
+
+      await writeContract({
+        address: selectedToken.address,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [contractAddress, amountInWei],
+      })
+
+      // Wait a bit for approval to confirm
+      setTimeout(() => setIsApproving(false), 3000)
+    } catch (error) {
+      console.error('Error approving token:', error)
+      setClaimError('Failed to approve token. Please try again.')
+      setIsApproving(false)
+    }
+  }
+
   const handleClaimGift = async () => {
     if (!amount || parseFloat(amount) < 0.0001) {
-      alert('Amount must be at least 0.0001')
+      setClaimError('Amount must be at least 0.0001')
       return
     }
 
     setIsClaiming(true)
+    setClaimError(null)
 
     try {
       const amountInWei = parseUnits(amount, selectedToken.decimals)
@@ -110,15 +157,26 @@ export default function Claim() {
       await writeContract(config)
     } catch (error) {
       console.error('Error claiming gift:', error)
-      alert('Failed to claim gift. Check console for details.')
+      let errorMsg = 'Failed to claim gift.'
+
+      if (error.message?.includes('InsufficientValue')) {
+        errorMsg = 'Amount too small. Minimum is 0.0001'
+      } else if (error.message?.includes('GiftAlreadyClaimed')) {
+        errorMsg = 'This gift has already been claimed!'
+      } else if (error.message?.includes('GiftDoesNotExist')) {
+        errorMsg = 'This gift does not exist.'
+      } else if (error.message?.includes('insufficient funds')) {
+        errorMsg = 'Insufficient funds for gas + gift amount.'
+      }
+
+      setClaimError(errorMsg)
       setIsClaiming(false)
     }
   }
 
   const handleRevealComplete = () => {
     setShowReveal(false)
-    // TODO: Get new gift ID and navigate
-    navigate('/gift/2') // Replace with actual new gift ID
+    navigate('/')
   }
 
   if (isLoadingGift) {
@@ -132,13 +190,40 @@ export default function Claim() {
     )
   }
 
-  if (isGiftClaimed) {
+  if (!giftExists) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-gray-800 text-center">
+        <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-red-500/50 text-center">
+          <div className="text-6xl mb-4">❌</div>
+          <h2 className="text-2xl font-bold text-white mb-3">Gift Not Found</h2>
+          <p className="text-gray-400 mb-6">This gift ID does not exist. Check the link and try again.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+          >
+            Create Your Own Gift
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (isGiftClaimed) {
+    const claimedBy = giftData[4]
+    const claimedAt = new Date(Number(giftData[6]) * 1000).toLocaleString()
+
+    return (
+      <div className="min-h-screen bg-dark flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">
           <div className="text-6xl mb-4">😢</div>
           <h2 className="text-2xl font-bold text-white mb-3">Already Claimed</h2>
-          <p className="text-gray-400 mb-6">This gift has already been claimed by someone else.</p>
+          <p className="text-gray-400 mb-4">This gift has already been claimed.</p>
+          <div className="bg-dark/50 rounded-xl p-4 mb-6 text-sm text-left">
+            <div className="text-gray-500 mb-1">Claimed by:</div>
+            <div className="text-toxic font-mono text-xs break-all">{claimedBy}</div>
+            <div className="text-gray-500 mt-3 mb-1">Claimed at:</div>
+            <div className="text-gray-300">{claimedAt}</div>
+          </div>
           <button
             onClick={() => navigate('/')}
             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
@@ -209,14 +294,38 @@ export default function Claim() {
                 onAmountChange={setAmount}
               />
 
+              {/* Error Message */}
+              {claimError && (
+                <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-4">
+                  <p className="text-red-400 font-semibold">⚠️ {claimError}</p>
+                </div>
+              )}
+
+              {/* Approval Button (for ERC20) */}
+              {needsApproval() && !isNativeToken(selectedToken.address) && (
+                <button
+                  onClick={handleApprove}
+                  disabled={isApproving}
+                  className="w-full bg-yellow-600 text-dark py-4 rounded-xl font-bold text-xl hover:bg-yellow-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isApproving ? (
+                    <span>Approving... ⏳</span>
+                  ) : (
+                    <span>1️⃣ Approve {selectedToken.symbol} First</span>
+                  )}
+                </button>
+              )}
+
               {/* Claim Button */}
               <button
                 onClick={handleClaimGift}
-                disabled={!amount || isClaiming || isConfirming}
+                disabled={!amount || isClaiming || isConfirming || needsApproval()}
                 className="w-full bg-gradient-to-r from-toxic to-purple text-dark py-4 rounded-xl font-bold text-xl hover:shadow-lg hover:shadow-toxic/50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isClaiming || isConfirming ? (
                   <span>Claiming... ⏳</span>
+                ) : needsApproval() && !isNativeToken(selectedToken.address) ? (
+                  <span>2️⃣ Claim Mystery Gift 🎁</span>
                 ) : (
                   <span>Claim Mystery Gift 🎁</span>
                 )}
