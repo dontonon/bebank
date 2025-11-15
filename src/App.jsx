@@ -8,6 +8,7 @@ import { config } from './config/wagmi'
 import Home from './pages/Home'
 import Claim from './pages/Claim'
 import PotatoLink from './pages/PotatoLink'
+import About from './pages/About'
 
 const queryClient = new QueryClient()
 
@@ -25,6 +26,7 @@ function App() {
           <Router>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
               <Route path="/claim/:giftId" element={<Claim />} />
               <Route path="/potato/:giftId" element={<PotatoLink />} />
               {/* Legacy route for backwards compatibility */}

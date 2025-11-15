@@ -1,6 +1,6 @@
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { ConnectButton } from '@rainbow-me/rainbowkit'
+import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
 
 export default function PotatoLink() {
@@ -30,15 +30,7 @@ export default function PotatoLink() {
     <div className="min-h-screen bg-dark flex">
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="border-b border-gray-800 bg-dark-card">
-          <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">
-            <Link to="/" className="text-3xl font-bold gradient-text hover:opacity-80 transition-opacity cursor-pointer">
-              HOT POTATO 🥔
-            </Link>
-            <ConnectButton />
-          </div>
-        </header>
+        <Header />
 
         <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
