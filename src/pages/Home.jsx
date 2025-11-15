@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
+import Sidebar from '../components/Sidebar'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import TokenSelector from '../components/TokenSelector'
 import { TOKENS, isNativeToken } from '../config/tokens'
@@ -17,7 +18,7 @@ const CREATE_GIFT_ABI = [
       { name: 'token', type: 'address' },
       { name: 'amount', type: 'uint256' }
     ],
-    outputs: [{ name: 'giftId', type: 'uint256' }]
+    outputs: [{ name: 'potatoId', type: 'uint256' }]
   }
 ]
 
@@ -57,39 +58,42 @@ export default function Home() {
 
       await writeContract(config)
 
-      // TODO: Get gift ID from transaction receipt and navigate
+      // TODO: Get potato ID from transaction receipt and navigate
       // For now, simulate navigation after success
       setTimeout(() => {
-        navigate('/gift/1') // Replace with actual gift ID
+        navigate('/potato/1') // Replace with actual potato ID
       }, 2000)
     } catch (error) {
-      console.error('Error creating gift:', error)
-      alert('Failed to create gift. Check console for details.')
+      console.error('Error creating potato:', error)
+      alert('Failed to create potato. Check console for details.')
       setIsCreating(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-dark flex flex-col">
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-dark-card">
-        <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold gradient-text">PASS IT ON</h1>
-          <ConnectButton />
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-dark flex">
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="border-b border-gray-800 bg-dark-card">
+          <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">
+            <Link to="/" className="text-3xl font-bold gradient-text hover:opacity-80 transition-opacity cursor-pointer">
+              HOT POTATO 🥔
+            </Link>
+            <ConnectButton />
+          </div>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
           {/* Hero Section */}
           <div className="text-center mb-12">
-            <div className="text-8xl mb-6 animate-float">🎁</div>
+            <div className="text-8xl mb-6 animate-float">🥔</div>
             <h2 className="text-5xl font-bold gradient-text mb-4">
               Give Blindly. Receive Surprisingly.
             </h2>
             <p className="text-xl text-gray-400">
-              Start a mystery gift chain. Someone will claim yours without knowing what it is.
+              Start a HotPotato chain. Someone will claim yours without knowing what it is.
             </p>
           </div>
 
@@ -97,7 +101,7 @@ export default function Home() {
           {!isConnected ? (
             <div className="bg-dark-card rounded-2xl p-12 text-center border border-gray-800">
               <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect Your Wallet</h3>
-              <p className="text-gray-500 mb-6">Connect to start your first gift chain</p>
+              <p className="text-gray-500 mb-6">Connect to start your first potato chain</p>
               <div className="flex justify-center">
                 <ConnectButton />
               </div>
@@ -105,7 +109,7 @@ export default function Home() {
           ) : (
             <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-white mb-2">Create Mystery Gift</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">Create HotPotato</h3>
                 <p className="text-gray-400">Choose what to pass on (they won't see it until they give)</p>
               </div>
 
@@ -125,7 +129,7 @@ export default function Home() {
                 {isCreating || isConfirming ? (
                   <span>Creating Gift... ⏳</span>
                 ) : (
-                  <span>Create Mystery Gift ✨</span>
+                  <span>Create HotPotato ✨</span>
                 )}
               </button>
 
@@ -152,9 +156,9 @@ export default function Home() {
           {/* How It Works */}
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="text-4xl mb-3">🎁</div>
+              <div className="text-4xl mb-3">🥔</div>
               <h4 className="font-bold text-white mb-2">1. You Give</h4>
-              <p className="text-sm text-gray-400">Choose token + amount, create mystery gift</p>
+              <p className="text-sm text-gray-400">Choose token + amount, create HotPotato</p>
             </div>
             <div className="text-center">
               <div className="text-4xl mb-3">❓</div>
@@ -169,6 +173,10 @@ export default function Home() {
           </div>
         </div>
       </main>
+      </div>
+
+      {/* Sidebar */}
+      <Sidebar />
     </div>
   )
 }

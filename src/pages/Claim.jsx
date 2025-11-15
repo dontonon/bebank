@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import TokenSelector from '../components/TokenSelector'
 import RevealAnimation from '../components/RevealAnimation'
+import Sidebar from '../components/Sidebar'
 import { TOKENS, getTokenByAddress, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
 import { parseUnits, formatUnits } from 'viem'
@@ -76,26 +77,32 @@ export default function Claim() {
   })
 
   const { writeContract, data: hash } = useWriteContract()
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
+  const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({ hash })
 
   // Check if gift exists and is claimed
   const giftExists = giftData && giftData[2] !== '0x0000000000000000000000000000000000000000'
   const isGiftClaimed = giftData && giftData[3] // claimed boolean
+  const isCreator = giftData && giftData[2]?.toLowerCase() === address?.toLowerCase()
 
   useEffect(() => {
-    if (isSuccess && giftData) {
+    if (isSuccess && giftData && receipt) {
       // Show reveal animation
       const token = getTokenByAddress(giftData[0])
       const receivedAmount = formatUnits(giftData[1] * 99n / 100n, token.decimals)
 
+      // Get new potato ID from logs
+      const giftClaimedLog = receipt.logs.find(log => log.topics[0] === '0x...' ) // We'll extract this from events
+      const newGiftId = receipt.logs.length > 0 ? Number(receipt.logs[receipt.logs.length - 1].topics[2]) : null
+
       setRevealedGift({
         token,
-        amount: receivedAmount
+        amount: receivedAmount,
+        newGiftId: newGiftId || Number(giftId) + 1 // Fallback to incrementing
       })
       setShowReveal(true)
       setIsClaiming(false)
     }
-  }, [isSuccess, giftData])
+  }, [isSuccess, giftData, receipt])
 
   const needsApproval = () => {
     if (isNativeToken(selectedToken.address)) return false
@@ -162,9 +169,9 @@ export default function Claim() {
       if (error.message?.includes('InsufficientValue')) {
         errorMsg = 'Amount too small. Minimum is 0.0001'
       } else if (error.message?.includes('GiftAlreadyClaimed')) {
-        errorMsg = 'This gift has already been claimed!'
+        errorMsg = 'This HotPotato has already been claimed!'
       } else if (error.message?.includes('GiftDoesNotExist')) {
-        errorMsg = 'This gift does not exist.'
+        errorMsg = 'This HotPotato does not exist.'
       } else if (error.message?.includes('insufficient funds')) {
         errorMsg = 'Insufficient funds for gas + gift amount.'
       }
@@ -176,14 +183,19 @@ export default function Claim() {
 
   const handleRevealComplete = () => {
     setShowReveal(false)
-    navigate('/')
+    // Navigate to the new potato link page
+    if (revealedGift?.newGiftId !== undefined) {
+      navigate(`/potato/${revealedGift.newGiftId}`)
+    } else {
+      navigate('/')
+    }
   }
 
   if (isLoadingGift) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4 animate-float">🎁</div>
+          <div className="text-6xl mb-4 animate-float">🥔</div>
           <p className="text-gray-400">Loading gift...</p>
         </div>
       </div>
@@ -195,13 +207,37 @@ export default function Claim() {
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-red-500/50 text-center">
           <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-white mb-3">Gift Not Found</h2>
-          <p className="text-gray-400 mb-6">This gift ID does not exist. Check the link and try again.</p>
+          <h2 className="text-2xl font-bold text-white mb-3">Potato Not Found</h2>
+          <p className="text-gray-400 mb-6">This HotPotato ID does not exist. Check the link and try again.</p>
           <button
             onClick={() => navigate('/')}
             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
           >
             Create Your Own Gift
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (isCreator) {
+    return (
+      <div className="min-h-screen bg-dark flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">
+          <div className="text-6xl mb-4">🚫</div>
+          <h2 className="text-2xl font-bold text-white mb-3">Can't Claim Your Own Potato!</h2>
+          <p className="text-gray-400 mb-6">You created this HotPotato. Share it with someone else to keep the chain going!</p>
+          <button
+            onClick={() => navigate(`/potato/${giftId}`)}
+            className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all mb-3"
+          >
+            View Share Link
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="block w-full bg-gray-700 text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-600 transition-all"
+          >
+            Create New Potato
           </button>
         </div>
       </div>
@@ -217,7 +253,7 @@ export default function Claim() {
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">
           <div className="text-6xl mb-4">😢</div>
           <h2 className="text-2xl font-bold text-white mb-3">Already Claimed</h2>
-          <p className="text-gray-400 mb-4">This gift has already been claimed.</p>
+          <p className="text-gray-400 mb-4">This HotPotato has already been passed on.</p>
           <div className="bg-dark/50 rounded-xl p-4 mb-6 text-sm text-left">
             <div className="text-gray-500 mb-1">Claimed by:</div>
             <div className="text-toxic font-mono text-xs break-all">{claimedBy}</div>
@@ -228,7 +264,7 @@ export default function Claim() {
             onClick={() => navigate('/')}
             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
           >
-            Create Your Own Gift
+            Create Your Own Potato
           </button>
         </div>
       </div>
@@ -236,7 +272,7 @@ export default function Claim() {
   }
 
   return (
-    <div className="min-h-screen bg-dark flex flex-col">
+    <div className="min-h-screen bg-dark flex">
       {/* Reveal Animation */}
       {showReveal && revealedGift && (
         <RevealAnimation
@@ -246,22 +282,25 @@ export default function Claim() {
         />
       )}
 
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-dark-card">
-        <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold gradient-text">PASS IT ON</h1>
-          <ConnectButton />
-        </div>
-      </header>
-
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="border-b border-gray-800 bg-dark-card">
+          <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">
+            <Link to="/" className="text-3xl font-bold gradient-text hover:opacity-80 transition-opacity cursor-pointer">
+              HOT POTATO 🥔
+            </Link>
+            <ConnectButton />
+          </div>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
           {/* Mystery Section */}
           <div className="text-center mb-12">
-            <div className="text-9xl mb-6 animate-float">🎁</div>
+            <div className="text-9xl mb-6 animate-float">🥔</div>
             <h2 className="text-5xl font-bold gradient-text mb-4">
-              Mystery Gift #{giftId}
+              HotPotato #{giftId}
             </h2>
             <p className="text-xl text-gray-400 mb-2">
               Someone passed something on... but what? 🤔
@@ -275,7 +314,7 @@ export default function Claim() {
           {!isConnected ? (
             <div className="bg-dark-card rounded-2xl p-12 text-center border border-gray-800">
               <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Claim</h3>
-              <p className="text-gray-500 mb-6">Connect your wallet to claim this mystery gift</p>
+              <p className="text-gray-500 mb-6">Connect your wallet to claim this HotPotato</p>
               <div className="flex justify-center">
                 <ConnectButton />
               </div>
@@ -325,9 +364,9 @@ export default function Claim() {
                 {isClaiming || isConfirming ? (
                   <span>Claiming... ⏳</span>
                 ) : needsApproval() && !isNativeToken(selectedToken.address) ? (
-                  <span>2️⃣ Claim Mystery Gift 🎁</span>
+                  <span>2️⃣ Claim HotPotato 🥔</span>
                 ) : (
-                  <span>Claim Mystery Gift 🎁</span>
+                  <span>Claim HotPotato 🥔</span>
                 )}
               </button>
 
@@ -342,7 +381,7 @@ export default function Claim() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">You receive:</span>
-                  <span className="text-toxic font-semibold">Mystery Gift 🎁</span>
+                  <span className="text-toxic font-semibold">HotPotato 🥔</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">Your next gift link:</span>
@@ -365,6 +404,10 @@ export default function Claim() {
           </div>
         </div>
       </main>
+      </div>
+
+      {/* Sidebar */}
+      <Sidebar />
     </div>
   )
 }

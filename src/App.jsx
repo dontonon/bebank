@@ -7,7 +7,7 @@ import '@rainbow-me/rainbowkit/styles.css'
 import { config } from './config/wagmi'
 import Home from './pages/Home'
 import Claim from './pages/Claim'
-import GiftLink from './pages/GiftLink'
+import PotatoLink from './pages/PotatoLink'
 
 const queryClient = new QueryClient()
 
@@ -26,7 +26,9 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/claim/:giftId" element={<Claim />} />
-              <Route path="/gift/:giftId" element={<GiftLink />} />
+              <Route path="/potato/:giftId" element={<PotatoLink />} />
+              {/* Legacy route for backwards compatibility */}
+              <Route path="/gift/:giftId" element={<PotatoLink />} />
             </Routes>
           </Router>
         </RainbowKitProvider>

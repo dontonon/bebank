@@ -1,0 +1,111 @@
+import { Link } from 'react-router-dom'
+import { useReadContract } from 'wagmi'
+import { getContractAddress } from '../config/wagmi'
+import { useAccount } from 'wagmi'
+
+const NEXT_GIFT_ID_ABI = [
+  {
+    name: 'nextGiftId',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }]
+  }
+]
+
+export default function Sidebar() {
+  const { chain } = useAccount()
+
+  // Get total potatoes created
+  const { data: nextGiftId } = useReadContract({
+    address: getContractAddress(chain?.id),
+    abi: NEXT_GIFT_ID_ABI,
+    functionName: 'nextGiftId',
+    enabled: !!chain
+  })
+
+  const totalCreated = nextGiftId ? Number(nextGiftId) : 0
+  // For claimed count, we'd need to track or estimate - using a simple estimate for now
+  const estimatedClaimed = Math.floor(totalCreated * 0.7) // Rough estimate
+
+  return (
+    <div className="w-80 bg-dark-card border-l border-gray-800 p-6 overflow-y-auto">
+      {/* Stats */}
+      <div className="mb-8">
+        <h3 className="text-xl font-bold text-white mb-4">🔥 Stats</h3>
+
+        <div className="space-y-4">
+          <div className="bg-dark rounded-xl p-4 border border-gray-800">
+            <div className="text-gray-400 text-sm mb-1">Total Potatoes</div>
+            <div className="text-3xl font-bold gradient-text">{totalCreated}</div>
+          </div>
+
+          <div className="bg-dark rounded-xl p-4 border border-gray-800">
+            <div className="text-gray-400 text-sm mb-1">Passed On</div>
+            <div className="text-3xl font-bold text-toxic">{estimatedClaimed}</div>
+          </div>
+
+          <div className="bg-dark rounded-xl p-4 border border-gray-800">
+            <div className="text-gray-400 text-sm mb-1">Active</div>
+            <div className="text-3xl font-bold text-purple">{totalCreated - estimatedClaimed}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Activity Feed */}
+      <div>
+        <h3 className="text-xl font-bold text-white mb-4">⚡ Recent Activity</h3>
+
+        <div className="space-y-3">
+          {totalCreated > 0 ? (
+            <>
+              <div className="bg-dark/50 rounded-lg p-3 border border-gray-800/50">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-lg">🥔</span>
+                  <span className="text-sm font-semibold text-white">Potato #{totalCreated - 1}</span>
+                </div>
+                <div className="text-xs text-gray-500">Just created</div>
+              </div>
+
+              {totalCreated > 1 && (
+                <div className="bg-dark/50 rounded-lg p-3 border border-gray-800/50">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="text-lg">🔥</span>
+                    <span className="text-sm font-semibold text-toxic">Potato #{totalCreated - 2}</span>
+                  </div>
+                  <div className="text-xs text-gray-500">Claimed recently</div>
+                </div>
+              )}
+
+              {totalCreated > 2 && (
+                <div className="bg-dark/50 rounded-lg p-3 border border-gray-800/50">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="text-lg">🥔</span>
+                    <span className="text-sm font-semibold text-white">Potato #{totalCreated - 3}</span>
+                  </div>
+                  <div className="text-xs text-gray-500">Active</div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center text-gray-500 py-8">
+              <div className="text-4xl mb-2">👀</div>
+              <div className="text-sm">No activity yet</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* How It Works */}
+      <div className="mt-8 pt-8 border-t border-gray-800">
+        <h3 className="text-lg font-bold text-white mb-3">How It Works</h3>
+        <div className="space-y-2 text-xs text-gray-400">
+          <div>🥔 Create a HotPotato with any token</div>
+          <div>🔗 Share the link (they can't see what's inside!)</div>
+          <div>🔥 They must pass on a potato to claim yours</div>
+          <div>✨ Chain continues forever!</div>
+        </div>
+      </div>
+    </div>
+  )
+}

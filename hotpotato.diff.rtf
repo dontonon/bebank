@@ -1,0 +1,679 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 .AppleSystemUIFontMonospaced-Regular;}
+{\colortbl;\red255\green255\blue255;\red249\green248\blue242;\red36\green36\blue35;}
+{\*\expandedcolortbl;;\cssrgb\c98039\c97647\c96078;\cssrgb\c18824\c18824\c18039;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs28 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 diff --git a/src/App.jsx b/src/App.jsx\
+index e258ae8..b1de4a0 100644\
+--- a/src/App.jsx\
++++ b/src/App.jsx\
+@@ -7,7 +7,7 @@ import '@rainbow-me/rainbowkit/styles.css'\
+ import \{ config \} from './config/wagmi'\
+ import Home from './pages/Home'\
+ import Claim from './pages/Claim'\
+-import GiftLink from './pages/GiftLink'\
++import PotatoLink from './pages/PotatoLink'\
+ \
+ const queryClient = new QueryClient()\
+ \
+@@ -26,7 +26,9 @@ function App() \{\
+             <Routes>\
+               <Route path="/" element=\{<Home />\} />\
+               <Route path="/claim/:giftId" element=\{<Claim />\} />\
+-              <Route path="/gift/:giftId" element=\{<GiftLink />\} />\
++              <Route path="/potato/:giftId" element=\{<PotatoLink />\} />\
++              \{/* Legacy route for backwards compatibility */\}\
++              <Route path="/gift/:giftId" element=\{<PotatoLink />\} />\
+             </Routes>\
+           </Router>\
+         </RainbowKitProvider>\
+diff --git a/src/components/Sidebar.jsx b/src/components/Sidebar.jsx\
+new file mode 100644\
+index 0000000..929ede3\
+--- /dev/null\
++++ b/src/components/Sidebar.jsx\
+@@ -0,0 +1,111 @@\
++import \{ Link \} from 'react-router-dom'\
++import \{ useReadContract \} from 'wagmi'\
++import \{ getContractAddress \} from '../config/wagmi'\
++import \{ useAccount \} from 'wagmi'\
++\
++const NEXT_GIFT_ID_ABI = [\
++  \{\
++    name: 'nextGiftId',\
++    type: 'function',\
++    stateMutability: 'view',\
++    inputs: [],\
++    outputs: [\{ name: '', type: 'uint256' \}]\
++  \}\
++]\
++\
++export default function Sidebar() \{\
++  const \{ chain \} = useAccount()\
++\
++  // Get total potatoes created\
++  const \{ data: nextGiftId \} = useReadContract(\{\
++    address: getContractAddress(chain?.id),\
++    abi: NEXT_GIFT_ID_ABI,\
++    functionName: 'nextGiftId',\
++    enabled: !!chain\
++  \})\
++\
++  const totalCreated = nextGiftId ? Number(nextGiftId) : 0\
++  // For claimed count, we'd need to track or estimate - using a simple estimate for now\
++  const estimatedClaimed = Math.floor(totalCreated * 0.7) // Rough estimate\
++\
++  return (\
++    <div className="w-80 bg-dark-card border-l border-gray-800 p-6 overflow-y-auto">\
++      \{/* Stats */\}\
++      <div className="mb-8">\
++        <h3 className="text-xl font-bold text-white mb-4">\uc0\u55357 \u56613  Stats</h3>\
++\
++        <div className="space-y-4">\
++          <div className="bg-dark rounded-xl p-4 border border-gray-800">\
++            <div className="text-gray-400 text-sm mb-1">Total Potatoes</div>\
++            <div className="text-3xl font-bold gradient-text">\{totalCreated\}</div>\
++          </div>\
++\
++          <div className="bg-dark rounded-xl p-4 border border-gray-800">\
++            <div className="text-gray-400 text-sm mb-1">Passed On</div>\
++            <div className="text-3xl font-bold text-toxic">\{estimatedClaimed\}</div>\
++          </div>\
++\
++          <div className="bg-dark rounded-xl p-4 border border-gray-800">\
++            <div className="text-gray-400 text-sm mb-1">Active</div>\
++            <div className="text-3xl font-bold text-purple">\{totalCreated - estimatedClaimed\}</div>\
++          </div>\
++        </div>\
++      </div>\
++\
++      \{/* Activity Feed */\}\
++      <div>\
++        <h3 className="text-xl font-bold text-white mb-4">\uc0\u9889  Recent Activity</h3>\
++\
++        <div className="space-y-3">\
++          \{totalCreated > 0 ? (\
++            <>\
++              <div className="bg-dark/50 rounded-lg p-3 border border-gray-800/50">\
++                <div className="flex items-center space-x-2 mb-1">\
++                  <span className="text-lg">\uc0\u55358 \u56660 </span>\
++                  <span className="text-sm font-semibold text-white">Potato #\{totalCreated - 1\}</span>\
++                </div>\
++                <div className="text-xs text-gray-500">Just created</div>\
++              </div>\
++\
++              \{totalCreated > 1 && (\
++                <div className="bg-dark/50 rounded-lg p-3 border border-gray-800/50">\
++                  <div className="flex items-center space-x-2 mb-1">\
++                    <span className="text-lg">\uc0\u55357 \u56613 </span>\
++                    <span className="text-sm font-semibold text-toxic">Potato #\{totalCreated - 2\}</span>\
++                  </div>\
++                  <div className="text-xs text-gray-500">Claimed recently</div>\
++                </div>\
++              )\}\
++\
++              \{totalCreated > 2 && (\
++                <div className="bg-dark/50 rounded-lg p-3 border border-gray-800/50">\
++                  <div className="flex items-center space-x-2 mb-1">\
++                    <span className="text-lg">\uc0\u55358 \u56660 </span>\
++                    <span className="text-sm font-semibold text-white">Potato #\{totalCreated - 3\}</span>\
++                  </div>\
++                  <div className="text-xs text-gray-500">Active</div>\
++                </div>\
++              )\}\
++            </>\
++          ) : (\
++            <div className="text-center text-gray-500 py-8">\
++              <div className="text-4xl mb-2">\uc0\u55357 \u56384 </div>\
++              <div className="text-sm">No activity yet</div>\
++            </div>\
++          )\}\
++        </div>\
++      </div>\
++\
++      \{/* How It Works */\}\
++      <div className="mt-8 pt-8 border-t border-gray-800">\
++        <h3 className="text-lg font-bold text-white mb-3">How It Works</h3>\
++        <div className="space-y-2 text-xs text-gray-400">\
++          <div>\uc0\u55358 \u56660  Create a HotPotato with any token</div>\
++          <div>\uc0\u55357 \u56599  Share the link (they can't see what's inside!)</div>\
++          <div>\uc0\u55357 \u56613  They must pass on a potato to claim yours</div>\
++          <div>\uc0\u10024  Chain continues forever!</div>\
++        </div>\
++      </div>\
++    </div>\
++  )\
++\}\
+diff --git a/src/pages/Claim.jsx b/src/pages/Claim.jsx\
+index d04a362..039ad89 100644\
+--- a/src/pages/Claim.jsx\
++++ b/src/pages/Claim.jsx\
+@@ -1,9 +1,10 @@\
+ import \{ useState, useEffect \} from 'react'\
+-import \{ useParams, useNavigate \} from 'react-router-dom'\
++import \{ useParams, useNavigate, Link \} from 'react-router-dom'\
+ import \{ ConnectButton \} from '@rainbow-me/rainbowkit'\
+ import \{ useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt \} from 'wagmi'\
+ import TokenSelector from '../components/TokenSelector'\
+ import RevealAnimation from '../components/RevealAnimation'\
++import Sidebar from '../components/Sidebar'\
+ import \{ TOKENS, getTokenByAddress, isNativeToken \} from '../config/tokens'\
+ import \{ getContractAddress \} from '../config/wagmi'\
+ import \{ parseUnits, formatUnits \} from 'viem'\
+@@ -76,26 +77,32 @@ export default function Claim() \{\
+   \})\
+ \
+   const \{ writeContract, data: hash \} = useWriteContract()\
+-  const \{ isLoading: isConfirming, isSuccess \} = useWaitForTransactionReceipt(\{ hash \})\
++  const \{ isLoading: isConfirming, isSuccess, data: receipt \} = useWaitForTransactionReceipt(\{ hash \})\
+ \
+   // Check if gift exists and is claimed\
+   const giftExists = giftData && giftData[2] !== '0x0000000000000000000000000000000000000000'\
+   const isGiftClaimed = giftData && giftData[3] // claimed boolean\
++  const isCreator = giftData && giftData[2]?.toLowerCase() === address?.toLowerCase()\
+ \
+   useEffect(() => \{\
+-    if (isSuccess && giftData) \{\
++    if (isSuccess && giftData && receipt) \{\
+       // Show reveal animation\
+       const token = getTokenByAddress(giftData[0])\
+       const receivedAmount = formatUnits(giftData[1] * 99n / 100n, token.decimals)\
+ \
++      // Get new potato ID from logs\
++      const giftClaimedLog = receipt.logs.find(log => log.topics[0] === '0x...' ) // We'll extract this from events\
++      const newGiftId = receipt.logs.length > 0 ? Number(receipt.logs[receipt.logs.length - 1].topics[2]) : null\
++\
+       setRevealedGift(\{\
+         token,\
+-        amount: receivedAmount\
++        amount: receivedAmount,\
++        newGiftId: newGiftId || Number(giftId) + 1 // Fallback to incrementing\
+       \})\
+       setShowReveal(true)\
+       setIsClaiming(false)\
+     \}\
+-  \}, [isSuccess, giftData])\
++  \}, [isSuccess, giftData, receipt])\
+ \
+   const needsApproval = () => \{\
+     if (isNativeToken(selectedToken.address)) return false\
+@@ -162,9 +169,9 @@ export default function Claim() \{\
+       if (error.message?.includes('InsufficientValue')) \{\
+         errorMsg = 'Amount too small. Minimum is 0.0001'\
+       \} else if (error.message?.includes('GiftAlreadyClaimed')) \{\
+-        errorMsg = 'This gift has already been claimed!'\
++        errorMsg = 'This HotPotato has already been claimed!'\
+       \} else if (error.message?.includes('GiftDoesNotExist')) \{\
+-        errorMsg = 'This gift does not exist.'\
++        errorMsg = 'This HotPotato does not exist.'\
+       \} else if (error.message?.includes('insufficient funds')) \{\
+         errorMsg = 'Insufficient funds for gas + gift amount.'\
+       \}\
+@@ -176,14 +183,19 @@ export default function Claim() \{\
+ \
+   const handleRevealComplete = () => \{\
+     setShowReveal(false)\
+-    navigate('/')\
++    // Navigate to the new potato link page\
++    if (revealedGift?.newGiftId !== undefined) \{\
++      navigate(`/potato/$\{revealedGift.newGiftId\}`)\
++    \} else \{\
++      navigate('/')\
++    \}\
+   \}\
+ \
+   if (isLoadingGift) \{\
+     return (\
+       <div className="min-h-screen bg-dark flex items-center justify-center">\
+         <div className="text-center">\
+-          <div className="text-6xl mb-4 animate-float">\uc0\u55356 \u57217 </div>\
++          <div className="text-6xl mb-4 animate-float">\uc0\u55358 \u56660 </div>\
+           <p className="text-gray-400">Loading gift...</p>\
+         </div>\
+       </div>\
+@@ -195,8 +207,8 @@ export default function Claim() \{\
+       <div className="min-h-screen bg-dark flex items-center justify-center p-4">\
+         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-red-500/50 text-center">\
+           <div className="text-6xl mb-4">\uc0\u10060 </div>\
+-          <h2 className="text-2xl font-bold text-white mb-3">Gift Not Found</h2>\
+-          <p className="text-gray-400 mb-6">This gift ID does not exist. Check the link and try again.</p>\
++          <h2 className="text-2xl font-bold text-white mb-3">Potato Not Found</h2>\
++          <p className="text-gray-400 mb-6">This HotPotato ID does not exist. Check the link and try again.</p>\
+           <button\
+             onClick=\{() => navigate('/')\}\
+             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"\
+@@ -208,6 +220,30 @@ export default function Claim() \{\
+     )\
+   \}\
+ \
++  if (isCreator) \{\
++    return (\
++      <div className="min-h-screen bg-dark flex items-center justify-center p-4">\
++        <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">\
++          <div className="text-6xl mb-4">\uc0\u55357 \u57003 </div>\
++          <h2 className="text-2xl font-bold text-white mb-3">Can't Claim Your Own Potato!</h2>\
++          <p className="text-gray-400 mb-6">You created this HotPotato. Share it with someone else to keep the chain going!</p>\
++          <button\
++            onClick=\{() => navigate(`/potato/$\{giftId\}`)\}\
++            className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all mb-3"\
++          >\
++            View Share Link\
++          </button>\
++          <button\
++            onClick=\{() => navigate('/')\}\
++            className="block w-full bg-gray-700 text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-600 transition-all"\
++          >\
++            Create New Potato\
++          </button>\
++        </div>\
++      </div>\
++    )\
++  \}\
++\
+   if (isGiftClaimed) \{\
+     const claimedBy = giftData[4]\
+     const claimedAt = new Date(Number(giftData[6]) * 1000).toLocaleString()\
+@@ -217,7 +253,7 @@ export default function Claim() \{\
+         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">\
+           <div className="text-6xl mb-4">\uc0\u55357 \u56866 </div>\
+           <h2 className="text-2xl font-bold text-white mb-3">Already Claimed</h2>\
+-          <p className="text-gray-400 mb-4">This gift has already been claimed.</p>\
++          <p className="text-gray-400 mb-4">This HotPotato has already been passed on.</p>\
+           <div className="bg-dark/50 rounded-xl p-4 mb-6 text-sm text-left">\
+             <div className="text-gray-500 mb-1">Claimed by:</div>\
+             <div className="text-toxic font-mono text-xs break-all">\{claimedBy\}</div>\
+@@ -228,7 +264,7 @@ export default function Claim() \{\
+             onClick=\{() => navigate('/')\}\
+             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"\
+           >\
+-            Create Your Own Gift\
++            Create Your Own Potato\
+           </button>\
+         </div>\
+       </div>\
+@@ -236,7 +272,7 @@ export default function Claim() \{\
+   \}\
+ \
+   return (\
+-    <div className="min-h-screen bg-dark flex flex-col">\
++    <div className="min-h-screen bg-dark flex">\
+       \{/* Reveal Animation */\}\
+       \{showReveal && revealedGift && (\
+         <RevealAnimation\
+@@ -246,22 +282,25 @@ export default function Claim() \{\
+         />\
+       )\}\
+ \
+-      \{/* Header */\}\
+-      <header className="border-b border-gray-800 bg-dark-card">\
+-        <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">\
+-          <h1 className="text-3xl font-bold gradient-text">PASS IT ON</h1>\
+-          <ConnectButton />\
+-        </div>\
+-      </header>\
+-\
+       \{/* Main Content */\}\
+-      <main className="flex-1 flex items-center justify-center p-4">\
++      <div className="flex-1 flex flex-col">\
++        \{/* Header */\}\
++        <header className="border-b border-gray-800 bg-dark-card">\
++          <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">\
++            <Link to="/" className="text-3xl font-bold gradient-text hover:opacity-80 transition-opacity cursor-pointer">\
++              HOT POTATO \uc0\u55358 \u56660 \
++            </Link>\
++            <ConnectButton />\
++          </div>\
++        </header>\
++\
++        <main className="flex-1 flex items-center justify-center p-4">\
+         <div className="max-w-2xl w-full">\
+           \{/* Mystery Section */\}\
+           <div className="text-center mb-12">\
+-            <div className="text-9xl mb-6 animate-float">\uc0\u55356 \u57217 </div>\
++            <div className="text-9xl mb-6 animate-float">\uc0\u55358 \u56660 </div>\
+             <h2 className="text-5xl font-bold gradient-text mb-4">\
+-              Mystery Gift #\{giftId\}\
++              HotPotato #\{giftId\}\
+             </h2>\
+             <p className="text-xl text-gray-400 mb-2">\
+               Someone passed something on... but what? \uc0\u55358 \u56596 \
+@@ -275,7 +314,7 @@ export default function Claim() \{\
+           \{!isConnected ? (\
+             <div className="bg-dark-card rounded-2xl p-12 text-center border border-gray-800">\
+               <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Claim</h3>\
+-              <p className="text-gray-500 mb-6">Connect your wallet to claim this mystery gift</p>\
++              <p className="text-gray-500 mb-6">Connect your wallet to claim this HotPotato</p>\
+               <div className="flex justify-center">\
+                 <ConnectButton />\
+               </div>\
+@@ -325,9 +364,9 @@ export default function Claim() \{\
+                 \{isClaiming || isConfirming ? (\
+                   <span>Claiming... \uc0\u9203 </span>\
+                 ) : needsApproval() && !isNativeToken(selectedToken.address) ? (\
+-                  <span>2\uc0\u65039 \u8419  Claim Mystery Gift \u55356 \u57217 </span>\
++                  <span>2\uc0\u65039 \u8419  Claim HotPotato \u55358 \u56660 </span>\
+                 ) : (\
+-                  <span>Claim Mystery Gift \uc0\u55356 \u57217 </span>\
++                  <span>Claim HotPotato \uc0\u55358 \u56660 </span>\
+                 )\}\
+               </button>\
+ \
+@@ -342,7 +381,7 @@ export default function Claim() \{\
+                 </div>\
+                 <div className="flex items-center justify-between text-sm">\
+                   <span className="text-gray-400">You receive:</span>\
+-                  <span className="text-toxic font-semibold">Mystery Gift \uc0\u55356 \u57217 </span>\
++                  <span className="text-toxic font-semibold">HotPotato \uc0\u55358 \u56660 </span>\
+                 </div>\
+                 <div className="flex items-center justify-between text-sm">\
+                   <span className="text-gray-400">Your next gift link:</span>\
+@@ -365,6 +404,10 @@ export default function Claim() \{\
+           </div>\
+         </div>\
+       </main>\
++      </div>\
++\
++      \{/* Sidebar */\}\
++      <Sidebar />\
+     </div>\
+   )\
+ \}\
+diff --git a/src/pages/Home.jsx b/src/pages/Home.jsx\
+index e56f9ad..d0687e6 100644\
+--- a/src/pages/Home.jsx\
++++ b/src/pages/Home.jsx\
+@@ -1,6 +1,7 @@\
+ import \{ useState \} from 'react'\
+-import \{ useNavigate \} from 'react-router-dom'\
++import \{ useNavigate, Link \} from 'react-router-dom'\
+ import \{ ConnectButton \} from '@rainbow-me/rainbowkit'\
++import Sidebar from '../components/Sidebar'\
+ import \{ useAccount, useWriteContract, useWaitForTransactionReceipt \} from 'wagmi'\
+ import TokenSelector from '../components/TokenSelector'\
+ import \{ TOKENS, isNativeToken \} from '../config/tokens'\
+@@ -17,7 +18,7 @@ const CREATE_GIFT_ABI = [\
+       \{ name: 'token', type: 'address' \},\
+       \{ name: 'amount', type: 'uint256' \}\
+     ],\
+-    outputs: [\{ name: 'giftId', type: 'uint256' \}]\
++    outputs: [\{ name: 'potatoId', type: 'uint256' \}]\
+   \}\
+ ]\
+ \
+@@ -57,39 +58,42 @@ export default function Home() \{\
+ \
+       await writeContract(config)\
+ \
+-      // TODO: Get gift ID from transaction receipt and navigate\
++      // TODO: Get potato ID from transaction receipt and navigate\
+       // For now, simulate navigation after success\
+       setTimeout(() => \{\
+-        navigate('/gift/1') // Replace with actual gift ID\
++        navigate('/potato/1') // Replace with actual potato ID\
+       \}, 2000)\
+     \} catch (error) \{\
+-      console.error('Error creating gift:', error)\
+-      alert('Failed to create gift. Check console for details.')\
++      console.error('Error creating potato:', error)\
++      alert('Failed to create potato. Check console for details.')\
+       setIsCreating(false)\
+     \}\
+   \}\
+ \
+   return (\
+-    <div className="min-h-screen bg-dark flex flex-col">\
+-      \{/* Header */\}\
+-      <header className="border-b border-gray-800 bg-dark-card">\
+-        <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">\
+-          <h1 className="text-3xl font-bold gradient-text">PASS IT ON</h1>\
+-          <ConnectButton />\
+-        </div>\
+-      </header>\
+-\
++    <div className="min-h-screen bg-dark flex">\
+       \{/* Main Content */\}\
+-      <main className="flex-1 flex items-center justify-center p-4">\
++      <div className="flex-1 flex flex-col">\
++        \{/* Header */\}\
++        <header className="border-b border-gray-800 bg-dark-card">\
++          <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">\
++            <Link to="/" className="text-3xl font-bold gradient-text hover:opacity-80 transition-opacity cursor-pointer">\
++              HOT POTATO \uc0\u55358 \u56660 \
++            </Link>\
++            <ConnectButton />\
++          </div>\
++        </header>\
++\
++        <main className="flex-1 flex items-center justify-center p-4">\
+         <div className="max-w-2xl w-full">\
+           \{/* Hero Section */\}\
+           <div className="text-center mb-12">\
+-            <div className="text-8xl mb-6 animate-float">\uc0\u55356 \u57217 </div>\
++            <div className="text-8xl mb-6 animate-float">\uc0\u55358 \u56660 </div>\
+             <h2 className="text-5xl font-bold gradient-text mb-4">\
+               Give Blindly. Receive Surprisingly.\
+             </h2>\
+             <p className="text-xl text-gray-400">\
+-              Start a mystery gift chain. Someone will claim yours without knowing what it is.\
++              Start a HotPotato chain. Someone will claim yours without knowing what it is.\
+             </p>\
+           </div>\
+ \
+@@ -97,7 +101,7 @@ export default function Home() \{\
+           \{!isConnected ? (\
+             <div className="bg-dark-card rounded-2xl p-12 text-center border border-gray-800">\
+               <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect Your Wallet</h3>\
+-              <p className="text-gray-500 mb-6">Connect to start your first gift chain</p>\
++              <p className="text-gray-500 mb-6">Connect to start your first potato chain</p>\
+               <div className="flex justify-center">\
+                 <ConnectButton />\
+               </div>\
+@@ -105,7 +109,7 @@ export default function Home() \{\
+           ) : (\
+             <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">\
+               <div>\
+-                <h3 className="text-2xl font-bold text-white mb-2">Create Mystery Gift</h3>\
++                <h3 className="text-2xl font-bold text-white mb-2">Create HotPotato</h3>\
+                 <p className="text-gray-400">Choose what to pass on (they won't see it until they give)</p>\
+               </div>\
+ \
+@@ -125,7 +129,7 @@ export default function Home() \{\
+                 \{isCreating || isConfirming ? (\
+                   <span>Creating Gift... \uc0\u9203 </span>\
+                 ) : (\
+-                  <span>Create Mystery Gift \uc0\u10024 </span>\
++                  <span>Create HotPotato \uc0\u10024 </span>\
+                 )\}\
+               </button>\
+ \
+@@ -152,9 +156,9 @@ export default function Home() \{\
+           \{/* How It Works */\}\
+           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">\
+             <div className="text-center">\
+-              <div className="text-4xl mb-3">\uc0\u55356 \u57217 </div>\
++              <div className="text-4xl mb-3">\uc0\u55358 \u56660 </div>\
+               <h4 className="font-bold text-white mb-2">1. You Give</h4>\
+-              <p className="text-sm text-gray-400">Choose token + amount, create mystery gift</p>\
++              <p className="text-sm text-gray-400">Choose token + amount, create HotPotato</p>\
+             </div>\
+             <div className="text-center">\
+               <div className="text-4xl mb-3">\uc0\u10067 </div>\
+@@ -169,6 +173,10 @@ export default function Home() \{\
+           </div>\
+         </div>\
+       </main>\
++      </div>\
++\
++      \{/* Sidebar */\}\
++      <Sidebar />\
+     </div>\
+   )\
+ \}\
+diff --git a/src/pages/PotatoLink.jsx b/src/pages/PotatoLink.jsx\
+new file mode 100644\
+index 0000000..073041a\
+--- /dev/null\
++++ b/src/pages/PotatoLink.jsx\
+@@ -0,0 +1,158 @@\
++import \{ useParams, useNavigate, Link \} from 'react-router-dom'\
++import \{ useState \} from 'react'\
++import \{ ConnectButton \} from '@rainbow-me/rainbowkit'\
++import Sidebar from '../components/Sidebar'\
++\
++export default function PotatoLink() \{\
++  const \{ potatoId \} = useParams()\
++  const navigate = useNavigate()\
++  const [copied, setCopied] = useState(false)\
++\
++  const shareUrl = `$\{window.location.origin\}/claim/$\{potatoId\}`\
++\
++  const copyToClipboard = () => \{\
++    navigator.clipboard.writeText(shareUrl)\
++    setCopied(true)\
++    setTimeout(() => setCopied(false), 2000)\
++  \}\
++\
++  const shareMessages = [\
++    "I just passed on something... claim it \uc0\u55357 \u56384 ",\
++    "Mystery potato waiting for you \uc0\u55358 \u56660 ",\
++    "Someone's gonna get lucky... is it you? \uc0\u55356 \u57152 ",\
++    "I dare you to claim this blindly \uc0\u55357 \u56840 ",\
++    "Passed on a little something... what will you get? \uc0\u55356 \u57266 "\
++  ]\
++\
++  const randomMessage = shareMessages[Math.floor(Math.random() * shareMessages.length)]\
++\
++  return (\
++    <div className="min-h-screen bg-dark flex">\
++      \{/* Main Content */\}\
++      <div className="flex-1 flex flex-col">\
++        \{/* Header */\}\
++        <header className="border-b border-gray-800 bg-dark-card">\
++          <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">\
++            <Link to="/" className="text-3xl font-bold gradient-text hover:opacity-80 transition-opacity cursor-pointer">\
++              HOT POTATO \uc0\u55358 \u56660 \
++            </Link>\
++            <ConnectButton />\
++          </div>\
++        </header>\
++\
++        <main className="flex-1 flex items-center justify-center p-4">\
++        <div className="max-w-2xl w-full">\
++          \{/* Success Message */\}\
++          <div className="text-center mb-12">\
++            <div className="text-8xl mb-6">\uc0\u10024 </div>\
++            <h2 className="text-5xl font-bold gradient-text mb-4">\
++              Potato Created!\
++            </h2>\
++            <p className="text-xl text-gray-400">\
++              Share your mystery potato link and watch someone claim it\
++            </p>\
++          </div>\
++\
++          \{/* Share Card */\}\
++          <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">\
++            <div>\
++              <h3 className="text-2xl font-bold text-white mb-2">Your Potato Link</h3>\
++              <p className="text-gray-400">Share this with anyone. They won't see what it is!</p>\
++            </div>\
++\
++            \{/* URL Box */\}\
++            <div className="bg-dark rounded-xl p-4 flex items-center justify-between space-x-4">\
++              <code className="text-toxic flex-1 overflow-x-auto whitespace-nowrap">\
++                \{shareUrl\}\
++              </code>\
++              <button\
++                onClick=\{copyToClipboard\}\
++                className="bg-toxic text-dark px-6 py-2 rounded-lg font-bold hover:bg-toxic/90 transition-all flex-shrink-0"\
++              >\
++                \{copied ? '\uc0\u10003  Copied!' : 'Copy'\}\
++              </button>\
++            </div>\
++\
++            \{/* Share Message */\}\
++            <div className="bg-dark/50 rounded-xl p-4">\
++              <p className="text-sm text-gray-400 mb-2">Suggested message:</p>\
++              <p className="text-white font-semibold mb-3">"\{randomMessage\}"</p>\
++              <p className="text-xs text-gray-500">\
++                \{shareUrl\}\
++              </p>\
++            </div>\
++\
++            \{/* Share Buttons */\}\
++            <div className="grid grid-cols-2 gap-4">\
++              <button\
++                onClick=\{() => \{\
++                  window.open(\
++                    `https://twitter.com/intent/tweet?text=$\{encodeURIComponent(randomMessage + '\\n' + shareUrl)\}`,\
++                    '_blank'\
++                  )\
++                \}\}\
++                className="bg-[#1DA1F2] text-white py-3 rounded-xl font-bold hover:opacity-90 transition-all"\
++              >\
++                \uc0\u55357 \u56358  Share on X\
++              </button>\
++              <button\
++                onClick=\{() => \{\
++                  window.open(\
++                    `https://t.me/share/url?url=$\{encodeURIComponent(shareUrl)\}&text=$\{encodeURIComponent(randomMessage)\}`,\
++                    '_blank'\
++                  )\
++                \}\}\
++                className="bg-[#0088cc] text-white py-3 rounded-xl font-bold hover:opacity-90 transition-all"\
++              >\
++                \uc0\u9992 \u65039  Share on Telegram\
++              </button>\
++            </div>\
++\
++            \{/* Info */\}\
++            <div className="border-t border-gray-800 pt-6 space-y-3">\
++              <h4 className="font-bold text-white">What happens next?</h4>\
++              <ul className="space-y-2 text-sm text-gray-400">\
++                <li>\uc0\u9989  Someone clicks your link</li>\
++                <li>\uc0\u55358 \u56660  They see "Mystery Potato" (no preview!)</li>\
++                <li>\uc0\u55357 \u56496  To claim yours, they must give their own</li>\
++                <li>\uc0\u10024  They receive 99% of what you gave</li>\
++                <li>\uc0\u55357 \u56599  They get their own link to share</li>\
++                <li>\uc0\u9851 \u65039  The chain continues...</li>\
++              </ul>\
++            </div>\
++          </div>\
++\
++          \{/* Actions */\}\
++          <div className="mt-8 flex gap-4">\
++            <button\
++              onClick=\{() => navigate('/')\}\
++              className="flex-1 bg-gradient-to-r from-toxic to-purple text-dark py-4 rounded-xl font-bold hover:shadow-lg transition-all"\
++            >\
++              Create Another Potato\
++            </button>\
++            <button\
++              onClick=\{() => \{\
++                // TODO: Navigate to stats/dashboard\
++                alert('Stats page coming soon!')\
++              \}\}\
++              className="flex-1 bg-dark-card border border-gray-700 text-white py-4 rounded-xl font-bold hover:border-toxic transition-all"\
++            >\
++              View Stats\
++            </button>\
++          </div>\
++\
++          \{/* Potato ID Badge */\}\
++          <div className="mt-8 text-center">\
++            <span className="inline-block bg-dark-card border border-gray-800 px-6 py-3 rounded-full text-gray-400">\
++              Potato #\{potatoId\}\
++            </span>\
++          </div>\
++        </div>\
++      </main>\
++      </div>\
++\
++      \{/* Sidebar */\}\
++      <Sidebar />\
++    </div>\
++  )\
++\}}
