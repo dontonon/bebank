@@ -3,7 +3,7 @@ import { base, baseSepolia } from 'wagmi/chains'
 
 export const config = getDefaultConfig({
   appName: 'Pass It On',
-  projectId: 'YOUR_PROJECT_ID', // Get from WalletConnect Cloud
+  projectId: '3fcbfaff90971f8b41972652f6a4d721', // WalletConnect Cloud
   chains: [base, baseSepolia],
   ssr: false,
 })
@@ -11,7 +11,7 @@ export const config = getDefaultConfig({
 // Contract addresses (update after deployment)
 export const CONTRACTS = {
   [base.id]: '0x0000000000000000000000000000000000000000', // Production Base
-  [baseSepolia.id]: '0x0000000000000000000000000000000000000000', // Testnet
+  [baseSepolia.id]: '0xbb6c32EcE2DE9243330f50ACa8a6694396358D4B', // Testnet - DEPLOYED!
 }
 
 export const getContractAddress = (chainId) => {
