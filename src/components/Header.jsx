@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { Link, useLocation } from 'react-router-dom'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 
 function Header() {
   const location = useLocation();
@@ -15,7 +15,9 @@ function Header() {
           <Link to="/" className="text-3xl font-bold gradient-text hover:opacity-80 transition-opacity cursor-pointer">
             HOT POTATO 🥔
           </Link>
-          <ConnectButton />
+          <div>
+            <ConnectButton />
+          </div>
         </div>
 
         {/* Navigation Menu */}
