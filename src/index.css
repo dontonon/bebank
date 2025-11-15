@@ -13,11 +13,6 @@ body {
   color: white;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -30,7 +25,33 @@ code {
     background-clip: text;
   }
 
-  .gradient-border {
-    border-image: linear-gradient(135deg, #00FF88 0%, #9D4EDD 100%) 1;
+  .gradient-bg {
+    background: linear-gradient(135deg, #00FF88 0%, #9D4EDD 100%);
   }
+
+  .glow-toxic {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 20px rgba(157, 78, 221, 0.5);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1A1F3A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00FF88;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00DD77;
 }
