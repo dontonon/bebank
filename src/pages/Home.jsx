@@ -39,12 +39,39 @@ export default function Home() {
   // Handle successful transaction
   useEffect(() => {
     if (isSuccess && receipt && isCreating) {
+      console.log('Processing create success:', { receipt })
       try {
         // Get potato ID from transaction logs
-        // The createGift function returns the potatoId, which should be in the logs
-        const potatoId = receipt.logs.length > 0
-          ? Number(receipt.logs[receipt.logs.length - 1].topics[1] || 1)
-          : 1
+        let potatoId = null
+
+        if (receipt.logs && receipt.logs.length > 0) {
+          console.log('Analyzing transaction logs:', receipt.logs)
+
+          // Try to find the GiftCreated event
+          for (let i = receipt.logs.length - 1; i >= 0; i--) {
+            const log = receipt.logs[i]
+            if (log.topics && log.topics.length > 1) {
+              try {
+                const potentialId = BigInt(log.topics[1])
+                if (potentialId > 0n && potentialId < 1000000n) {
+                  potatoId = Number(potentialId)
+                  console.log('Extracted potato ID from topics[1]:', potatoId)
+                  break
+                }
+              } catch (e) {
+                // Try next log
+              }
+            }
+          }
+        }
+
+        // Fallback to ID 1 if extraction failed
+        if (!potatoId || isNaN(potatoId) || potatoId <= 0) {
+          potatoId = 1
+          console.log('Using fallback potato ID:', potatoId)
+        }
+
+        console.log('Final potato ID:', potatoId)
 
         setIsCreating(false)
         navigate(`/potato/${potatoId}`)

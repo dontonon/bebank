@@ -8,6 +8,25 @@ export default function PotatoLink() {
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
 
+  // Validate potatoId
+  if (!potatoId || potatoId === 'undefined' || potatoId === 'null') {
+    return (
+      <div className="min-h-screen bg-dark flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-red-500/50 text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-white mb-3">Invalid Potato Link</h2>
+          <p className="text-gray-400 mb-6">This potato link is invalid. Please check the URL.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const shareUrl = `${window.location.origin}/claim/${potatoId}`
 
   const copyToClipboard = () => {

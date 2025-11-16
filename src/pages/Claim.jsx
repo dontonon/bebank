@@ -86,6 +86,7 @@ export default function Claim() {
 
   useEffect(() => {
     if (isSuccess && giftData && receipt) {
+      console.log('Processing claim success:', { receipt, giftData })
       try {
         // Show reveal animation
         const token = getTokenByAddress(giftData[0])
@@ -104,10 +105,25 @@ export default function Claim() {
         let newGiftId = null
         try {
           if (receipt.logs && receipt.logs.length > 0) {
-            // Try to extract from the last log's topics
-            const lastLog = receipt.logs[receipt.logs.length - 1]
-            if (lastLog.topics && lastLog.topics.length > 2) {
-              newGiftId = Number(lastLog.topics[2])
+            console.log('Analyzing transaction logs:', receipt.logs)
+
+            // Try to find the GiftCreated event (should be in logs)
+            // The event signature for GiftCreated will have the giftId
+            for (let i = receipt.logs.length - 1; i >= 0; i--) {
+              const log = receipt.logs[i]
+              if (log.topics && log.topics.length > 1) {
+                // Try topics[1] which often contains the first indexed parameter (giftId)
+                try {
+                  const potentialId = BigInt(log.topics[1])
+                  if (potentialId > 0n && potentialId < 1000000n) { // Sanity check
+                    newGiftId = Number(potentialId)
+                    console.log('Extracted potato ID from topics[1]:', newGiftId)
+                    break
+                  }
+                } catch (e) {
+                  // Try next log
+                }
+              }
             }
           }
         } catch (logError) {
@@ -115,9 +131,12 @@ export default function Claim() {
         }
 
         // Fallback: increment current giftId
-        if (!newGiftId || isNaN(newGiftId)) {
+        if (!newGiftId || isNaN(newGiftId) || newGiftId <= 0) {
           newGiftId = Number(giftId) + 1
+          console.log('Using fallback potato ID:', newGiftId)
         }
+
+        console.log('Final potato ID:', newGiftId)
 
         setRevealedGift({
           token,
@@ -214,9 +233,11 @@ export default function Claim() {
   const handleRevealComplete = () => {
     setShowReveal(false)
     // Navigate to the new potato link page
-    if (revealedGift?.newGiftId !== undefined) {
+    if (revealedGift?.newGiftId && revealedGift.newGiftId > 0) {
+      console.log('Navigating to potato:', revealedGift.newGiftId)
       navigate(`/potato/${revealedGift.newGiftId}`)
     } else {
+      console.warn('Invalid potato ID, navigating home:', revealedGift)
       navigate('/')
     }
   }
