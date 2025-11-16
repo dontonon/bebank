@@ -21,7 +21,7 @@ export default function NetworkGuard({ children }) {
             <div className="text-6xl mb-4">⚠️</div>
             <h2 className="text-2xl font-bold text-white mb-2">Wrong Network</h2>
             <p className="text-gray-400">
-              HotPotato only works on Base Sepolia testnet or Base mainnet.
+              Hot Potato only works on Base Sepolia testnet or Base mainnet.
             </p>
           </div>
 

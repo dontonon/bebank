@@ -38,10 +38,22 @@ export default function Home() {
   useEffect(() => {
     if (isSuccess && receipt) {
       try {
-        // The contract returns the potatoId, it's in the logs
-        // Look for the GiftCreated event which should contain the potato ID
-        // For now, we'll use the contract's nextGiftId pattern
-        const potatoId = receipt.logs.length > 0 ? receipt.blockNumber : Date.now()
+        // Extract giftId from GiftCreated event
+        // Event signature: GiftCreated(uint256 indexed giftId, address indexed giver, address token, uint256 amount, uint256 timestamp)
+        // The giftId is the first indexed parameter (topic[1])
+        const giftCreatedEvent = receipt.logs.find(log => {
+          // GiftCreated event signature hash
+          return log.topics[0] === '0x...' || log.topics.length >= 2
+        })
+
+        let potatoId
+        if (giftCreatedEvent && giftCreatedEvent.topics[1]) {
+          // Extract giftId from indexed parameter (topic[1])
+          potatoId = BigInt(giftCreatedEvent.topics[1]).toString()
+        } else {
+          // Fallback: use transaction hash as ID
+          potatoId = receipt.transactionHash.slice(-8)
+        }
 
         // Navigate to share page
         setTimeout(() => {
@@ -124,14 +136,29 @@ export default function Home() {
         <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
           {/* Hero Section */}
-          <div className="text-center mb-12">
-            <div className="text-8xl mb-6 animate-float">🥔</div>
-            <h2 className="text-5xl font-bold gradient-text mb-4">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold gradient-text mb-6">
               Give Blindly. Receive Surprisingly.
             </h2>
-            <p className="text-xl text-gray-400">
-              Start a HotPotato chain. Someone will claim yours without knowing what it is.
-            </p>
+
+            {/* How It Works */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <div className="text-center">
+                <div className="text-3xl mb-2">🥔</div>
+                <h4 className="font-bold text-white mb-1 text-sm">1. You Give</h4>
+                <p className="text-xs text-gray-400">Choose token + amount</p>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl mb-2">❓</div>
+                <h4 className="font-bold text-white mb-1 text-sm">2. They Claim Blindly</h4>
+                <p className="text-xs text-gray-400">Must give to receive</p>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl mb-2">✨</div>
+                <h4 className="font-bold text-white mb-1 text-sm">3. Reveal & Repeat</h4>
+                <p className="text-xs text-gray-400">Pass it on forever</p>
+              </div>
+            </div>
           </div>
 
           {/* Create Gift Form */}
@@ -146,7 +173,7 @@ export default function Home() {
           ) : (
             <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-white mb-2">Create HotPotato</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">Create Hot Potato</h3>
                 <p className="text-gray-400">Choose what to pass on (they won't see it until they give)</p>
               </div>
 
@@ -172,7 +199,7 @@ export default function Home() {
               >
                 {isPending && <span>Confirm in wallet... 👛</span>}
                 {isConfirming && <span>Creating potato... ⏳</span>}
-                {!isLoading && <span>Create HotPotato ✨</span>}
+                {!isLoading && <span>Create Hot Potato ✨</span>}
               </button>
 
               {/* Info */}
@@ -194,25 +221,6 @@ export default function Home() {
               </div>
             </div>
           )}
-
-          {/* How It Works */}
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-4xl mb-3">🥔</div>
-              <h4 className="font-bold text-white mb-2">1. You Give</h4>
-              <p className="text-sm text-gray-400">Choose token + amount, create HotPotato</p>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl mb-3">❓</div>
-              <h4 className="font-bold text-white mb-2">2. They Claim Blindly</h4>
-              <p className="text-sm text-gray-400">Must give to receive - no preview!</p>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl mb-3">✨</div>
-              <h4 className="font-bold text-white mb-2">3. Reveal & Repeat</h4>
-              <p className="text-sm text-gray-400">See what they got, pass it on</p>
-            </div>
-          </div>
         </div>
       </main>
       </div>

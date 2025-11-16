@@ -1,8 +1,15 @@
-import { useState } from 'react'
-import { TOKENS } from '../config/tokens'
+import { useState, useEffect } from 'react'
+import { useAccount, useReadContract, useBalance } from 'wagmi'
+import { TOKENS, isNativeToken } from '../config/tokens'
+import { ERC20_ABI } from '../config/abis'
+import { formatUnits } from 'viem'
 
 export default function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [tokenBalances, setTokenBalances] = useState({})
+  const [customTokenAddress, setCustomTokenAddress] = useState('')
+  const [showCustomInput, setShowCustomInput] = useState(false)
+  const { address, isConnected } = useAccount()
 
   return (
     <div className="space-y-4">
@@ -29,7 +36,7 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
 
           {/* Dropdown */}
           {isOpen && (
-            <div className="absolute z-10 w-full mt-2 bg-dark-card border border-gray-700 rounded-xl overflow-hidden shadow-2xl">
+            <div className="absolute z-10 w-full mt-2 bg-dark-card border border-gray-700 rounded-xl overflow-hidden shadow-2xl max-h-96 overflow-y-auto">
               {TOKENS.map((token) => (
                 <button
                   key={token.symbol}
@@ -37,6 +44,7 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
                   onClick={() => {
                     onSelect(token)
                     setIsOpen(false)
+                    setShowCustomInput(false)
                   }}
                   className="w-full px-4 py-3 hover:bg-gray-800 transition-colors flex items-center space-x-3 text-left"
                 >
@@ -47,6 +55,54 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
                   </div>
                 </button>
               ))}
+
+              {/* Custom Token Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCustomInput(!showCustomInput)
+                }}
+                className="w-full px-4 py-3 hover:bg-gray-800 transition-colors flex items-center space-x-3 text-left border-t border-gray-700"
+              >
+                <span className="text-2xl">➕</span>
+                <div>
+                  <div className="font-bold text-white">Custom Token</div>
+                  <div className="text-sm text-gray-400">Add any ERC20 by address</div>
+                </div>
+              </button>
+
+              {/* Custom Token Input */}
+              {showCustomInput && (
+                <div className="px-4 py-3 border-t border-gray-700 bg-gray-900">
+                  <input
+                    type="text"
+                    value={customTokenAddress}
+                    onChange={(e) => setCustomTokenAddress(e.target.value)}
+                    placeholder="0x..."
+                    className="w-full bg-dark border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:border-toxic focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (customTokenAddress && customTokenAddress.startsWith('0x')) {
+                        onSelect({
+                          symbol: 'CUSTOM',
+                          name: 'Custom Token',
+                          logo: '🪙',
+                          address: customTokenAddress,
+                          decimals: 18 // Default, could query this
+                        })
+                        setIsOpen(false)
+                        setShowCustomInput(false)
+                        setCustomTokenAddress('')
+                      }
+                    }}
+                    className="w-full mt-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white py-2 rounded-lg font-bold hover:opacity-90 transition-all text-sm"
+                  >
+                    Add Token
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

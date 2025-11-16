@@ -100,7 +100,7 @@ export default function Sidebar() {
       <div className="mt-8 pt-8 border-t border-gray-800">
         <h3 className="text-lg font-bold text-white mb-3">How It Works</h3>
         <div className="space-y-2 text-xs text-gray-400">
-          <div>🥔 Create a HotPotato with any token</div>
+          <div>🥔 Create a Hot Potato with any token</div>
           <div>🔗 Share the link (they can't see what's inside!)</div>
           <div>🔥 They must pass on a potato to claim yours</div>
           <div>✨ Chain continues forever!</div>

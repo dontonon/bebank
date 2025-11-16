@@ -171,9 +171,9 @@ export default function Claim() {
       if (error.message?.includes('InsufficientValue')) {
         errorMsg = 'Amount too small. Minimum is 0.0001'
       } else if (error.message?.includes('GiftAlreadyClaimed')) {
-        errorMsg = 'This HotPotato has already been claimed!'
+        errorMsg = 'This Hot Potato has already been claimed!'
       } else if (error.message?.includes('GiftDoesNotExist')) {
-        errorMsg = 'This HotPotato does not exist.'
+        errorMsg = 'This Hot Potato does not exist.'
       } else if (error.message?.includes('insufficient funds')) {
         errorMsg = 'Insufficient funds for gas + gift amount.'
       }
@@ -210,7 +210,7 @@ export default function Claim() {
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-red-500/50 text-center">
           <div className="text-6xl mb-4">❌</div>
           <h2 className="text-2xl font-bold text-white mb-3">Potato Not Found</h2>
-          <p className="text-gray-400 mb-6">This HotPotato ID does not exist. Check the link and try again.</p>
+          <p className="text-gray-400 mb-6">This Hot Potato ID does not exist. Check the link and try again.</p>
           <button
             onClick={() => navigate('/')}
             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
@@ -228,7 +228,7 @@ export default function Claim() {
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">
           <div className="text-6xl mb-4">🚫</div>
           <h2 className="text-2xl font-bold text-white mb-3">Can't Claim Your Own Potato!</h2>
-          <p className="text-gray-400 mb-6">You created this HotPotato. Share it with someone else to keep the chain going!</p>
+          <p className="text-gray-400 mb-6">You created this Hot Potato. Share it with someone else to keep the chain going!</p>
           <button
             onClick={() => navigate(`/potato/${giftId}`)}
             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all mb-3"
@@ -255,7 +255,7 @@ export default function Claim() {
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">
           <div className="text-6xl mb-4">😢</div>
           <h2 className="text-2xl font-bold text-white mb-3">Already Claimed</h2>
-          <p className="text-gray-400 mb-4">This HotPotato has already been passed on.</p>
+          <p className="text-gray-400 mb-4">This Hot Potato has already been passed on.</p>
           <div className="bg-dark/50 rounded-xl p-4 mb-6 text-sm text-left">
             <div className="text-gray-500 mb-1">Claimed by:</div>
             <div className="text-toxic font-mono text-xs break-all">{claimedBy}</div>
@@ -295,7 +295,7 @@ export default function Claim() {
           <div className="text-center mb-12">
             <div className="text-9xl mb-6 animate-float">🥔</div>
             <h2 className="text-5xl font-bold gradient-text mb-4">
-              HotPotato #{giftId}
+              Hot Potato #{giftId}
             </h2>
             <p className="text-xl text-gray-400 mb-2">
               Someone passed something on... but what? 🤔
@@ -309,7 +309,7 @@ export default function Claim() {
           {!isConnected ? (
             <div className="bg-dark-card rounded-2xl p-12 text-center border border-gray-800">
               <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Claim</h3>
-              <p className="text-gray-500 mb-6">Connect your wallet to claim this HotPotato</p>
+              <p className="text-gray-500 mb-6">Connect your wallet to claim this Hot Potato</p>
               <div className="flex justify-center">
                 <ConnectButton />
               </div>
@@ -359,9 +359,9 @@ export default function Claim() {
                 {isClaiming || isConfirming ? (
                   <span>Claiming... ⏳</span>
                 ) : needsApproval() && !isNativeToken(selectedToken.address) ? (
-                  <span>2️⃣ Claim HotPotato 🥔</span>
+                  <span>2️⃣ Claim Hot Potato 🥔</span>
                 ) : (
-                  <span>Claim HotPotato 🥔</span>
+                  <span>Claim Hot Potato 🥔</span>
                 )}
               </button>
 
@@ -376,7 +376,7 @@ export default function Claim() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">You receive:</span>
-                  <span className="text-toxic font-semibold">HotPotato 🥔</span>
+                  <span className="text-toxic font-semibold">Hot Potato 🥔</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">Your next gift link:</span>
