@@ -24,7 +24,8 @@ export default function Sidebar() {
     enabled: !!chain
   })
 
-  const totalCreated = nextGiftId ? Number(nextGiftId) : 0
+  // Safely convert BigInt to Number
+  const totalCreated = nextGiftId !== undefined && nextGiftId !== null ? Number(nextGiftId) : 0
   // For claimed count, we'd need to track or estimate - using a simple estimate for now
   const estimatedClaimed = Math.floor(totalCreated * 0.7) // Rough estimate
 
