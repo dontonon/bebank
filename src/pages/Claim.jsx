@@ -63,7 +63,7 @@ export default function Claim() {
     address: getContractAddress(chain?.id),
     abi: GET_GIFT_ABI,
     functionName: 'getGift',
-    args: [BigInt(giftId || 0)],
+    args: giftId ? [BigInt(giftId)] : undefined,
     enabled: isConnected && !!chain && !!giftId
   })
 
@@ -98,7 +98,8 @@ export default function Claim() {
         }
 
         // Safely handle BigInt conversion
-        const giftAmount = BigInt(giftData[1] || 0)
+        // giftData[1] is already a BigInt from the contract
+        const giftAmount = giftData[1]
         const receivedAmount = formatUnits((giftAmount * 99n) / 100n, token.decimals)
 
         // Get new potato ID from logs - try multiple approaches
