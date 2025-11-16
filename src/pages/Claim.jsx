@@ -86,28 +86,51 @@ export default function Claim() {
 
   useEffect(() => {
     if (isSuccess && giftData && receipt) {
-      // Show reveal animation
-      const token = getTokenByAddress(giftData[0])
-      if (!token) {
-        console.error('Unknown token address:', giftData[0])
-        setClaimError('Unknown token received. Please contact support.')
+      try {
+        // Show reveal animation
+        const token = getTokenByAddress(giftData[0])
+        if (!token) {
+          console.error('Unknown token address:', giftData[0])
+          setClaimError('Unknown token received. Please contact support.')
+          setIsClaiming(false)
+          return
+        }
+
+        // Safely handle BigInt conversion
+        const giftAmount = BigInt(giftData[1] || 0)
+        const receivedAmount = formatUnits((giftAmount * 99n) / 100n, token.decimals)
+
+        // Get new potato ID from logs - try multiple approaches
+        let newGiftId = null
+        try {
+          if (receipt.logs && receipt.logs.length > 0) {
+            // Try to extract from the last log's topics
+            const lastLog = receipt.logs[receipt.logs.length - 1]
+            if (lastLog.topics && lastLog.topics.length > 2) {
+              newGiftId = Number(lastLog.topics[2])
+            }
+          }
+        } catch (logError) {
+          console.warn('Could not parse log for potato ID:', logError)
+        }
+
+        // Fallback: increment current giftId
+        if (!newGiftId || isNaN(newGiftId)) {
+          newGiftId = Number(giftId) + 1
+        }
+
+        setRevealedGift({
+          token,
+          amount: receivedAmount,
+          newGiftId
+        })
+        setShowReveal(true)
         setIsClaiming(false)
-        return
+      } catch (error) {
+        console.error('Error processing claim result:', error)
+        setClaimError('Claim succeeded but could not process result. Please check your wallet.')
+        setIsClaiming(false)
       }
-
-      const receivedAmount = formatUnits((giftData[1] * 99n) / 100n, token.decimals)
-
-      // Get new potato ID from logs
-      const giftClaimedLog = receipt.logs.find(log => log.topics[0] === '0x...' ) // We'll extract this from events
-      const newGiftId = receipt.logs.length > 0 ? Number(receipt.logs[receipt.logs.length - 1].topics[2]) : null
-
-      setRevealedGift({
-        token,
-        amount: receivedAmount,
-        newGiftId: newGiftId || Number(giftId) + 1 // Fallback to incrementing
-      })
-      setShowReveal(true)
-      setIsClaiming(false)
     }
   }, [isSuccess, giftData, receipt, giftId])
 
