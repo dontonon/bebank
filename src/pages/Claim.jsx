@@ -88,7 +88,14 @@ export default function Claim() {
     if (isSuccess && giftData && receipt) {
       // Show reveal animation
       const token = getTokenByAddress(giftData[0])
-      const receivedAmount = formatUnits(giftData[1] * 99n / 100n, token.decimals)
+      if (!token) {
+        console.error('Unknown token address:', giftData[0])
+        setClaimError('Unknown token received. Please contact support.')
+        setIsClaiming(false)
+        return
+      }
+
+      const receivedAmount = formatUnits((giftData[1] * 99n) / 100n, token.decimals)
 
       // Get new potato ID from logs
       const giftClaimedLog = receipt.logs.find(log => log.topics[0] === '0x...' ) // We'll extract this from events
@@ -102,7 +109,7 @@ export default function Claim() {
       setShowReveal(true)
       setIsClaiming(false)
     }
-  }, [isSuccess, giftData, receipt])
+  }, [isSuccess, giftData, receipt, giftId])
 
   const needsApproval = () => {
     if (isNativeToken(selectedToken.address)) return false
