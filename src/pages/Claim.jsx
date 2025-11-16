@@ -93,6 +93,7 @@ export default function Claim() {
   const [revealedGift, setRevealedGift] = useState(null)
   const [claimError, setClaimError] = useState(null)
   const [isClaimerContract, setIsClaimerContract] = useState(false)
+  const [contractBalance, setContractBalance] = useState(null)
 
   // Read gift data
   const { data: giftData, isLoading: isLoadingGift } = useReadContract({
@@ -128,38 +129,61 @@ export default function Claim() {
   const isGiftClaimed = giftData && giftData[3] // claimed boolean
   const isCreator = giftData && giftData[2]?.toLowerCase() === address?.toLowerCase()
 
-  // Check if claimer address is a smart contract
+  // Check if claimer address is a smart contract AND get contract balance
   useEffect(() => {
-    async function checkIfContract() {
-      if (address && publicClient) {
+    async function checkWalletAndBalance() {
+      if (address && publicClient && chain) {
         try {
+          // Check if wallet is a contract
           const code = await publicClient.getCode({ address })
           const isContract = code && code !== '0x'
           setIsClaimerContract(isContract)
           console.log('Your wallet is a contract?', isContract)
+
+          // Get contract ETH balance
+          const contractAddr = getContractAddress(chain.id)
+          const balance = await publicClient.getBalance({ address: contractAddr })
+          setContractBalance(balance)
+          console.log('Contract ETH balance:', formatUnits(balance, 18), 'ETH')
         } catch (error) {
-          console.error('Error checking if contract:', error)
+          console.error('Error checking wallet/balance:', error)
         }
       }
     }
-    checkIfContract()
-  }, [address, publicClient])
+    checkWalletAndBalance()
+  }, [address, publicClient, chain])
 
   // Debug logging
   useEffect(() => {
-    if (giftData && address) {
+    if (giftData && address && contractBalance !== null) {
+      const isETHGift = giftData[0] === '0x0000000000000000000000000000000000000000'
+      const giftAmount = giftData[1]
+      const claimerWillGet = giftAmount * 99n / 100n
+      const treasuryWillGet = giftAmount - claimerWillGet
+      const totalNeeded = giftAmount // Contract needs full amount to distribute
+
       console.log('=== CLAIM DEBUG ===')
       console.log('Potato creator:', giftData[2])
       console.log('Current wallet (YOU):', address)
       console.log('Is same wallet?', isCreator)
       console.log('Treasury address:', treasuryAddress)
       console.log('Gift token address:', giftData[0])
-      console.log('Gift is ETH?', giftData[0] === '0x0000000000000000000000000000000000000000')
-      console.log('Gift amount:', giftData[1]?.toString())
+      console.log('Gift is ETH?', isETHGift)
+      console.log('Gift amount (raw):', giftAmount?.toString())
+      if (isETHGift) {
+        console.log('Gift amount (ETH):', formatUnits(giftAmount, 18))
+        console.log('Contract balance (ETH):', formatUnits(contractBalance, 18))
+        console.log('Claimer will get (ETH):', formatUnits(claimerWillGet, 18))
+        console.log('Treasury will get (ETH):', formatUnits(treasuryWillGet, 18))
+        console.log('Contract has enough?', contractBalance >= totalNeeded)
+        if (contractBalance < totalNeeded) {
+          console.error('❌ CONTRACT INSUFFICIENT BALANCE! Needs:', formatUnits(totalNeeded, 18), 'Has:', formatUnits(contractBalance, 18))
+        }
+      }
       console.log('Your wallet is smart contract?', isClaimerContract)
       console.log('==================')
     }
-  }, [giftData, address, isCreator, treasuryAddress, isClaimerContract])
+  }, [giftData, address, isCreator, treasuryAddress, isClaimerContract, contractBalance])
 
   useEffect(() => {
     if (isSuccess && giftData && receipt && chain) {
@@ -446,6 +470,27 @@ export default function Claim() {
                       </p>
                       <p className="text-yellow-300 text-sm mt-2">
                         ✅ Please use a regular wallet: MetaMask, Rainbow, Rabby, etc.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Contract Insufficient Balance Warning */}
+              {giftData && contractBalance !== null && giftData[0] === '0x0000000000000000000000000000000000000000' && contractBalance < giftData[1] && (
+                <div className="bg-red-900/30 border-2 border-red-500 rounded-xl p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">💸</div>
+                    <div>
+                      <p className="text-red-400 font-bold text-lg mb-2">CONTRACT HAS INSUFFICIENT ETH!</p>
+                      <p className="text-red-300 text-sm mb-3">
+                        The contract needs <strong>{formatUnits(giftData[1], 18)} ETH</strong> to pay out this gift, but only has <strong>{formatUnits(contractBalance, 18)} ETH</strong>.
+                      </p>
+                      <p className="text-red-200 text-sm font-semibold">
+                        ❌ This is a CRITICAL BUG in the smart contract!
+                      </p>
+                      <p className="text-yellow-300 text-sm mt-2">
+                        The potato creator's ETH should be in the contract. Check the contract on BaseScan.
                       </p>
                     </div>
                   </div>
