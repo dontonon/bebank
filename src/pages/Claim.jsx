@@ -306,9 +306,9 @@ export default function Claim() {
           {!isConnected ? (
             <div className="bg-dark-card rounded-2xl p-12 text-center border border-gray-800">
               <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Claim</h3>
-              <p className="text-gray-500 mb-6">Connect your wallet to claim this HotPotato</p>
-              <div className="flex justify-center">
-                <ConnectButton />
+              <p className="text-gray-500 mb-6">Connect your wallet using the button in the top right to claim this HotPotato</p>
+              <div className="text-6xl animate-bounce">
+                ☝️
               </div>
             </div>
           ) : (

@@ -1,5 +1,7 @@
 # 🚀 DEPLOYMENT GUIDE - PASS IT ON
 
+<!-- Last updated: Nov 16, 2025 - Fixed Claim page ConnectButton bug -->
+
 ## Step 1: Deploy Smart Contract to Base Sepolia ✅
 
 ### Using Remix IDE (Easiest Method)
