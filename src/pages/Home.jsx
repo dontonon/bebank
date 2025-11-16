@@ -8,9 +8,9 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagm
 import TokenSelector from '../components/TokenSelector'
 import { TOKENS, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
-import { parseUnits } from 'viem'
+import { parseUnits, decodeEventLog } from 'viem'
 
-// ABI for createGift function
+// ABI for createGift function and GiftCreated event
 const CREATE_GIFT_ABI = [
   {
     name: 'createGift',
@@ -21,6 +21,18 @@ const CREATE_GIFT_ABI = [
       { name: 'amount', type: 'uint256' }
     ],
     outputs: [{ name: 'potatoId', type: 'uint256' }]
+  },
+  {
+    name: 'GiftCreated',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'giftId', type: 'uint256' },
+      { indexed: true, name: 'giver', type: 'address' },
+      { indexed: false, name: 'token', type: 'address' },
+      { indexed: false, name: 'amount', type: 'uint256' },
+      { indexed: false, name: 'timestamp', type: 'uint256' }
+    ]
   }
 ]
 
@@ -38,22 +50,27 @@ export default function Home() {
   useEffect(() => {
     if (isSuccess && receipt) {
       try {
-        // Extract giftId from GiftCreated event
-        // Event signature: GiftCreated(uint256 indexed giftId, address indexed giver, address token, uint256 amount, uint256 timestamp)
-        // The giftId is the first indexed parameter (topic[1])
-        const giftCreatedEvent = receipt.logs.find(log => {
-          // GiftCreated event signature hash
-          return log.topics[0] === '0x...' || log.topics.length >= 2
+        const contractAddress = getContractAddress(chain.id)
+
+        // Find the GiftCreated event from our contract
+        const giftCreatedLog = receipt.logs.find(log =>
+          log.address.toLowerCase() === contractAddress.toLowerCase()
+        )
+
+        if (!giftCreatedLog) {
+          console.error('No logs found from contract')
+          setError('Potato created but could not extract ID')
+          return
+        }
+
+        // Decode the event to get the giftId
+        const decodedEvent = decodeEventLog({
+          abi: CREATE_GIFT_ABI,
+          data: giftCreatedLog.data,
+          topics: giftCreatedLog.topics,
         })
 
-        let potatoId
-        if (giftCreatedEvent && giftCreatedEvent.topics[1]) {
-          // Extract giftId from indexed parameter (topic[1])
-          potatoId = BigInt(giftCreatedEvent.topics[1]).toString()
-        } else {
-          // Fallback: use transaction hash as ID
-          potatoId = receipt.transactionHash.slice(-8)
-        }
+        const potatoId = decodedEvent.args.giftId.toString()
 
         // Navigate to share page
         setTimeout(() => {
@@ -64,7 +81,7 @@ export default function Home() {
         setError('Potato created but failed to get ID. Check your wallet.')
       }
     }
-  }, [isSuccess, receipt, navigate])
+  }, [isSuccess, receipt, navigate, chain])
 
   // Handle write errors
   useEffect(() => {
