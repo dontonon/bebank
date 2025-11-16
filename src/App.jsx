@@ -9,6 +9,7 @@ import Home from './pages/Home'
 import Claim from './pages/Claim'
 import PotatoLink from './pages/PotatoLink'
 import About from './pages/About'
+import Admin from './pages/Admin'
 
 const queryClient = new QueryClient()
 
@@ -27,6 +28,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
+              <Route path="/admin" element={<Admin />} />
               <Route path="/claim/:giftId" element={<Claim />} />
               <Route path="/potato/:giftId" element={<PotatoLink />} />
               {/* Legacy route for backwards compatibility */}
