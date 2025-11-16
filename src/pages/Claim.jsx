@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import Header from '../components/Header'
+import NetworkGuard from '../components/NetworkGuard'
 import TokenSelector from '../components/TokenSelector'
 import RevealAnimation from '../components/RevealAnimation'
 import Sidebar from '../components/Sidebar'
@@ -273,19 +274,20 @@ export default function Claim() {
   }
 
   return (
-    <div className="min-h-screen bg-dark flex">
-      {/* Reveal Animation */}
-      {showReveal && revealedGift && (
-        <RevealAnimation
-          token={revealedGift.token}
-          amount={revealedGift.amount}
-          onComplete={handleRevealComplete}
-        />
-      )}
+    <NetworkGuard>
+      <div className="min-h-screen bg-dark flex">
+        {/* Reveal Animation */}
+        {showReveal && revealedGift && (
+          <RevealAnimation
+            token={revealedGift.token}
+            amount={revealedGift.amount}
+            onComplete={handleRevealComplete}
+          />
+        )}
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        <Header />
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col">
+          <Header />
 
         <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
@@ -396,11 +398,12 @@ export default function Claim() {
             </ul>
           </div>
         </div>
-      </main>
-      </div>
+        </main>
+        </div>
 
-      {/* Sidebar */}
-      <Sidebar />
-    </div>
+        {/* Sidebar */}
+        <Sidebar />
+      </div>
+    </NetworkGuard>
   )
 }

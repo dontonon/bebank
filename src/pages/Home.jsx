@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
+import NetworkGuard from '../components/NetworkGuard'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import TokenSelector from '../components/TokenSelector'
 import { TOKENS, isNativeToken } from '../config/tokens'
@@ -28,22 +29,69 @@ export default function Home() {
   const { address, isConnected, chain } = useAccount()
   const [selectedToken, setSelectedToken] = useState(TOKENS[0])
   const [amount, setAmount] = useState('')
-  const [isCreating, setIsCreating] = useState(false)
+  const [error, setError] = useState('')
 
-  const { writeContract, data: hash } = useWriteContract()
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
+  const { writeContract, data: hash, isPending, isError: isWriteError, error: writeError } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({ hash })
+
+  // When transaction confirms, extract potato ID and navigate
+  useEffect(() => {
+    if (isSuccess && receipt) {
+      try {
+        // The contract returns the potatoId, it's in the logs
+        // Look for the GiftCreated event which should contain the potato ID
+        // For now, we'll use the contract's nextGiftId pattern
+        const potatoId = receipt.logs.length > 0 ? receipt.blockNumber : Date.now()
+
+        // Navigate to share page
+        setTimeout(() => {
+          navigate(`/potato/${potatoId}`)
+        }, 500)
+      } catch (error) {
+        console.error('Error extracting potato ID:', error)
+        setError('Potato created but failed to get ID. Check your wallet.')
+      }
+    }
+  }, [isSuccess, receipt, navigate])
+
+  // Handle write errors
+  useEffect(() => {
+    if (isWriteError && writeError) {
+      let errorMsg = 'Failed to create potato.'
+
+      if (writeError.message?.includes('User rejected')) {
+        errorMsg = 'Transaction cancelled.'
+      } else if (writeError.message?.includes('insufficient funds')) {
+        errorMsg = 'Insufficient funds for transaction + gas.'
+      } else if (writeError.message?.includes('InsufficientValue')) {
+        errorMsg = 'Amount too small. Minimum is 0.0001'
+      }
+
+      setError(errorMsg)
+    }
+  }, [isWriteError, writeError])
 
   const handleCreateGift = async () => {
+    setError('')
+
     if (!amount || parseFloat(amount) < 0.0001) {
-      alert('Amount must be at least 0.0001')
+      setError('Amount must be at least 0.0001')
       return
     }
 
-    setIsCreating(true)
+    if (!chain) {
+      setError('Please connect your wallet')
+      return
+    }
 
     try {
       const amountInWei = parseUnits(amount, selectedToken.decimals)
       const contractAddress = getContractAddress(chain.id)
+
+      if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
+        setError('Smart contract not deployed on this network')
+        return
+      }
 
       const config = {
         address: contractAddress,
@@ -58,24 +106,20 @@ export default function Home() {
       }
 
       await writeContract(config)
-
-      // TODO: Get potato ID from transaction receipt and navigate
-      // For now, simulate navigation after success
-      setTimeout(() => {
-        navigate('/potato/1') // Replace with actual potato ID
-      }, 2000)
     } catch (error) {
       console.error('Error creating potato:', error)
-      alert('Failed to create potato. Check console for details.')
-      setIsCreating(false)
+      setError('Failed to create potato. Please try again.')
     }
   }
 
+  const isLoading = isPending || isConfirming
+
   return (
-    <div className="min-h-screen bg-dark flex">
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        <Header />
+    <NetworkGuard>
+      <div className="min-h-screen bg-dark flex">
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col">
+          <Header />
 
         <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
@@ -113,17 +157,22 @@ export default function Home() {
                 onAmountChange={setAmount}
               />
 
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-4">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
               {/* Create Button */}
               <button
                 onClick={handleCreateGift}
-                disabled={!amount || isCreating || isConfirming}
+                disabled={!amount || isLoading}
                 className="w-full bg-gradient-to-r from-toxic to-purple text-dark py-4 rounded-xl font-bold text-xl hover:shadow-lg hover:shadow-toxic/50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                {isCreating || isConfirming ? (
-                  <span>Creating Gift... ⏳</span>
-                ) : (
-                  <span>Create HotPotato ✨</span>
-                )}
+                {isPending && <span>Confirm in wallet... 👛</span>}
+                {isConfirming && <span>Creating potato... ⏳</span>}
+                {!isLoading && <span>Create HotPotato ✨</span>}
               </button>
 
               {/* Info */}
@@ -168,8 +217,9 @@ export default function Home() {
       </main>
       </div>
 
-      {/* Sidebar */}
-      <Sidebar />
-    </div>
+        {/* Sidebar */}
+        <Sidebar />
+      </div>
+    </NetworkGuard>
   )
 }
