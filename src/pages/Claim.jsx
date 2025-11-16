@@ -9,7 +9,7 @@ import RevealAnimation from '../components/RevealAnimation'
 import Sidebar from '../components/Sidebar'
 import { TOKENS, getTokenByAddress, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
-import { parseUnits, formatUnits } from 'viem'
+import { parseUnits, formatUnits, decodeEventLog } from 'viem'
 import { ERC20_ABI } from '../config/abis'
 
 const CLAIM_GIFT_ABI = [
@@ -23,6 +23,30 @@ const CLAIM_GIFT_ABI = [
       { name: 'newGiftAmount', type: 'uint256' }
     ],
     outputs: [{ name: 'newGiftId', type: 'uint256' }]
+  },
+  {
+    name: 'GiftCreated',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'giftId', type: 'uint256' },
+      { indexed: true, name: 'giver', type: 'address' },
+      { indexed: false, name: 'token', type: 'address' },
+      { indexed: false, name: 'amount', type: 'uint256' },
+      { indexed: false, name: 'timestamp', type: 'uint256' }
+    ]
+  },
+  {
+    name: 'GiftClaimed',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'oldGiftId', type: 'uint256' },
+      { indexed: true, name: 'newGiftId', type: 'uint256' },
+      { indexed: true, name: 'claimer', type: 'address' },
+      { indexed: false, name: 'tokenReceived', type: 'address' },
+      { indexed: false, name: 'amountReceived', type: 'uint256' }
+    ]
   }
 ]
 
@@ -98,24 +122,46 @@ export default function Claim() {
   }, [giftData, address, isCreator])
 
   useEffect(() => {
-    if (isSuccess && giftData && receipt) {
-      // Show reveal animation
-      const token = getTokenByAddress(giftData[0])
-      const receivedAmount = formatUnits(giftData[1] * 99n / 100n, token.decimals)
+    if (isSuccess && giftData && receipt && chain) {
+      try {
+        // Show reveal animation
+        const token = getTokenByAddress(giftData[0])
+        const receivedAmount = formatUnits(giftData[1] * 99n / 100n, token.decimals)
 
-      // Get new potato ID from logs
-      const giftClaimedLog = receipt.logs.find(log => log.topics[0] === '0x...' ) // We'll extract this from events
-      const newGiftId = receipt.logs.length > 0 ? Number(receipt.logs[receipt.logs.length - 1].topics[2]) : null
+        const contractAddress = getContractAddress(chain.id)
 
-      setRevealedGift({
-        token,
-        amount: receivedAmount,
-        newGiftId: newGiftId || Number(giftId) + 1 // Fallback to incrementing
-      })
-      setShowReveal(true)
-      setIsClaiming(false)
+        // Find the GiftCreated event for the new potato
+        const giftCreatedLog = receipt.logs.find(log =>
+          log.address.toLowerCase() === contractAddress.toLowerCase()
+        )
+
+        let newGiftId = null
+        if (giftCreatedLog) {
+          try {
+            const decodedEvent = decodeEventLog({
+              abi: CLAIM_GIFT_ABI,
+              data: giftCreatedLog.data,
+              topics: giftCreatedLog.topics,
+            })
+            newGiftId = decodedEvent.args.giftId.toString()
+          } catch (error) {
+            console.error('Error decoding GiftCreated event:', error)
+          }
+        }
+
+        setRevealedGift({
+          token,
+          amount: receivedAmount,
+          newGiftId: newGiftId
+        })
+        setShowReveal(true)
+        setIsClaiming(false)
+      } catch (error) {
+        console.error('Error processing claim:', error)
+        setIsClaiming(false)
+      }
     }
-  }, [isSuccess, giftData, receipt])
+  }, [isSuccess, giftData, receipt, chain, giftId])
 
   const needsApproval = () => {
     if (isNativeToken(selectedToken.address)) return false
