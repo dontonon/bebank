@@ -68,6 +68,13 @@ const GET_GIFT_ABI = [
         { name: 'claimedAt', type: 'uint256' }
       ]
     }]
+  },
+  {
+    name: 'treasury',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }]
   }
 ]
 
@@ -91,6 +98,14 @@ export default function Claim() {
     functionName: 'getGift',
     args: [BigInt(giftId || 0)],
     enabled: isConnected && !!chain && !!giftId
+  })
+
+  // Read treasury address for debugging
+  const { data: treasuryAddress } = useReadContract({
+    address: getContractAddress(chain?.id),
+    abi: GET_GIFT_ABI,
+    functionName: 'treasury',
+    enabled: isConnected && !!chain
   })
 
   // Check ERC20 allowance
@@ -117,9 +132,10 @@ export default function Claim() {
       console.log('Potato creator:', giftData[2])
       console.log('Current wallet:', address)
       console.log('Is same wallet?', isCreator)
+      console.log('Treasury address:', treasuryAddress)
       console.log('==================')
     }
-  }, [giftData, address, isCreator])
+  }, [giftData, address, isCreator, treasuryAddress])
 
   useEffect(() => {
     if (isSuccess && giftData && receipt && chain) {
@@ -223,16 +239,25 @@ export default function Claim() {
       await writeContract(config)
     } catch (error) {
       console.error('Error claiming gift:', error)
+      console.error('Full error:', JSON.stringify(error, null, 2))
       let errorMsg = 'Failed to claim gift.'
 
-      if (error.message?.includes('InsufficientValue')) {
-        errorMsg = 'Amount too small. Minimum is 0.0001'
-      } else if (error.message?.includes('GiftAlreadyClaimed')) {
+      const errStr = error.message || error.toString()
+
+      if (errStr.includes('InsufficientValue')) {
+        errorMsg = 'Amount too small. Minimum is 0.0001 ETH'
+      } else if (errStr.includes('GiftAlreadyClaimed')) {
         errorMsg = 'This Hot Potato has already been claimed!'
-      } else if (error.message?.includes('GiftDoesNotExist')) {
+      } else if (errStr.includes('GiftDoesNotExist')) {
         errorMsg = 'This Hot Potato does not exist.'
-      } else if (error.message?.includes('insufficient funds')) {
+      } else if (errStr.includes('TransferFailed') || errStr.includes('f;')) {
+        errorMsg = `Transfer failed. The treasury address (${treasuryAddress || 'unknown'}) cannot accept ETH. This is a smart contract configuration issue.`
+      } else if (errStr.includes('insufficient funds')) {
         errorMsg = 'Insufficient funds for gas + gift amount.'
+      } else if (errStr.includes('User rejected') || errStr.includes('user rejected')) {
+        errorMsg = 'Transaction cancelled.'
+      } else {
+        errorMsg = `Failed to claim: ${errStr.substring(0, 100)}`
       }
 
       setClaimError(errorMsg)
