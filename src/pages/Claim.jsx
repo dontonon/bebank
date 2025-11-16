@@ -86,6 +86,17 @@ export default function Claim() {
   const isGiftClaimed = giftData && giftData[3] // claimed boolean
   const isCreator = giftData && giftData[2]?.toLowerCase() === address?.toLowerCase()
 
+  // Debug logging
+  useEffect(() => {
+    if (giftData && address) {
+      console.log('=== CLAIM DEBUG ===')
+      console.log('Potato creator:', giftData[2])
+      console.log('Current wallet:', address)
+      console.log('Is same wallet?', isCreator)
+      console.log('==================')
+    }
+  }, [giftData, address, isCreator])
+
   useEffect(() => {
     if (isSuccess && giftData && receipt) {
       // Show reveal animation
