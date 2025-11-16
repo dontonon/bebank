@@ -9,7 +9,8 @@ import RevealAnimation from '../components/RevealAnimation'
 import Sidebar from '../components/Sidebar'
 import { TOKENS, getTokenByAddress, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
-import { parseUnits, formatUnits, decodeEventLog } from 'viem'
+import { parseUnits, formatUnits, decodeEventLog, getCode } from 'viem'
+import { usePublicClient } from 'wagmi'
 import { ERC20_ABI } from '../config/abis'
 
 const CLAIM_GIFT_ABI = [
@@ -82,6 +83,7 @@ export default function Claim() {
   const { giftId } = useParams()
   const navigate = useNavigate()
   const { address, isConnected, chain } = useAccount()
+  const publicClient = usePublicClient()
 
   const [selectedToken, setSelectedToken] = useState(TOKENS[0])
   const [amount, setAmount] = useState('')
@@ -90,6 +92,7 @@ export default function Claim() {
   const [showReveal, setShowReveal] = useState(false)
   const [revealedGift, setRevealedGift] = useState(null)
   const [claimError, setClaimError] = useState(null)
+  const [isClaimerContract, setIsClaimerContract] = useState(false)
 
   // Read gift data
   const { data: giftData, isLoading: isLoadingGift } = useReadContract({
@@ -125,17 +128,38 @@ export default function Claim() {
   const isGiftClaimed = giftData && giftData[3] // claimed boolean
   const isCreator = giftData && giftData[2]?.toLowerCase() === address?.toLowerCase()
 
+  // Check if claimer address is a smart contract
+  useEffect(() => {
+    async function checkIfContract() {
+      if (address && publicClient) {
+        try {
+          const code = await publicClient.getCode({ address })
+          const isContract = code && code !== '0x'
+          setIsClaimerContract(isContract)
+          console.log('Your wallet is a contract?', isContract)
+        } catch (error) {
+          console.error('Error checking if contract:', error)
+        }
+      }
+    }
+    checkIfContract()
+  }, [address, publicClient])
+
   // Debug logging
   useEffect(() => {
     if (giftData && address) {
       console.log('=== CLAIM DEBUG ===')
       console.log('Potato creator:', giftData[2])
-      console.log('Current wallet:', address)
+      console.log('Current wallet (YOU):', address)
       console.log('Is same wallet?', isCreator)
       console.log('Treasury address:', treasuryAddress)
+      console.log('Gift token address:', giftData[0])
+      console.log('Gift is ETH?', giftData[0] === '0x0000000000000000000000000000000000000000')
+      console.log('Gift amount:', giftData[1]?.toString())
+      console.log('Your wallet is smart contract?', isClaimerContract)
       console.log('==================')
     }
-  }, [giftData, address, isCreator, treasuryAddress])
+  }, [giftData, address, isCreator, treasuryAddress, isClaimerContract])
 
   useEffect(() => {
     if (isSuccess && giftData && receipt && chain) {
@@ -251,7 +275,11 @@ export default function Claim() {
       } else if (errStr.includes('GiftDoesNotExist')) {
         errorMsg = 'This Hot Potato does not exist.'
       } else if (errStr.includes('TransferFailed') || errStr.includes('f;')) {
-        errorMsg = `Transfer failed. The treasury address (${treasuryAddress || 'unknown'}) cannot accept ETH. This is a smart contract configuration issue.`
+        if (isClaimerContract) {
+          errorMsg = `Transfer failed! Your wallet (${address?.substring(0, 10)}...) is a SMART CONTRACT WALLET and cannot receive ETH transfers from the contract. Please use a regular wallet (MetaMask, Rainbow, etc.) to claim.`
+        } else {
+          errorMsg = `Transfer failed. Either the treasury (${treasuryAddress?.substring(0, 10)}...) or your wallet cannot receive ETH. Both must be regular wallets, not smart contract wallets.`
+        }
       } else if (errStr.includes('insufficient funds')) {
         errorMsg = 'Insufficient funds for gas + gift amount.'
       } else if (errStr.includes('User rejected') || errStr.includes('user rejected')) {
@@ -402,6 +430,27 @@ export default function Claim() {
                 <h3 className="text-2xl font-bold text-white mb-2">To Claim: Give Your Gift</h3>
                 <p className="text-gray-400">You must pass on a gift to receive this one</p>
               </div>
+
+              {/* Smart Contract Wallet Warning */}
+              {isClaimerContract && (
+                <div className="bg-red-900/30 border-2 border-red-500 rounded-xl p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">⚠️</div>
+                    <div>
+                      <p className="text-red-400 font-bold text-lg mb-2">SMART CONTRACT WALLET DETECTED!</p>
+                      <p className="text-red-300 text-sm mb-3">
+                        Your wallet (<code className="text-xs">{address?.substring(0, 20)}...</code>) is a smart contract wallet (like Coinbase Smart Wallet).
+                      </p>
+                      <p className="text-red-200 text-sm font-semibold">
+                        ❌ Claims will FAIL because the contract cannot send ETH to smart wallets.
+                      </p>
+                      <p className="text-yellow-300 text-sm mt-2">
+                        ✅ Please use a regular wallet: MetaMask, Rainbow, Rabby, etc.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <TokenSelector
                 selectedToken={selectedToken}
