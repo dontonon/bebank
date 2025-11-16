@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
