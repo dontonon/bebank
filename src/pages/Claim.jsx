@@ -191,11 +191,14 @@ export default function Claim() {
 
   // Process claim success with robust error handling
   useEffect(() => {
-    if (isSuccess && giftData && receipt) {
+    if (isSuccess && giftData && receipt && isClaiming) {
       console.log('Processing claim success:', { receipt, giftData })
       try {
         // Show reveal animation
+        console.log('Step 1: Looking for token:', giftData[0])
         const token = getTokenByAddress(giftData[0])
+        console.log('Token found:', token)
+
         if (!token) {
           console.error('Unknown token address:', giftData[0])
           setClaimError('Unknown token received. Please contact support.')
@@ -204,31 +207,35 @@ export default function Claim() {
         }
 
         // Safely handle BigInt conversion
-        // giftData[1] is already a BigInt from the contract
+        console.log('Step 2: Converting gift amount:', giftData[1])
         const giftAmount = BigInt(giftData[1])
         const receivedAmount = formatUnits((giftAmount * 99n) / 100n, token.decimals)
+        console.log('Received amount formatted:', receivedAmount)
 
         // Get new potato ID from logs - try multiple approaches
+        console.log('Step 3: Extracting new potato ID from logs')
         let newGiftId = null
         try {
           if (receipt.logs && receipt.logs.length > 0) {
-            console.log('Analyzing transaction logs:', receipt.logs)
+            console.log('Total logs:', receipt.logs.length)
 
-            // Try to find the GiftCreated event (should be in logs)
-            // The event signature for GiftCreated will have the giftId
+            // Look for the LAST GiftCreated event (your new potato)
             for (let i = receipt.logs.length - 1; i >= 0; i--) {
               const log = receipt.logs[i]
+              console.log(`Log ${i}:`, log)
+
               if (log.topics && log.topics.length > 1) {
-                // Try topics[1] which often contains the first indexed parameter (giftId)
                 try {
                   const potentialId = BigInt(log.topics[1])
-                  if (potentialId > 0n && potentialId < 1000000n) { // Sanity check
+                  console.log(`Topics[1] as BigInt: ${potentialId}`)
+
+                  if (potentialId > 0n && potentialId < 1000000n) {
                     newGiftId = Number(potentialId)
-                    console.log('Extracted potato ID from topics[1]:', newGiftId)
+                    console.log('✅ Extracted potato ID from topics[1]:', newGiftId)
                     break
                   }
                 } catch (e) {
-                  // Try next log
+                  console.log(`Failed to parse log ${i}:`, e)
                 }
               }
             }
@@ -243,7 +250,7 @@ export default function Claim() {
           console.log('Using fallback potato ID:', newGiftId)
         }
 
-        console.log('Final potato ID:', newGiftId)
+        console.log('✅ Final potato ID:', newGiftId)
 
         setRevealedGift({
           token,
@@ -253,12 +260,13 @@ export default function Claim() {
         setShowReveal(true)
         setIsClaiming(false)
       } catch (error) {
-        console.error('Error processing claim result:', error)
-        setClaimError('Claim succeeded but could not process result. Please check your wallet.')
+        console.error('❌ Error processing claim result:', error)
+        console.error('Error stack:', error.stack)
+        setClaimError(`Claim succeeded but failed to process: ${error.message}. Your new potato ID might be ${Number(giftId) + 1}`)
         setIsClaiming(false)
       }
     }
-  }, [isSuccess, giftData, receipt, giftId])
+  }, [isSuccess, giftData, receipt, giftId, isClaiming])
 
   const needsApproval = () => {
     if (isNativeToken(selectedToken.address)) return false
@@ -486,8 +494,8 @@ export default function Claim() {
           ) : (
             <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-white mb-2">To Claim: Give Your Gift</h3>
-                <p className="text-gray-400">You must pass on a gift to receive this one</p>
+                <h3 className="text-2xl font-bold text-white mb-2">Step 1: Create Your Hot Potato</h3>
+                <p className="text-gray-400">Choose a token & amount to pass on. Then you can claim this potato!</p>
               </div>
 
               {/* Smart Contract Wallet Warning */}
@@ -568,11 +576,11 @@ export default function Claim() {
                 className="w-full bg-gradient-to-r from-toxic to-purple text-dark py-4 rounded-xl font-bold text-xl hover:shadow-lg hover:shadow-toxic/50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isClaiming || isConfirming ? (
-                  <span>Claiming... ⏳</span>
+                  <span>Processing... ⏳</span>
                 ) : needsApproval() && !isNativeToken(selectedToken.address) ? (
-                  <span>2️⃣ Claim Hot Potato 🥔</span>
+                  <span>2️⃣ Create & Claim Hot Potato 🥔</span>
                 ) : (
-                  <span>Claim Hot Potato 🥔</span>
+                  <span>Create Hot Potato & Claim 🥔</span>
                 )}
               </button>
 
