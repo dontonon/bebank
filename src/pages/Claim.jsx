@@ -413,7 +413,7 @@ export default function Claim() {
 
   if (isGiftClaimed) {
     const claimedBy = giftData[4]
-    const claimedAt = new Date(Number(giftData[6]) * 1000).toLocaleString()
+    const claimedAt = new Date(Number(giftData[6] * 1000n)).toLocaleString()
 
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
