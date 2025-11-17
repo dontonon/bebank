@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import Header from '../components/Header'
+import NetworkGuard from '../components/NetworkGuard'
 import TokenSelector from '../components/TokenSelector'
 import RevealAnimation from '../components/RevealAnimation'
 import Sidebar from '../components/Sidebar'
 import { TOKENS, getTokenByAddress, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
-import { parseUnits, formatUnits } from 'viem'
+import { parseUnits, formatUnits, decodeEventLog, getCode } from 'viem'
+import { usePublicClient } from 'wagmi'
 import { ERC20_ABI } from '../config/abis'
 
 const CLAIM_GIFT_ABI = [
@@ -21,6 +24,30 @@ const CLAIM_GIFT_ABI = [
       { name: 'newGiftAmount', type: 'uint256' }
     ],
     outputs: [{ name: 'newGiftId', type: 'uint256' }]
+  },
+  {
+    name: 'GiftCreated',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'giftId', type: 'uint256' },
+      { indexed: true, name: 'giver', type: 'address' },
+      { indexed: false, name: 'token', type: 'address' },
+      { indexed: false, name: 'amount', type: 'uint256' },
+      { indexed: false, name: 'timestamp', type: 'uint256' }
+    ]
+  },
+  {
+    name: 'GiftClaimed',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'oldGiftId', type: 'uint256' },
+      { indexed: true, name: 'newGiftId', type: 'uint256' },
+      { indexed: true, name: 'claimer', type: 'address' },
+      { indexed: false, name: 'tokenReceived', type: 'address' },
+      { indexed: false, name: 'amountReceived', type: 'uint256' }
+    ]
   }
 ]
 
@@ -42,6 +69,13 @@ const GET_GIFT_ABI = [
         { name: 'claimedAt', type: 'uint256' }
       ]
     }]
+  },
+  {
+    name: 'treasury',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }]
   }
 ]
 
@@ -49,6 +83,7 @@ export default function Claim() {
   const { giftId } = useParams()
   const navigate = useNavigate()
   const { address, isConnected, chain } = useAccount()
+  const publicClient = usePublicClient()
 
   const [selectedToken, setSelectedToken] = useState(TOKENS[0])
   const [amount, setAmount] = useState('')
@@ -57,6 +92,8 @@ export default function Claim() {
   const [showReveal, setShowReveal] = useState(false)
   const [revealedGift, setRevealedGift] = useState(null)
   const [claimError, setClaimError] = useState(null)
+  const [isClaimerContract, setIsClaimerContract] = useState(false)
+  const [contractBalance, setContractBalance] = useState(null)
 
   // Read gift data
   const { data: giftData, isLoading: isLoadingGift } = useReadContract({
@@ -65,6 +102,14 @@ export default function Claim() {
     functionName: 'getGift',
     args: giftId ? [BigInt(giftId)] : undefined,
     enabled: isConnected && !!chain && !!giftId
+  })
+
+  // Read treasury address for debugging
+  const { data: treasuryAddress } = useReadContract({
+    address: getContractAddress(chain?.id),
+    abi: GET_GIFT_ABI,
+    functionName: 'treasury',
+    enabled: isConnected && !!chain
   })
 
   // Check ERC20 allowance
@@ -84,6 +129,63 @@ export default function Claim() {
   const isGiftClaimed = giftData && giftData[3] // claimed boolean
   const isCreator = giftData && giftData[2]?.toLowerCase() === address?.toLowerCase()
 
+  // Check if claimer address is a smart contract AND get contract balance
+  useEffect(() => {
+    async function checkWalletAndBalance() {
+      if (address && publicClient && chain) {
+        try {
+          // Check if wallet is a contract
+          const code = await publicClient.getCode({ address })
+          const isContract = code && code !== '0x'
+          setIsClaimerContract(isContract)
+          console.log('Your wallet is a contract?', isContract)
+
+          // Get contract ETH balance
+          const contractAddr = getContractAddress(chain.id)
+          const balance = await publicClient.getBalance({ address: contractAddr })
+          setContractBalance(balance)
+          console.log('Contract ETH balance:', formatUnits(balance, 18), 'ETH')
+        } catch (error) {
+          console.error('Error checking wallet/balance:', error)
+        }
+      }
+    }
+    checkWalletAndBalance()
+  }, [address, publicClient, chain])
+
+  // Debug logging
+  useEffect(() => {
+    if (giftData && address && contractBalance !== null) {
+      const isETHGift = giftData[0] === '0x0000000000000000000000000000000000000000'
+      const giftAmount = giftData[1]
+      const claimerWillGet = giftAmount * 99n / 100n
+      const treasuryWillGet = giftAmount - claimerWillGet
+      const totalNeeded = giftAmount // Contract needs full amount to distribute
+
+      console.log('=== CLAIM DEBUG ===')
+      console.log('Potato creator:', giftData[2])
+      console.log('Current wallet (YOU):', address)
+      console.log('Is same wallet?', isCreator)
+      console.log('Treasury address:', treasuryAddress)
+      console.log('Gift token address:', giftData[0])
+      console.log('Gift is ETH?', isETHGift)
+      console.log('Gift amount (raw):', giftAmount?.toString())
+      if (isETHGift) {
+        console.log('Gift amount (ETH):', formatUnits(giftAmount, 18))
+        console.log('Contract balance (ETH):', formatUnits(contractBalance, 18))
+        console.log('Claimer will get (ETH):', formatUnits(claimerWillGet, 18))
+        console.log('Treasury will get (ETH):', formatUnits(treasuryWillGet, 18))
+        console.log('Contract has enough?', contractBalance >= totalNeeded)
+        if (contractBalance < totalNeeded) {
+          console.error('❌ CONTRACT INSUFFICIENT BALANCE! Needs:', formatUnits(totalNeeded, 18), 'Has:', formatUnits(contractBalance, 18))
+        }
+      }
+      console.log('Your wallet is smart contract?', isClaimerContract)
+      console.log('==================')
+    }
+  }, [giftData, address, isCreator, treasuryAddress, isClaimerContract, contractBalance])
+
+  // Process claim success with robust error handling
   useEffect(() => {
     if (isSuccess && giftData && receipt) {
       console.log('Processing claim success:', { receipt, giftData })
@@ -214,16 +316,29 @@ export default function Claim() {
       await writeContract(config)
     } catch (error) {
       console.error('Error claiming gift:', error)
+      console.error('Full error:', JSON.stringify(error, null, 2))
       let errorMsg = 'Failed to claim gift.'
 
-      if (error.message?.includes('InsufficientValue')) {
-        errorMsg = 'Amount too small. Minimum is 0.0001'
-      } else if (error.message?.includes('GiftAlreadyClaimed')) {
-        errorMsg = 'This HotPotato has already been claimed!'
-      } else if (error.message?.includes('GiftDoesNotExist')) {
-        errorMsg = 'This HotPotato does not exist.'
-      } else if (error.message?.includes('insufficient funds')) {
+      const errStr = error.message || error.toString()
+
+      if (errStr.includes('InsufficientValue')) {
+        errorMsg = 'Amount too small. Minimum is 0.0001 ETH'
+      } else if (errStr.includes('GiftAlreadyClaimed')) {
+        errorMsg = 'This Hot Potato has already been claimed!'
+      } else if (errStr.includes('GiftDoesNotExist')) {
+        errorMsg = 'This Hot Potato does not exist.'
+      } else if (errStr.includes('TransferFailed') || errStr.includes('f;')) {
+        if (isClaimerContract) {
+          errorMsg = `Transfer failed! Your wallet (${address?.substring(0, 10)}...) is a SMART CONTRACT WALLET and cannot receive ETH transfers from the contract. Please use a regular wallet (MetaMask, Rainbow, etc.) to claim.`
+        } else {
+          errorMsg = `Transfer failed. Either the treasury (${treasuryAddress?.substring(0, 10)}...) or your wallet cannot receive ETH. Both must be regular wallets, not smart contract wallets.`
+        }
+      } else if (errStr.includes('insufficient funds')) {
         errorMsg = 'Insufficient funds for gas + gift amount.'
+      } else if (errStr.includes('User rejected') || errStr.includes('user rejected')) {
+        errorMsg = 'Transaction cancelled.'
+      } else {
+        errorMsg = `Failed to claim: ${errStr.substring(0, 100)}`
       }
 
       setClaimError(errorMsg)
@@ -260,7 +375,7 @@ export default function Claim() {
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-red-500/50 text-center">
           <div className="text-6xl mb-4">❌</div>
           <h2 className="text-2xl font-bold text-white mb-3">Potato Not Found</h2>
-          <p className="text-gray-400 mb-6">This HotPotato ID does not exist. Check the link and try again.</p>
+          <p className="text-gray-400 mb-6">This Hot Potato ID does not exist. Check the link and try again.</p>
           <button
             onClick={() => navigate('/')}
             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
@@ -278,7 +393,7 @@ export default function Claim() {
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">
           <div className="text-6xl mb-4">🚫</div>
           <h2 className="text-2xl font-bold text-white mb-3">Can't Claim Your Own Potato!</h2>
-          <p className="text-gray-400 mb-6">You created this HotPotato. Share it with someone else to keep the chain going!</p>
+          <p className="text-gray-400 mb-6">You created this Hot Potato. Share it with someone else to keep the chain going!</p>
           <button
             onClick={() => navigate(`/potato/${giftId}`)}
             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all mb-3"
@@ -305,7 +420,7 @@ export default function Claim() {
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">
           <div className="text-6xl mb-4">😢</div>
           <h2 className="text-2xl font-bold text-white mb-3">Already Claimed</h2>
-          <p className="text-gray-400 mb-4">This HotPotato has already been passed on.</p>
+          <p className="text-gray-400 mb-4">This Hot Potato has already been passed on.</p>
           <div className="bg-dark/50 rounded-xl p-4 mb-6 text-sm text-left">
             <div className="text-gray-500 mb-1">Claimed by:</div>
             <div className="text-toxic font-mono text-xs break-all">{claimedBy}</div>
@@ -324,19 +439,20 @@ export default function Claim() {
   }
 
   return (
-    <div className="min-h-screen bg-dark flex">
-      {/* Reveal Animation */}
-      {showReveal && revealedGift && (
-        <RevealAnimation
-          token={revealedGift.token}
-          amount={revealedGift.amount}
-          onComplete={handleRevealComplete}
-        />
-      )}
+    <NetworkGuard>
+      <div className="min-h-screen bg-dark flex">
+        {/* Reveal Animation */}
+        {showReveal && revealedGift && (
+          <RevealAnimation
+            token={revealedGift.token}
+            amount={revealedGift.amount}
+            onComplete={handleRevealComplete}
+          />
+        )}
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        <Header />
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col">
+          <Header />
 
         <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
@@ -344,7 +460,7 @@ export default function Claim() {
           <div className="text-center mb-12">
             <div className="text-9xl mb-6 animate-float">🥔</div>
             <h2 className="text-5xl font-bold gradient-text mb-4">
-              HotPotato #{giftId}
+              Hot Potato #{giftId}
             </h2>
             <p className="text-xl text-gray-400 mb-2">
               Someone passed something on... but what? 🤔
@@ -358,9 +474,9 @@ export default function Claim() {
           {!isConnected ? (
             <div className="bg-dark-card rounded-2xl p-12 text-center border border-gray-800">
               <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Claim</h3>
-              <p className="text-gray-500 mb-6">Connect your wallet using the button in the top right to claim this HotPotato</p>
-              <div className="text-6xl animate-bounce">
-                ☝️
+              <p className="text-gray-500 mb-6">Connect your wallet to claim this Hot Potato</p>
+              <div className="flex justify-center">
+                <ConnectButton />
               </div>
             </div>
           ) : (
@@ -369,6 +485,48 @@ export default function Claim() {
                 <h3 className="text-2xl font-bold text-white mb-2">To Claim: Give Your Gift</h3>
                 <p className="text-gray-400">You must pass on a gift to receive this one</p>
               </div>
+
+              {/* Smart Contract Wallet Warning */}
+              {isClaimerContract && (
+                <div className="bg-red-900/30 border-2 border-red-500 rounded-xl p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">⚠️</div>
+                    <div>
+                      <p className="text-red-400 font-bold text-lg mb-2">SMART CONTRACT WALLET DETECTED!</p>
+                      <p className="text-red-300 text-sm mb-3">
+                        Your wallet (<code className="text-xs">{address?.substring(0, 20)}...</code>) is a smart contract wallet (like Coinbase Smart Wallet).
+                      </p>
+                      <p className="text-red-200 text-sm font-semibold">
+                        ❌ Claims will FAIL because the contract cannot send ETH to smart wallets.
+                      </p>
+                      <p className="text-yellow-300 text-sm mt-2">
+                        ✅ Please use a regular wallet: MetaMask, Rainbow, Rabby, etc.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Contract Insufficient Balance Warning */}
+              {giftData && contractBalance !== null && giftData[0] === '0x0000000000000000000000000000000000000000' && contractBalance < giftData[1] && (
+                <div className="bg-red-900/30 border-2 border-red-500 rounded-xl p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">💸</div>
+                    <div>
+                      <p className="text-red-400 font-bold text-lg mb-2">CONTRACT HAS INSUFFICIENT ETH!</p>
+                      <p className="text-red-300 text-sm mb-3">
+                        The contract needs <strong>{formatUnits(giftData[1], 18)} ETH</strong> to pay out this gift, but only has <strong>{formatUnits(contractBalance, 18)} ETH</strong>.
+                      </p>
+                      <p className="text-red-200 text-sm font-semibold">
+                        ❌ This is a CRITICAL BUG in the smart contract!
+                      </p>
+                      <p className="text-yellow-300 text-sm mt-2">
+                        The potato creator's ETH should be in the contract. Check the contract on BaseScan.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <TokenSelector
                 selectedToken={selectedToken}
@@ -408,9 +566,9 @@ export default function Claim() {
                 {isClaiming || isConfirming ? (
                   <span>Claiming... ⏳</span>
                 ) : needsApproval() && !isNativeToken(selectedToken.address) ? (
-                  <span>2️⃣ Claim HotPotato 🥔</span>
+                  <span>2️⃣ Claim Hot Potato 🥔</span>
                 ) : (
-                  <span>Claim HotPotato 🥔</span>
+                  <span>Claim Hot Potato 🥔</span>
                 )}
               </button>
 
@@ -425,7 +583,7 @@ export default function Claim() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">You receive:</span>
-                  <span className="text-toxic font-semibold">HotPotato 🥔</span>
+                  <span className="text-toxic font-semibold">Hot Potato 🥔</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">Your next gift link:</span>
@@ -447,11 +605,12 @@ export default function Claim() {
             </ul>
           </div>
         </div>
-      </main>
-      </div>
+        </main>
+        </div>
 
-      {/* Sidebar */}
-      <Sidebar />
-    </div>
+        {/* Sidebar */}
+        <Sidebar />
+      </div>
+    </NetworkGuard>
   )
 }

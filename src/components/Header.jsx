@@ -42,6 +42,16 @@ function Header() {
           >
             Create Potato
           </Link>
+          <Link
+            to="/admin"
+            className={`text-sm font-medium transition-colors ${
+              isActive('/admin')
+                ? 'text-orange-500'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Admin
+          </Link>
         </nav>
       </div>
     </header>

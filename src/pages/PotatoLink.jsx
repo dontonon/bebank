@@ -4,12 +4,12 @@ import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
 
 export default function PotatoLink() {
-  const { potatoId } = useParams()
+  const { giftId } = useParams()
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
 
-  // Validate potatoId
-  if (!potatoId || potatoId === 'undefined' || potatoId === 'null') {
+  // Validate giftId
+  if (!giftId || giftId === 'undefined' || giftId === 'null') {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-red-500/50 text-center">
@@ -27,7 +27,7 @@ export default function PotatoLink() {
     )
   }
 
-  const shareUrl = `${window.location.origin}/claim/${potatoId}`
+  const shareUrl = `${window.location.origin}/claim/${giftId}`
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shareUrl)
@@ -155,7 +155,7 @@ export default function PotatoLink() {
           {/* Potato ID Badge */}
           <div className="mt-8 text-center">
             <span className="inline-block bg-dark-card border border-gray-800 px-6 py-3 rounded-full text-gray-400">
-              Potato #{potatoId}
+              Potato #{giftId}
             </span>
           </div>
         </div>

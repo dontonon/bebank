@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
+import NetworkGuard from '../components/NetworkGuard'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import TokenSelector from '../components/TokenSelector'
 import { TOKENS, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
-import { parseUnits } from 'viem'
-import { ERC20_ABI } from '../config/abis'
+import { parseUnits, decodeEventLog } from 'viem'
 
-// ABI for createGift function
+// ABI for createGift function and GiftCreated event
 const CREATE_GIFT_ABI = [
   {
     name: 'createGift',
@@ -21,6 +21,18 @@ const CREATE_GIFT_ABI = [
       { name: 'amount', type: 'uint256' }
     ],
     outputs: [{ name: 'potatoId', type: 'uint256' }]
+  },
+  {
+    name: 'GiftCreated',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'giftId', type: 'uint256' },
+      { indexed: true, name: 'giver', type: 'address' },
+      { indexed: false, name: 'token', type: 'address' },
+      { indexed: false, name: 'amount', type: 'uint256' },
+      { indexed: false, name: 'timestamp', type: 'uint256' }
+    ]
   }
 ]
 
@@ -29,25 +41,38 @@ export default function Home() {
   const { address, isConnected, chain } = useAccount()
   const [selectedToken, setSelectedToken] = useState(TOKENS[0])
   const [amount, setAmount] = useState('')
-  const [isCreating, setIsCreating] = useState(false)
-  const [isApproving, setIsApproving] = useState(false)
-  const [createError, setCreateError] = useState(null)
+  const [error, setError] = useState('')
 
-  const { writeContract, data: hash } = useWriteContract()
+  const { writeContract, data: hash, isPending, isError: isWriteError, error: writeError } = useWriteContract()
   const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({ hash })
 
-  // Handle successful transaction
+  // When transaction confirms, extract potato ID and navigate
   useEffect(() => {
-    if (isSuccess && receipt && isCreating) {
-      console.log('Processing create success:', { receipt })
+    if (isSuccess && receipt) {
       try {
-        // Get potato ID from transaction logs
+        const contractAddress = getContractAddress(chain.id)
         let potatoId = null
 
-        if (receipt.logs && receipt.logs.length > 0) {
-          console.log('Analyzing transaction logs:', receipt.logs)
+        // Try proper event decoding first
+        try {
+          const giftCreatedLog = receipt.logs.find(log =>
+            log.address.toLowerCase() === contractAddress.toLowerCase()
+          )
 
-          // Try to find the GiftCreated event
+          if (giftCreatedLog) {
+            const decodedEvent = decodeEventLog({
+              abi: CREATE_GIFT_ABI,
+              data: giftCreatedLog.data,
+              topics: giftCreatedLog.topics,
+            })
+            potatoId = decodedEvent.args.giftId.toString()
+          }
+        } catch (decodeError) {
+          console.log('Event decode failed, trying fallback extraction:', decodeError)
+        }
+
+        // Fallback: Try extracting from topics
+        if (!potatoId && receipt.logs && receipt.logs.length > 0) {
           for (let i = receipt.logs.length - 1; i >= 0; i--) {
             const log = receipt.logs[i]
             if (log.topics && log.topics.length > 1) {
@@ -65,48 +90,61 @@ export default function Home() {
           }
         }
 
-        // Fallback to ID 1 if extraction failed
+        // Final fallback
         if (!potatoId || isNaN(potatoId) || potatoId <= 0) {
           potatoId = 1
           console.log('Using fallback potato ID:', potatoId)
         }
 
-        console.log('Final potato ID:', potatoId)
-
-        setIsCreating(false)
-        navigate(`/potato/${potatoId}`)
+        // Navigate to share page
+        setTimeout(() => {
+          navigate(`/potato/${potatoId}`)
+        }, 500)
       } catch (error) {
-        console.error('Error parsing receipt:', error)
-        setIsCreating(false)
-        navigate('/potato/1') // Fallback
+        console.error('Error extracting potato ID:', error)
+        setError('Potato created but failed to get ID. Check your wallet.')
       }
     }
-  }, [isSuccess, receipt, isCreating, navigate])
+  }, [isSuccess, receipt, navigate, chain])
 
-  const needsApproval = () => {
-    if (isNativeToken(selectedToken.address)) return false
-    // For ERC20, we should check allowance here
-    // Simplified for now - in production, add allowance check
-    return false
-  }
+  // Handle write errors
+  useEffect(() => {
+    if (isWriteError && writeError) {
+      let errorMsg = 'Failed to create potato.'
+
+      if (writeError.message?.includes('User rejected')) {
+        errorMsg = 'Transaction cancelled.'
+      } else if (writeError.message?.includes('insufficient funds')) {
+        errorMsg = 'Insufficient funds for transaction + gas.'
+      } else if (writeError.message?.includes('InsufficientValue')) {
+        errorMsg = 'Amount too small. Minimum is 0.0001'
+      }
+
+      setError(errorMsg)
+    }
+  }, [isWriteError, writeError])
 
   const handleCreateGift = async () => {
+    setError('')
+
     if (!amount || parseFloat(amount) < 0.0001) {
-      setCreateError('Amount must be at least 0.0001')
+      setError('Amount must be at least 0.0001')
       return
     }
 
     if (!chain) {
-      setCreateError('Please connect your wallet')
+      setError('Please connect your wallet')
       return
     }
-
-    setIsCreating(true)
-    setCreateError(null)
 
     try {
       const amountInWei = parseUnits(amount, selectedToken.decimals)
       const contractAddress = getContractAddress(chain.id)
+
+      if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
+        setError('Smart contract not deployed on this network')
+        return
+      }
 
       const config = {
         address: contractAddress,
@@ -123,38 +161,45 @@ export default function Home() {
       await writeContract(config)
     } catch (error) {
       console.error('Error creating potato:', error)
-
-      let errorMsg = 'Failed to create potato.'
-      if (error.message?.includes('User rejected')) {
-        errorMsg = 'Transaction rejected by user.'
-      } else if (error.message?.includes('insufficient funds')) {
-        errorMsg = 'Insufficient funds for gas + gift amount.'
-      } else if (error.message?.includes('InsufficientValue')) {
-        errorMsg = 'Amount too small. Minimum is 0.0001'
-      }
-
-      setCreateError(errorMsg)
-      setIsCreating(false)
+      setError('Failed to create potato. Please try again.')
     }
   }
 
+  const isLoading = isPending || isConfirming
+
   return (
-    <div className="min-h-screen bg-dark flex">
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        <Header />
+    <NetworkGuard>
+      <div className="min-h-screen bg-dark flex">
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col">
+          <Header />
 
         <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
           {/* Hero Section */}
-          <div className="text-center mb-12">
-            <div className="text-8xl mb-6 animate-float">🥔</div>
-            <h2 className="text-5xl font-bold gradient-text mb-4">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold gradient-text mb-6">
               Give Blindly. Receive Surprisingly.
             </h2>
-            <p className="text-xl text-gray-400">
-              Start a HotPotato chain. Someone will claim yours without knowing what it is.
-            </p>
+
+            {/* How It Works */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <div className="text-center">
+                <div className="text-3xl mb-2">🥔</div>
+                <h4 className="font-bold text-white mb-1 text-sm">1. You Give</h4>
+                <p className="text-xs text-gray-400">Choose token + amount</p>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl mb-2">❓</div>
+                <h4 className="font-bold text-white mb-1 text-sm">2. They Claim Blindly</h4>
+                <p className="text-xs text-gray-400">Must give to receive</p>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl mb-2">✨</div>
+                <h4 className="font-bold text-white mb-1 text-sm">3. Reveal & Repeat</h4>
+                <p className="text-xs text-gray-400">Pass it on forever</p>
+              </div>
+            </div>
           </div>
 
           {/* Create Gift Form */}
@@ -169,7 +214,7 @@ export default function Home() {
           ) : (
             <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-white mb-2">Create HotPotato</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">Create Hot Potato</h3>
                 <p className="text-gray-400">Choose what to pass on (they won't see it until they give)</p>
               </div>
 
@@ -181,23 +226,21 @@ export default function Home() {
               />
 
               {/* Error Message */}
-              {createError && (
-                <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-4">
-                  <p className="text-red-400 font-semibold">⚠️ {createError}</p>
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-4">
+                  <p className="text-red-400 text-sm">{error}</p>
                 </div>
               )}
 
               {/* Create Button */}
               <button
                 onClick={handleCreateGift}
-                disabled={!amount || isCreating || isConfirming}
+                disabled={!amount || isLoading}
                 className="w-full bg-gradient-to-r from-toxic to-purple text-dark py-4 rounded-xl font-bold text-xl hover:shadow-lg hover:shadow-toxic/50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                {isCreating || isConfirming ? (
-                  <span>Creating Gift... ⏳</span>
-                ) : (
-                  <span>Create HotPotato ✨</span>
-                )}
+                {isPending && <span>Confirm in wallet... 👛</span>}
+                {isConfirming && <span>Creating potato... ⏳</span>}
+                {!isLoading && <span>Create Hot Potato ✨</span>}
               </button>
 
               {/* Info */}
@@ -219,31 +262,13 @@ export default function Home() {
               </div>
             </div>
           )}
-
-          {/* How It Works */}
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-4xl mb-3">🥔</div>
-              <h4 className="font-bold text-white mb-2">1. You Give</h4>
-              <p className="text-sm text-gray-400">Choose token + amount, create HotPotato</p>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl mb-3">❓</div>
-              <h4 className="font-bold text-white mb-2">2. They Claim Blindly</h4>
-              <p className="text-sm text-gray-400">Must give to receive - no preview!</p>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl mb-3">✨</div>
-              <h4 className="font-bold text-white mb-2">3. Reveal & Repeat</h4>
-              <p className="text-sm text-gray-400">See what they got, pass it on</p>
-            </div>
-          </div>
         </div>
       </main>
       </div>
 
-      {/* Sidebar */}
-      <Sidebar />
-    </div>
+        {/* Sidebar */}
+        <Sidebar />
+      </div>
+    </NetworkGuard>
   )
 }
