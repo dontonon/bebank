@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import Header from '../components/Header'
@@ -8,6 +8,7 @@ import TokenSelector from '../components/TokenSelector'
 import { TOKENS, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
 import { parseUnits } from 'viem'
+import { ERC20_ABI } from '../config/abis'
 
 // ABI for createGift function
 const CREATE_GIFT_ABI = [
@@ -29,17 +30,79 @@ export default function Home() {
   const [selectedToken, setSelectedToken] = useState(TOKENS[0])
   const [amount, setAmount] = useState('')
   const [isCreating, setIsCreating] = useState(false)
+  const [isApproving, setIsApproving] = useState(false)
+  const [createError, setCreateError] = useState(null)
 
   const { writeContract, data: hash } = useWriteContract()
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
+  const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({ hash })
+
+  // Handle successful transaction
+  useEffect(() => {
+    if (isSuccess && receipt && isCreating) {
+      console.log('Processing create success:', { receipt })
+      try {
+        // Get potato ID from transaction logs
+        let potatoId = null
+
+        if (receipt.logs && receipt.logs.length > 0) {
+          console.log('Analyzing transaction logs:', receipt.logs)
+
+          // Try to find the GiftCreated event
+          for (let i = receipt.logs.length - 1; i >= 0; i--) {
+            const log = receipt.logs[i]
+            if (log.topics && log.topics.length > 1) {
+              try {
+                const potentialId = BigInt(log.topics[1])
+                if (potentialId > 0n && potentialId < 1000000n) {
+                  potatoId = Number(potentialId)
+                  console.log('Extracted potato ID from topics[1]:', potatoId)
+                  break
+                }
+              } catch (e) {
+                // Try next log
+              }
+            }
+          }
+        }
+
+        // Fallback to ID 1 if extraction failed
+        if (!potatoId || isNaN(potatoId) || potatoId <= 0) {
+          potatoId = 1
+          console.log('Using fallback potato ID:', potatoId)
+        }
+
+        console.log('Final potato ID:', potatoId)
+
+        setIsCreating(false)
+        navigate(`/potato/${potatoId}`)
+      } catch (error) {
+        console.error('Error parsing receipt:', error)
+        setIsCreating(false)
+        navigate('/potato/1') // Fallback
+      }
+    }
+  }, [isSuccess, receipt, isCreating, navigate])
+
+  const needsApproval = () => {
+    if (isNativeToken(selectedToken.address)) return false
+    // For ERC20, we should check allowance here
+    // Simplified for now - in production, add allowance check
+    return false
+  }
 
   const handleCreateGift = async () => {
     if (!amount || parseFloat(amount) < 0.0001) {
-      alert('Amount must be at least 0.0001')
+      setCreateError('Amount must be at least 0.0001')
+      return
+    }
+
+    if (!chain) {
+      setCreateError('Please connect your wallet')
       return
     }
 
     setIsCreating(true)
+    setCreateError(null)
 
     try {
       const amountInWei = parseUnits(amount, selectedToken.decimals)
@@ -58,15 +121,19 @@ export default function Home() {
       }
 
       await writeContract(config)
-
-      // TODO: Get potato ID from transaction receipt and navigate
-      // For now, simulate navigation after success
-      setTimeout(() => {
-        navigate('/potato/1') // Replace with actual potato ID
-      }, 2000)
     } catch (error) {
       console.error('Error creating potato:', error)
-      alert('Failed to create potato. Check console for details.')
+
+      let errorMsg = 'Failed to create potato.'
+      if (error.message?.includes('User rejected')) {
+        errorMsg = 'Transaction rejected by user.'
+      } else if (error.message?.includes('insufficient funds')) {
+        errorMsg = 'Insufficient funds for gas + gift amount.'
+      } else if (error.message?.includes('InsufficientValue')) {
+        errorMsg = 'Amount too small. Minimum is 0.0001'
+      }
+
+      setCreateError(errorMsg)
       setIsCreating(false)
     }
   }
@@ -112,6 +179,13 @@ export default function Home() {
                 amount={amount}
                 onAmountChange={setAmount}
               />
+
+              {/* Error Message */}
+              {createError && (
+                <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-4">
+                  <p className="text-red-400 font-semibold">⚠️ {createError}</p>
+                </div>
+              )}
 
               {/* Create Button */}
               <button

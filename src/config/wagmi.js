@@ -1,10 +1,15 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
 import { base, baseSepolia } from 'wagmi/chains'
+import { http } from 'wagmi'
 
 export const config = getDefaultConfig({
   appName: 'Pass It On',
   projectId: '3fcbfaff90971f8b41972652f6a4d721', // WalletConnect Cloud
   chains: [base, baseSepolia],
+  transports: {
+    [base.id]: http(),
+    [baseSepolia.id]: http(),
+  },
   ssr: false,
 })
 

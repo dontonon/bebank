@@ -17,15 +17,25 @@ export default function Sidebar() {
   const { chain } = useAccount()
 
   // Get total potatoes created
-  const { data: nextGiftId } = useReadContract({
-    address: getContractAddress(chain?.id),
+  const { data: nextGiftId, isError, isLoading } = useReadContract({
+    address: chain?.id ? getContractAddress(chain.id) : undefined,
     abi: NEXT_GIFT_ID_ABI,
     functionName: 'nextGiftId',
-    enabled: !!chain
+    enabled: !!chain?.id
   })
 
-  // Safely convert BigInt to Number
-  const totalCreated = nextGiftId !== undefined && nextGiftId !== null ? Number(nextGiftId) : 0
+  // Safely convert BigInt to Number with extra defensive checks
+  let totalCreated = 0
+  try {
+    if (nextGiftId !== undefined && nextGiftId !== null) {
+      // Handle both BigInt and number types
+      totalCreated = typeof nextGiftId === 'bigint' ? Number(nextGiftId) : Number(nextGiftId)
+    }
+  } catch (error) {
+    console.error('Error converting nextGiftId:', error)
+    totalCreated = 0
+  }
+
   // For claimed count, we'd need to track or estimate - using a simple estimate for now
   const estimatedClaimed = Math.floor(totalCreated * 0.7) // Rough estimate
 
