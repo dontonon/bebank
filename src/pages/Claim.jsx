@@ -175,8 +175,8 @@ export default function Claim() {
         console.log('Contract balance (ETH):', formatUnits(contractBalance, 18))
         console.log('Claimer will get (ETH):', formatUnits(claimerWillGet, 18))
         console.log('Treasury will get (ETH):', formatUnits(treasuryWillGet, 18))
-        console.log('Contract has enough?', contractBalance >= totalNeeded)
-        if (contractBalance < totalNeeded) {
+        console.log('Contract has enough?', BigInt(contractBalance) >= BigInt(totalNeeded))
+        if (BigInt(contractBalance) < BigInt(totalNeeded)) {
           console.error('❌ CONTRACT INSUFFICIENT BALANCE! Needs:', formatUnits(totalNeeded, 18), 'Has:', formatUnits(contractBalance, 18))
         }
       }
@@ -508,7 +508,7 @@ export default function Claim() {
               )}
 
               {/* Contract Insufficient Balance Warning */}
-              {giftData && contractBalance !== null && giftData[0] === '0x0000000000000000000000000000000000000000' && contractBalance < giftData[1] && (
+              {giftData && contractBalance !== null && giftData[0] === '0x0000000000000000000000000000000000000000' && BigInt(contractBalance) < BigInt(giftData[1]) && (
                 <div className="bg-red-900/30 border-2 border-red-500 rounded-xl p-5">
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">💸</div>
