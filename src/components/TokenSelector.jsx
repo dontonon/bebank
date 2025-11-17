@@ -6,10 +6,64 @@ import { formatUnits } from 'viem'
 
 export default function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [tokenBalances, setTokenBalances] = useState({})
-  const [customTokenAddress, setCustomTokenAddress] = useState('')
-  const [showCustomInput, setShowCustomInput] = useState(false)
+  const [tokensWithBalances, setTokensWithBalances] = useState([])
   const { address, isConnected } = useAccount()
+
+  // Get ETH balance
+  const { data: ethBalance } = useBalance({
+    address,
+    enabled: !!address
+  })
+
+  // Get balances for all ERC20 tokens
+  const tokenBalanceResults = TOKENS.filter(t => !isNativeToken(t.address)).map(token =>
+    useReadContract({
+      address: token.address,
+      abi: ERC20_ABI,
+      functionName: 'balanceOf',
+      args: [address],
+      enabled: !!address
+    })
+  )
+
+  // Update tokens with balances when data changes
+  useEffect(() => {
+    if (!isConnected || !address) {
+      setTokensWithBalances([])
+      return
+    }
+
+    const tokensWithBalance = []
+
+    // Add ETH if user has balance
+    const ethToken = TOKENS.find(t => isNativeToken(t.address))
+    if (ethToken && ethBalance && ethBalance.value > 0n) {
+      tokensWithBalance.push({
+        ...ethToken,
+        balance: formatUnits(ethBalance.value, ethToken.decimals),
+        rawBalance: ethBalance.value
+      })
+    }
+
+    // Add ERC20 tokens with balance
+    TOKENS.filter(t => !isNativeToken(t.address)).forEach((token, index) => {
+      const result = tokenBalanceResults[index]
+      if (result.data && result.data > 0n) {
+        tokensWithBalance.push({
+          ...token,
+          balance: formatUnits(result.data, token.decimals),
+          rawBalance: result.data
+        })
+      }
+    })
+
+    setTokensWithBalances(tokensWithBalance)
+
+    // Auto-select first token with balance if no token selected
+    if (tokensWithBalance.length > 0 && !selectedToken) {
+      onSelect(tokensWithBalance[0])
+    }
+  }, [isConnected, address, ethBalance, ...tokenBalanceResults.map(r => r.data)])
 
   return (
     <div className="space-y-4">
@@ -37,70 +91,37 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
           {/* Dropdown */}
           {isOpen && (
             <div className="absolute z-10 w-full mt-2 bg-dark-card border border-gray-700 rounded-xl overflow-hidden shadow-2xl max-h-96 overflow-y-auto">
-              {TOKENS.map((token) => (
-                <button
-                  key={token.symbol}
-                  type="button"
-                  onClick={() => {
-                    onSelect(token)
-                    setIsOpen(false)
-                    setShowCustomInput(false)
-                  }}
-                  className="w-full px-4 py-3 hover:bg-gray-800 transition-colors flex items-center space-x-3 text-left"
-                >
-                  <span className="text-2xl">{token.logo}</span>
-                  <div>
-                    <div className="font-bold text-white">{token.symbol}</div>
-                    <div className="text-sm text-gray-400">{token.name}</div>
-                  </div>
-                </button>
-              ))}
-
-              {/* Custom Token Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCustomInput(!showCustomInput)
-                }}
-                className="w-full px-4 py-3 hover:bg-gray-800 transition-colors flex items-center space-x-3 text-left border-t border-gray-700"
-              >
-                <span className="text-2xl">➕</span>
-                <div>
-                  <div className="font-bold text-white">Custom Token</div>
-                  <div className="text-sm text-gray-400">Add any ERC20 by address</div>
-                </div>
-              </button>
-
-              {/* Custom Token Input */}
-              {showCustomInput && (
-                <div className="px-4 py-3 border-t border-gray-700 bg-gray-900">
-                  <input
-                    type="text"
-                    value={customTokenAddress}
-                    onChange={(e) => setCustomTokenAddress(e.target.value)}
-                    placeholder="0x..."
-                    className="w-full bg-dark border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:border-toxic focus:outline-none"
-                  />
+              {tokensWithBalances.length > 0 ? (
+                tokensWithBalances.map((token) => (
                   <button
+                    key={token.address}
                     type="button"
                     onClick={() => {
-                      if (customTokenAddress && customTokenAddress.startsWith('0x')) {
-                        onSelect({
-                          symbol: 'CUSTOM',
-                          name: 'Custom Token',
-                          logo: '🪙',
-                          address: customTokenAddress,
-                          decimals: 18 // Default, could query this
-                        })
-                        setIsOpen(false)
-                        setShowCustomInput(false)
-                        setCustomTokenAddress('')
-                      }
+                      onSelect(token)
+                      setIsOpen(false)
                     }}
-                    className="w-full mt-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white py-2 rounded-lg font-bold hover:opacity-90 transition-all text-sm"
+                    className="w-full px-4 py-3 hover:bg-gray-800 transition-colors flex items-center justify-between text-left"
                   >
-                    Add Token
+                    <div className="flex items-center space-x-3">
+                      <span className="text-2xl">{token.logo}</span>
+                      <div>
+                        <div className="font-bold text-white">{token.symbol}</div>
+                        <div className="text-sm text-gray-400">{token.name}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-toxic">
+                        {parseFloat(token.balance).toFixed(4)}
+                      </div>
+                      <div className="text-xs text-gray-500">balance</div>
+                    </div>
                   </button>
+                ))
+              ) : (
+                <div className="px-4 py-6 text-center text-gray-400">
+                  <div className="text-3xl mb-2">💰</div>
+                  <div className="text-sm">No tokens found in wallet</div>
+                  <div className="text-xs text-gray-500 mt-1">Get some ETH or tokens first</div>
                 </div>
               )}
             </div>

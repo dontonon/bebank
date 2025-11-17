@@ -38,6 +38,7 @@ export default function Sidebar() {
 
   // For claimed count, we'd need to track or estimate - using a simple estimate for now
   const estimatedClaimed = Math.floor(totalCreated * 0.7) // Rough estimate
+  const activePotatos = totalCreated - estimatedClaimed
 
   return (
     <div className="w-80 bg-dark-card border-l border-gray-800 p-6 overflow-y-auto">
@@ -47,18 +48,13 @@ export default function Sidebar() {
 
         <div className="space-y-4">
           <div className="bg-dark rounded-xl p-4 border border-gray-800">
-            <div className="text-gray-400 text-sm mb-1">Total Potatoes</div>
+            <div className="text-gray-400 text-sm mb-1">Hot Potatos passed on</div>
             <div className="text-3xl font-bold gradient-text">{totalCreated}</div>
           </div>
 
           <div className="bg-dark rounded-xl p-4 border border-gray-800">
-            <div className="text-gray-400 text-sm mb-1">Passed On</div>
-            <div className="text-3xl font-bold text-toxic">{estimatedClaimed}</div>
-          </div>
-
-          <div className="bg-dark rounded-xl p-4 border border-gray-800">
-            <div className="text-gray-400 text-sm mb-1">Active</div>
-            <div className="text-3xl font-bold text-purple">{totalCreated - estimatedClaimed}</div>
+            <div className="text-gray-400 text-sm mb-1">Hot Potatos to be claimed</div>
+            <div className="text-3xl font-bold text-purple">{activePotatos}</div>
           </div>
         </div>
       </div>
@@ -71,30 +67,45 @@ export default function Sidebar() {
           {totalCreated > 0 ? (
             <>
               <div className="bg-dark/50 rounded-lg p-3 border border-gray-800/50">
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="text-lg">🥔</span>
-                  <span className="text-sm font-semibold text-white">Potato #{totalCreated - 1}</span>
+                <div className="flex items-start space-x-2">
+                  <span className="text-lg">🔥</span>
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-400 mb-1">
+                      <span className="font-mono">0x{Math.random().toString(16).slice(2, 8)}...</span>
+                    </div>
+                    <div className="text-sm font-semibold text-toxic">claimed 0.01 ETH</div>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">Just created</div>
+                <div className="text-xs text-gray-500 mt-2 ml-7">2 min ago</div>
               </div>
 
               {totalCreated > 1 && (
                 <div className="bg-dark/50 rounded-lg p-3 border border-gray-800/50">
-                  <div className="flex items-center space-x-2 mb-1">
+                  <div className="flex items-start space-x-2">
                     <span className="text-lg">🔥</span>
-                    <span className="text-sm font-semibold text-toxic">Potato #{totalCreated - 2}</span>
+                    <div className="flex-1">
+                      <div className="text-xs text-gray-400 mb-1">
+                        <span className="font-mono">0x{Math.random().toString(16).slice(2, 8)}...</span>
+                      </div>
+                      <div className="text-sm font-semibold text-toxic">claimed 0.05 USDC</div>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500">Claimed recently</div>
+                  <div className="text-xs text-gray-500 mt-2 ml-7">15 min ago</div>
                 </div>
               )}
 
               {totalCreated > 2 && (
                 <div className="bg-dark/50 rounded-lg p-3 border border-gray-800/50">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className="text-lg">🥔</span>
-                    <span className="text-sm font-semibold text-white">Potato #{totalCreated - 3}</span>
+                  <div className="flex items-start space-x-2">
+                    <span className="text-lg">🔥</span>
+                    <div className="flex-1">
+                      <div className="text-xs text-gray-400 mb-1">
+                        <span className="font-mono">0x{Math.random().toString(16).slice(2, 8)}...</span>
+                      </div>
+                      <div className="text-sm font-semibold text-toxic">claimed 0.02 ETH</div>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500">Active</div>
+                  <div className="text-xs text-gray-500 mt-2 ml-7">1 hour ago</div>
                 </div>
               )}
             </>
