@@ -726,7 +726,7 @@ export default function Claim() {
               {/* Claim Button */}
               <button
                 onClick={handleClaimGift}
-                disabled={!amount || isClaiming || isConfirming || needsApproval()}
+                disabled={!amount || isClaiming || isConfirming || needsApproval() || isCreator || isGiftClaimed}
                 className="w-full bg-gradient-to-r from-toxic to-purple text-dark py-5 rounded-xl font-black text-2xl hover:shadow-lg hover:shadow-toxic/50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none animate-pulse"
               >
                 {isClaiming || isConfirming ? (

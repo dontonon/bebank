@@ -69,8 +69,10 @@ export default function Sidebar() {
         const contractAddress = getContractAddress(chain.id)
         const currentBlock = await publicClient.getBlockNumber()
 
-        // Get logs from last ~1000 blocks (roughly last 30-60 minutes on Base)
-        const fromBlock = currentBlock - 1000n
+        // Get logs from last ~5000 blocks (roughly last 2-3 hours on Base)
+        const fromBlock = currentBlock > 5000n ? currentBlock - 5000n : 0n
+
+        console.log('Loading activity from block', fromBlock.toString(), 'to', currentBlock.toString())
 
         // Fetch GiftClaimed events
         const claimedLogs = await publicClient.getLogs({
@@ -80,6 +82,8 @@ export default function Sidebar() {
           toBlock: 'latest'
         })
 
+        console.log('Found', claimedLogs.length, 'claim events')
+
         // Fetch GiftCreated events
         const createdLogs = await publicClient.getLogs({
           address: contractAddress,
@@ -88,16 +92,20 @@ export default function Sidebar() {
           toBlock: 'latest'
         })
 
+        console.log('Found', createdLogs.length, 'create events')
+
         const activities = []
 
         // Process claimed events
         claimedLogs.forEach(log => {
           try {
-            const { claimer, tokenReceived, amountReceived } = log.args
+            const { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived } = log.args
             const token = getTokenByAddress(tokenReceived)
             if (token) {
               activities.push({
                 type: 'claim',
+                potatoId: Number(oldGiftId),
+                newPotatoId: Number(newGiftId),
                 address: claimer,
                 token: token.symbol,
                 amount: formatUnits(amountReceived, token.decimals),
@@ -113,11 +121,12 @@ export default function Sidebar() {
         // Process created events
         createdLogs.forEach(log => {
           try {
-            const { giver, token: tokenAddr, amount } = log.args
+            const { giftId, giver, token: tokenAddr, amount } = log.args
             const token = getTokenByAddress(tokenAddr)
             if (token) {
               activities.push({
                 type: 'create',
+                potatoId: Number(giftId),
                 address: giver,
                 token: token.symbol,
                 amount: formatUnits(amount, token.decimals),
@@ -130,9 +139,11 @@ export default function Sidebar() {
           }
         })
 
-        // Sort by block number (most recent first) and take top 10
+        // Sort by block number (most recent first) and take top 15
         activities.sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber))
-        setRecentActivity(activities.slice(0, 10))
+        const topActivities = activities.slice(0, 15)
+        console.log('Setting', topActivities.length, 'activities')
+        setRecentActivity(topActivities)
       } catch (error) {
         console.error('Error loading recent activity:', error)
       } finally {
@@ -141,7 +152,7 @@ export default function Sidebar() {
     }
 
     loadRecentActivity()
-  }, [chain, publicClient])
+  }, [chain, publicClient, nextGiftId]) // Reload when nextGiftId changes (new potato created)
 
   // Watch for new GiftClaimed events
   useWatchContractEvent({
@@ -150,20 +161,24 @@ export default function Sidebar() {
     eventName: 'GiftClaimed',
     enabled: !!chain?.id,
     onLogs(logs) {
-      console.log('New GiftClaimed events:', logs)
+      console.log('🔥 New GiftClaimed events:', logs)
       logs.forEach(log => {
         try {
-          const { claimer, tokenReceived, amountReceived } = log.args
+          const { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived } = log.args
           const token = getTokenByAddress(tokenReceived)
           if (token) {
             const newActivity = {
               type: 'claim',
+              potatoId: Number(oldGiftId),
+              newPotatoId: Number(newGiftId),
               address: claimer,
               token: token.symbol,
               amount: formatUnits(amountReceived, token.decimals),
-              timestamp: Date.now()
+              timestamp: Date.now(),
+              blockNumber: log.blockNumber
             }
-            setRecentActivity(prev => [newActivity, ...prev].slice(0, 10))
+            console.log('Adding new claim activity:', newActivity)
+            setRecentActivity(prev => [newActivity, ...prev].slice(0, 15))
           }
         } catch (error) {
           console.error('Error processing GiftClaimed event:', error)
@@ -179,20 +194,23 @@ export default function Sidebar() {
     eventName: 'GiftCreated',
     enabled: !!chain?.id,
     onLogs(logs) {
-      console.log('New GiftCreated events:', logs)
+      console.log('🎉 New GiftCreated events:', logs)
       logs.forEach(log => {
         try {
-          const { giver, token: tokenAddr, amount } = log.args
+          const { giftId, giver, token: tokenAddr, amount } = log.args
           const token = getTokenByAddress(tokenAddr)
           if (token) {
             const newActivity = {
               type: 'create',
+              potatoId: Number(giftId),
               address: giver,
               token: token.symbol,
               amount: formatUnits(amount, token.decimals),
-              timestamp: Date.now()
+              timestamp: Date.now(),
+              blockNumber: log.blockNumber
             }
-            setRecentActivity(prev => [newActivity, ...prev].slice(0, 10))
+            console.log('Adding new create activity:', newActivity)
+            setRecentActivity(prev => [newActivity, ...prev].slice(0, 15))
           }
         } catch (error) {
           console.error('Error processing GiftCreated event:', error)
@@ -266,6 +284,14 @@ export default function Sidebar() {
                     <div className="text-sm font-semibold text-toxic">
                       {activity.type === 'claim' ? 'claimed' : 'created'} {parseFloat(activity.amount).toFixed(4)} {activity.token}
                     </div>
+                    {activity.potatoId && (
+                      <div className="text-xs text-gray-500">
+                        Potato #{activity.potatoId}
+                        {activity.type === 'claim' && activity.newPotatoId && (
+                          <span> → #{activity.newPotatoId}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="text-xs text-gray-500 mt-2 ml-7">{formatTimeAgo(activity.timestamp)}</div>

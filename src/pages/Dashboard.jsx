@@ -120,7 +120,7 @@ export default function Dashboard() {
               const tokenAddr = giftData[0] || giftData.token
               const amount = giftData[1] || giftData.amount
               const giver = giftData[2] || giftData.giver
-              const claimed = giftData[3] !== undefined ? giftData[3] : giftData.claimed
+              const isClaimed = giftData[3] !== undefined ? giftData[3] : giftData.claimed
               const claimer = giftData[4] || giftData.claimer
               const timestamp = giftData[5] || giftData.timestamp
               const claimedAt = giftData[6] || giftData.claimedAt
@@ -130,7 +130,7 @@ export default function Dashboard() {
                 token: getTokenByAddress(tokenAddr),
                 amount: amount,
                 giver: giver,
-                claimed: claimed,
+                claimed: isClaimed,
                 claimer: claimer,
                 timestamp: Number(timestamp),
                 claimedAt: claimedAt ? Number(claimedAt) : null
@@ -146,11 +146,12 @@ export default function Dashboard() {
               }
 
               // Check if user claimed this potato
-              const isClaimer = claimed && claimer && claimer.toLowerCase() === address.toLowerCase()
+              const isClaimer = isClaimed && claimer && claimer.toLowerCase() === address.toLowerCase()
               if (isClaimer) {
                 console.log('✅ FOUND CLAIMED POTATO #' + i)
                 console.log('   Claimer:', claimer)
                 console.log('   Your address:', address)
+                console.log('   Pushing to claimed array')
                 claimed.push(potatoInfo)
               }
             } else {
