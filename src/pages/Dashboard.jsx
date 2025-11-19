@@ -305,10 +305,16 @@ export default function Dashboard() {
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <div className="text-sm text-gray-400 mb-1">Potato #{potato.id}</div>
-                          <div className="text-2xl font-bold text-white">
-                            {formatUnits(BigInt(potato.amount), potato.token?.decimals || 18)}{' '}
-                            {potato.token?.symbol || '???'}
-                          </div>
+                          {potato.claimed ? (
+                            <div className="text-2xl font-bold text-white">
+                              {formatUnits(BigInt(potato.amount), potato.token?.decimals || 18)}{' '}
+                              {potato.token?.symbol || '???'}
+                            </div>
+                          ) : (
+                            <div className="text-2xl font-bold text-gray-500">
+                              🎁 Surprise Inside!
+                            </div>
+                          )}
                         </div>
                         <div>
                           {potato.claimed ? (

@@ -84,19 +84,9 @@ export default function Sidebar() {
 
         console.log('Found', claimedLogs.length, 'claim events')
 
-        // Fetch GiftCreated events
-        const createdLogs = await publicClient.getLogs({
-          address: contractAddress,
-          event: EVENT_ABIS[0], // GiftCreated
-          fromBlock,
-          toBlock: 'latest'
-        })
-
-        console.log('Found', createdLogs.length, 'create events')
-
         const activities = []
 
-        // Process claimed events
+        // Process ONLY claimed events (don't show creates - that would spoil the surprise!)
         claimedLogs.forEach(log => {
           try {
             const { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived } = log.args
@@ -118,27 +108,6 @@ export default function Sidebar() {
           }
         })
 
-        // Process created events
-        createdLogs.forEach(log => {
-          try {
-            const { giftId, giver, token: tokenAddr, amount } = log.args
-            const token = getTokenByAddress(tokenAddr)
-            if (token) {
-              activities.push({
-                type: 'create',
-                potatoId: Number(giftId),
-                address: giver,
-                token: token.symbol,
-                amount: formatUnits(amount, token.decimals),
-                timestamp: Date.now() - Math.random() * 3600000,
-                blockNumber: log.blockNumber
-              })
-            }
-          } catch (error) {
-            console.error('Error processing create log:', error)
-          }
-        })
-
         // Sort by block number (most recent first) and take top 15
         activities.sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber))
         const topActivities = activities.slice(0, 15)
@@ -152,9 +121,9 @@ export default function Sidebar() {
     }
 
     loadRecentActivity()
-  }, [chain, publicClient, nextGiftId]) // Reload when nextGiftId changes (new potato created)
+  }, [chain, publicClient]) // Reload activity when chain/client changes
 
-  // Watch for new GiftClaimed events
+  // Watch for new GiftClaimed events (real-time updates)
   useWatchContractEvent({
     address: chain?.id ? getContractAddress(chain.id) : undefined,
     abi: EVENT_ABIS,
@@ -182,38 +151,6 @@ export default function Sidebar() {
           }
         } catch (error) {
           console.error('Error processing GiftClaimed event:', error)
-        }
-      })
-    }
-  })
-
-  // Watch for new GiftCreated events
-  useWatchContractEvent({
-    address: chain?.id ? getContractAddress(chain.id) : undefined,
-    abi: EVENT_ABIS,
-    eventName: 'GiftCreated',
-    enabled: !!chain?.id,
-    onLogs(logs) {
-      console.log('🎉 New GiftCreated events:', logs)
-      logs.forEach(log => {
-        try {
-          const { giftId, giver, token: tokenAddr, amount } = log.args
-          const token = getTokenByAddress(tokenAddr)
-          if (token) {
-            const newActivity = {
-              type: 'create',
-              potatoId: Number(giftId),
-              address: giver,
-              token: token.symbol,
-              amount: formatUnits(amount, token.decimals),
-              timestamp: Date.now(),
-              blockNumber: log.blockNumber
-            }
-            console.log('Adding new create activity:', newActivity)
-            setRecentActivity(prev => [newActivity, ...prev].slice(0, 15))
-          }
-        } catch (error) {
-          console.error('Error processing GiftCreated event:', error)
         }
       })
     }
@@ -274,7 +211,7 @@ export default function Sidebar() {
             recentActivity.map((activity, index) => (
               <div key={index} className="bg-dark/50 rounded-lg p-3 border border-gray-800/50 animate-fade-in">
                 <div className="flex items-start space-x-2">
-                  <span className="text-lg">{activity.type === 'claim' ? '🔥' : '🥔'}</span>
+                  <span className="text-lg">🔥</span>
                   <div className="flex-1">
                     <div className="text-xs text-gray-400 mb-1">
                       <span className="font-mono">
@@ -282,14 +219,11 @@ export default function Sidebar() {
                       </span>
                     </div>
                     <div className="text-sm font-semibold text-toxic">
-                      {activity.type === 'claim' ? 'claimed' : 'created'} {parseFloat(activity.amount).toFixed(4)} {activity.token}
+                      claimed {parseFloat(activity.amount).toFixed(4)} {activity.token}
                     </div>
                     {activity.potatoId && (
                       <div className="text-xs text-gray-500">
-                        Potato #{activity.potatoId}
-                        {activity.type === 'claim' && activity.newPotatoId && (
-                          <span> → #{activity.newPotatoId}</span>
-                        )}
+                        Potato #{activity.potatoId} → #{activity.newPotatoId}
                       </div>
                     )}
                   </div>
