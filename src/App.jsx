@@ -10,6 +10,7 @@ import Claim from './pages/Claim'
 import PotatoLink from './pages/PotatoLink'
 import About from './pages/About'
 import Admin from './pages/Admin'
+import Dashboard from './pages/Dashboard'
 import ErrorBoundary from './components/ErrorBoundary'
 
 const queryClient = new QueryClient({
@@ -37,6 +38,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/claim/:giftId" element={<Claim />} />
                 <Route path="/potato/:giftId" element={<PotatoLink />} />
