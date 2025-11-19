@@ -507,34 +507,59 @@ export default function Claim() {
 
         <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
-          {/* Mystery Section */}
-          <div className="text-center mb-12">
-            <div className="text-9xl mb-6 animate-float">🥔</div>
-            <h2 className="text-5xl font-bold gradient-text mb-4">
-              Hot Potato #{giftId}
-            </h2>
-            <p className="text-xl text-gray-400 mb-2">
-              Someone passed something on... but what? 🤔
+          {/* CLAIMING BANNER */}
+          <div className="bg-gradient-to-r from-purple/30 to-toxic/30 border-2 border-purple rounded-2xl p-6 mb-8 text-center">
+            <div className="text-6xl mb-3">🎯</div>
+            <h1 className="text-4xl font-black gradient-text mb-2">
+              YOU'RE CLAIMING POTATO #{giftId}!
+            </h1>
+            <p className="text-xl text-white font-semibold mb-1">
+              Someone sent you crypto 🎁
             </p>
-            <p className="text-lg text-toxic font-semibold">
-              Give to find out!
+            <p className="text-gray-300">
+              To claim it, you must pass on your own Hot Potato
+            </p>
+          </div>
+
+          {/* Mystery Section */}
+          <div className="text-center mb-8">
+            <div className="text-7xl mb-4 animate-float">🥔</div>
+            <p className="text-lg text-gray-400 mb-2">
+              What's inside? 🤔
+            </p>
+            <p className="text-md text-toxic font-semibold">
+              You'll find out AFTER you claim!
             </p>
           </div>
 
           {/* Claim Form */}
           {!isConnected ? (
             <div className="bg-dark-card rounded-2xl p-12 text-center border border-gray-800">
-              <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Claim</h3>
-              <p className="text-gray-500 mb-6">Connect your wallet to claim this Hot Potato</p>
+              <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Claim This Potato</h3>
+              <p className="text-gray-500 mb-6">Connect your wallet to see what you'll receive</p>
               <div className="flex justify-center">
                 <ConnectButton />
               </div>
             </div>
           ) : (
-            <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">
+            <div className="bg-dark-card rounded-2xl p-8 border-2 border-toxic/50 space-y-6">
+              {/* Clear Instructions */}
+              <div className="bg-gradient-to-r from-purple/20 to-toxic/20 rounded-xl p-5 border border-purple/30">
+                <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                  <span>🔄</span>
+                  <span>How Claiming Works</span>
+                </h3>
+                <div className="space-y-2 text-sm text-gray-300">
+                  <p>1️⃣ You choose a token & amount to pass on</p>
+                  <p>2️⃣ Click "CLAIM NOW" - this creates YOUR potato AND claims theirs</p>
+                  <p>3️⃣ You instantly receive their crypto (99% of it)</p>
+                  <p>4️⃣ Get your new link to share with someone else!</p>
+                </div>
+              </div>
+
               <div>
-                <h3 className="text-2xl font-bold text-white mb-2">Step 1: Create Your Hot Potato</h3>
-                <p className="text-gray-400">Choose a token & amount to pass on. Then you can claim this potato!</p>
+                <h3 className="text-xl font-bold text-white mb-2">Choose What to Pass On:</h3>
+                <p className="text-gray-400 text-sm">This will be YOUR Hot Potato that you give to claim theirs</p>
               </div>
 
               {/* Smart Contract Wallet Warning */}
@@ -612,47 +637,50 @@ export default function Claim() {
               <button
                 onClick={handleClaimGift}
                 disabled={!amount || isClaiming || isConfirming || needsApproval()}
-                className="w-full bg-gradient-to-r from-toxic to-purple text-dark py-4 rounded-xl font-bold text-xl hover:shadow-lg hover:shadow-toxic/50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full bg-gradient-to-r from-toxic to-purple text-dark py-5 rounded-xl font-black text-2xl hover:shadow-lg hover:shadow-toxic/50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none animate-pulse"
               >
                 {isClaiming || isConfirming ? (
-                  <span>Processing... ⏳</span>
+                  <span>⏳ CLAIMING... PLEASE WAIT</span>
                 ) : needsApproval() && !isNativeToken(selectedToken.address) ? (
-                  <span>2️⃣ Create & Claim Hot Potato 🥔</span>
+                  <span>2️⃣ CLAIM POTATO #{giftId} NOW! 🎯</span>
                 ) : (
-                  <span>Create Hot Potato & Claim 🥔</span>
+                  <span>🎯 CLAIM POTATO #{giftId} NOW!</span>
                 )}
               </button>
 
               {/* Info */}
-              <div className="bg-dark/50 rounded-xl p-4 space-y-3">
-                <div className="text-center text-sm text-gray-400 mb-3">
-                  ⚠️ You won't see what you're getting until AFTER you claim
+              <div className="bg-gradient-to-r from-dark/90 to-dark-card/90 rounded-xl p-5 space-y-3 border border-toxic/30">
+                <div className="text-center text-base text-toxic font-bold mb-3 border-b border-toxic/20 pb-2">
+                  ⚡ What Happens When You Click:
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">You give:</span>
-                  <span className="text-white font-semibold">{amount || '0'} {selectedToken.symbol}</span>
+                  <span className="text-gray-400">✅ You give:</span>
+                  <span className="text-white font-bold">{amount || '0'} {selectedToken.symbol}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">You receive:</span>
-                  <span className="text-toxic font-semibold">Hot Potato 🥔</span>
+                  <span className="text-gray-400">✅ You receive:</span>
+                  <span className="text-toxic font-bold text-lg">??? (Surprise! 🎁)</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">Your next gift link:</span>
-                  <span className="text-purple font-semibold">After claiming</span>
+                  <span className="text-gray-400">✅ You get new link:</span>
+                  <span className="text-purple font-bold">To share next!</span>
+                </div>
+                <div className="text-center text-xs text-gray-500 pt-2 border-t border-gray-800">
+                  All in ONE transaction - instant swap!
                 </div>
               </div>
             </div>
           )}
 
-          {/* Psychological Hook */}
-          <div className="mt-12 bg-dark-card/50 rounded-xl p-6 border border-gray-800">
-            <h4 className="text-lg font-bold text-white mb-3">The Rules:</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li>✅ Fair trade: Give to receive</li>
-              <li>🙈 Blind commitment: No preview</li>
-              <li>✨ Delayed gratification: Reveal after claim</li>
-              <li>🔗 Pass it on: Share your link next</li>
-              <li>💚 99% goes to you, 1% to protocol</li>
+          {/* Why This Is Fun */}
+          <div className="mt-8 bg-dark-card/50 rounded-xl p-6 border border-purple/30">
+            <h4 className="text-lg font-bold gradient-text mb-3">🎰 Why This Is Fun:</h4>
+            <ul className="space-y-2 text-gray-300 text-sm">
+              <li>🎁 <strong>Surprise factor:</strong> You don't know what you're getting!</li>
+              <li>🤝 <strong>Fair trade:</strong> You give something to receive something</li>
+              <li>⛓️ <strong>Endless chain:</strong> Your potato continues the game</li>
+              <li>💰 <strong>Real value:</strong> Actual crypto, not fake internet points</li>
+              <li>⚡ <strong>Instant:</strong> One click = claim + create new potato</li>
             </ul>
           </div>
         </div>

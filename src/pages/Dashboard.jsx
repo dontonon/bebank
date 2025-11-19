@@ -40,7 +40,7 @@ export default function Dashboard() {
   const { address, isConnected, chain } = useAccount()
   const publicClient = usePublicClient()
   const [myPotatoes, setMyPotatoes] = useState({ created: [], claimed: [] })
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [filter, setFilter] = useState('all') // all, active, claimed
 
   // Get total number of potatoes
@@ -54,7 +54,15 @@ export default function Dashboard() {
   // Fetch all user's potatoes
   useEffect(() => {
     async function fetchMyPotatoes() {
-      if (!address || !chain || !nextGiftId) return
+      if (!address || !chain || !nextGiftId || !publicClient) {
+        console.log('Dashboard: Waiting for data...', {
+          hasAddress: !!address,
+          hasChain: !!chain,
+          hasNextGiftId: !!nextGiftId,
+          hasPublicClient: !!publicClient
+        })
+        return
+      }
 
       setIsLoading(true)
       try {
