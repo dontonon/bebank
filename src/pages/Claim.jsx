@@ -693,11 +693,20 @@ export default function Claim() {
 
       {/* Success Modal */}
       {showSuccess && successData && (
-        <SuccessModal
-          type="claim"
-          data={successData}
-          onClose={() => setShowSuccess(false)}
-        />
+        <>
+          {console.log('🚨🚨🚨 CLAIM PAGE RENDERING SUCCESS MODAL 🚨🚨🚨')}
+          {console.log('showSuccess:', showSuccess)}
+          {console.log('successData:', successData)}
+          {console.log('Type being passed:', "claim")}
+          <SuccessModal
+            type="claim"
+            data={successData}
+            onClose={() => {
+              console.log('Claim modal closed')
+              setShowSuccess(false)
+            }}
+          />
+        </>
       )}
     </NetworkGuard>
   )

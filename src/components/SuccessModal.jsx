@@ -129,41 +129,38 @@ export default function SuccessModal({ type, data, onClose }) {
 
     return (
       <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999] animate-fade-in">
-        <div className="bg-gradient-to-br from-purple-900 to-dark-card rounded-2xl p-8 max-w-md w-full border-4 border-purple animate-scale-in shadow-2xl shadow-purple/50">
-          {/* Success Icon */}
-          <div className="text-center mb-6">
-            <div className="text-8xl mb-4 animate-bounce">🎁</div>
-            <h2 className="text-4xl font-black text-purple mb-2">🔥 YOU GOT CRYPTO! 🔥</h2>
-            <p className="text-white font-bold text-lg">Claim Successful!</p>
-          </div>
+        <div className="bg-gradient-to-br from-purple-900 to-dark-card rounded-2xl p-8 max-w-md w-full border-8 border-purple animate-scale-in shadow-2xl shadow-purple/50">
 
-          {/* What You Got */}
-          <div className="bg-gradient-to-r from-toxic/20 to-purple/20 rounded-xl p-6 mb-4 border border-toxic/50">
-            <div className="text-center">
-              <div className="text-gray-400 text-sm mb-1">You Received</div>
-              <div className="text-5xl font-bold text-toxic mb-2">
-                {data.received} {data.token}
-              </div>
-              <div className="text-gray-500 text-xs">99% of the potato (1% protocol fee)</div>
+          {/* HUGE BANNER - WHAT YOU RECEIVED */}
+          <div className="bg-gradient-to-r from-toxic to-purple rounded-2xl p-8 mb-6 text-center">
+            <div className="text-white text-xl font-black mb-2">💰 YOU CLAIMED & RECEIVED 💰</div>
+            <div className="text-6xl font-black text-dark mb-2">
+              {data.received} {data.token}
             </div>
+            <div className="text-dark text-sm font-bold">Successfully claimed potato!</div>
           </div>
 
-          {/* What You Gave */}
-          <div className="bg-dark rounded-xl p-4 mb-6 border border-gray-800">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-400">You gave:</span>
-              <span className="text-white font-semibold">{data.gave} {data.gaveToken}</span>
+          {/* Summary Box */}
+          <div className="bg-purple/10 rounded-xl p-4 mb-6 border border-purple/30">
+            <div className="text-center text-sm space-y-2">
+              <div className="text-gray-400">Transaction Summary:</div>
+              <div className="text-white">
+                ✅ Claimed potato & received <span className="text-toxic font-bold">{data.received} {data.token}</span>
+              </div>
+              <div className="text-gray-400">
+                ✅ Passed on <span className="text-white font-semibold">{data.gave} {data.gaveToken}</span> (your new potato)
+              </div>
             </div>
           </div>
 
           {/* Your New Potato */}
-          <div className="bg-gradient-to-r from-purple/20 to-toxic/20 rounded-xl p-4 mb-6 border border-purple/50">
-            <div className="text-sm text-gray-300 mb-2 font-semibold">🥔 Your NEW Hot Potato Link:</div>
-            <div className="bg-dark rounded-lg p-3 mb-3 font-mono text-xs text-gray-400 break-all">
+          <div className="bg-gradient-to-r from-purple/30 to-toxic/30 rounded-xl p-5 mb-6 border-2 border-purple">
+            <div className="text-base text-white mb-2 font-black text-center">🔗 NOW SHARE YOUR POTATO!</div>
+            <div className="bg-dark rounded-lg p-3 mb-3 font-mono text-xs text-white break-all">
               {window.location.origin}/claim/{data.newPotatoId}
             </div>
-            <div className="text-xs text-gray-400">
-              💡 Keep the chain going! Share this link to pass on your gift.
+            <div className="text-xs text-center text-gray-300 font-semibold">
+              ⬆️ This is YOUR new potato #{data.newPotatoId} - share it to continue the chain!
             </div>
           </div>
 
@@ -173,11 +170,11 @@ export default function SuccessModal({ type, data, onClose }) {
               onClick={() => {
                 const link = `${window.location.origin}/claim/${data.newPotatoId}`
                 navigator.clipboard.writeText(link)
-                alert('Link copied! 🔗')
+                alert('New potato link copied! Share it to pass on your ' + data.gave + ' ' + data.gaveToken + ' 🔗')
               }}
-              className="w-full bg-gradient-to-r from-purple to-toxic text-dark py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-purple/50 transition-all transform hover:scale-105"
+              className="w-full bg-gradient-to-r from-purple to-toxic text-dark py-4 rounded-xl font-black text-lg hover:shadow-lg hover:shadow-purple/50 transition-all transform hover:scale-105"
             >
-              📋 Copy My Link to Share
+              📋 Copy NEW Potato Link (#{data.newPotatoId})
             </button>
 
             <button
