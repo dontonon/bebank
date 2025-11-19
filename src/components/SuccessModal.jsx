@@ -3,7 +3,17 @@ import { useNavigate } from 'react-router-dom'
 export default function SuccessModal({ type, data, onClose }) {
   const navigate = useNavigate()
 
-  console.log('SuccessModal rendered with type:', type, 'data:', data)
+  console.log('========== SUCCESS MODAL DEBUG ==========')
+  console.log('Modal type:', type)
+  console.log('Modal data:', data)
+  console.log('Data keys:', data ? Object.keys(data) : 'NO DATA')
+  console.log('=======================================')
+
+  // Defensive check - ensure we have required data
+  if (!type || !data) {
+    console.error('❌ SuccessModal missing required props:', { type, data })
+    return null
+  }
 
   const copyLink = () => {
     const link = `${window.location.origin}/claim/${data.potatoId}`
@@ -90,6 +100,27 @@ export default function SuccessModal({ type, data, onClose }) {
   }
 
   if (type === 'claim') {
+    console.log('🔥 Rendering CLAIM modal')
+    console.log('Claim data - received:', data.received, 'token:', data.token)
+    console.log('Claim data - gave:', data.gave, 'gaveToken:', data.gaveToken)
+    console.log('Claim data - newPotatoId:', data.newPotatoId)
+
+    // Validate required fields for claim modal
+    if (!data.received || !data.token || !data.gave || !data.gaveToken || !data.newPotatoId) {
+      console.error('❌ Claim modal missing required data fields:', data)
+      return (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-dark-card rounded-2xl p-8 max-w-md w-full border-2 border-red-500">
+            <h2 className="text-xl font-bold text-white mb-2">Claim Succeeded!</h2>
+            <p className="text-gray-400">But we're missing some data. Check console for details.</p>
+            <button onClick={() => navigate('/dashboard')} className="mt-4 w-full bg-toxic text-dark py-3 rounded-xl font-bold">
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-fade-in">
         <div className="bg-dark-card rounded-2xl p-8 max-w-md w-full border-2 border-purple animate-scale-in">

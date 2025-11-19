@@ -62,16 +62,28 @@ export default function Dashboard() {
         const created = []
         const claimed = []
 
+        console.log('==================== DASHBOARD DEBUG ====================')
+        console.log('nextGiftId (raw):', nextGiftId)
         console.log('Total potatoes in contract:', totalPotatoes)
         console.log('Your wallet address:', address)
+
+        // Edge case: No potatoes created yet
+        if (totalPotatoes <= 1) {
+          console.log('⚠️ No potatoes exist yet (nextGiftId <= 1)')
+          setMyPotatoes({ created: [], claimed: [] })
+          setIsLoading(false)
+          return
+        }
 
         // Potato IDs start from 1 and go up to (but not including) nextGiftId
         // So if nextGiftId is 35, the last potato is ID 34
         // If there are many potatoes, we'll limit to last 200 for performance
         const lastPotatoId = totalPotatoes - 1
-        const startId = Math.max(1, lastPotatoId - 200)
+        const startId = Math.max(1, lastPotatoId - 199) // Scan up to 200 potatoes
 
         console.log('Scanning potatoes from', startId, 'to', lastPotatoId, '(inclusive)')
+        console.log('Total potatoes to scan:', lastPotatoId - startId + 1)
+        console.log('========================================================')
 
         for (let i = startId; i <= lastPotatoId; i++) {
           try {
@@ -82,7 +94,17 @@ export default function Dashboard() {
               args: [BigInt(i)]
             })
 
-            if (giftData && giftData[2]) {
+            // Always log each potato scan for debugging
+            if (i <= startId + 5 || i >= lastPotatoId - 2) {
+              console.log(`[Scan] Potato #${i}:`, {
+                exists: !!giftData,
+                creator: giftData?.[2]?.substring(0, 10) + '...',
+                claimed: giftData?.[3],
+                claimer: giftData?.[4]?.substring(0, 10) + '...'
+              })
+            }
+
+            if (giftData && giftData[2] && giftData[2] !== '0x0000000000000000000000000000000000000000') {
               const potatoInfo = {
                 id: i,
                 token: getTokenByAddress(giftData[0]),
@@ -97,33 +119,45 @@ export default function Dashboard() {
               // Check if user created this potato
               const isCreator = giftData[2].toLowerCase() === address.toLowerCase()
               if (isCreator) {
-                console.log('✅ Found created potato #', i, '- Creator:', giftData[2])
+                console.log('✅ FOUND CREATED POTATO #' + i)
+                console.log('   Creator:', giftData[2])
+                console.log('   Your address:', address)
+                console.log('   Match:', isCreator)
                 created.push(potatoInfo)
               }
 
               // Check if user claimed this potato
               const isClaimer = giftData[3] && giftData[4] && giftData[4].toLowerCase() === address.toLowerCase()
               if (isClaimer) {
-                console.log('✅ Found claimed potato #', i, '- Claimer:', giftData[4])
+                console.log('✅ FOUND CLAIMED POTATO #' + i)
+                console.log('   Claimer:', giftData[4])
+                console.log('   Your address:', address)
+                console.log('   Match:', isClaimer)
                 claimed.push(potatoInfo)
               }
-
-              // Debug: Log first few potatoes to verify data structure
-              if (i <= startId + 3) {
-                console.log(`Potato #${i} - Creator: ${giftData[2]}, Claimed: ${giftData[3]}, Claimer: ${giftData[4]}, IsCreator: ${isCreator}, IsClaimer: ${isClaimer}`)
-              }
             } else {
-              console.log(`Potato #${i} - No data or invalid data`)
+              console.log(`⚠️ Potato #${i} - Invalid or empty data`)
             }
           } catch (error) {
-            console.error(`Error fetching potato ${i}:`, error)
+            console.error(`❌ Error fetching potato ${i}:`, error)
           }
         }
 
-        console.log('Final results - Created:', created.length, 'Claimed:', claimed.length)
+        console.log('==================== SCAN COMPLETE ====================')
+        console.log('📊 Final results:')
+        console.log('   ✅ Created potatoes found:', created.length)
+        console.log('   ✅ Claimed potatoes found:', claimed.length)
+        if (created.length > 0) {
+          console.log('   Created IDs:', created.map(p => p.id).join(', '))
+        }
+        if (claimed.length > 0) {
+          console.log('   Claimed IDs:', claimed.map(p => p.id).join(', '))
+        }
+        console.log('======================================================')
         setMyPotatoes({ created, claimed })
       } catch (error) {
-        console.error('Error fetching potatoes:', error)
+        console.error('❌ Error fetching potatoes:', error)
+        console.error('Error details:', error.message)
       } finally {
         setIsLoading(false)
       }

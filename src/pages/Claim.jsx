@@ -269,13 +269,27 @@ export default function Claim() {
         console.log('✅ Final potato ID:', newGiftId)
 
         // Show success modal with claim details
-        setSuccessData({
+        const modalData = {
           received: receivedAmount,
           token: token.symbol,
           gave: amount,
           gaveToken: selectedToken.symbol,
           newPotatoId: newGiftId
+        }
+
+        console.log('========== ABOUT TO SHOW SUCCESS MODAL ==========')
+        console.log('Modal will show with TYPE: "claim"')
+        console.log('Modal data being passed:', modalData)
+        console.log('All fields present?', {
+          received: !!modalData.received,
+          token: !!modalData.token,
+          gave: !!modalData.gave,
+          gaveToken: !!modalData.gaveToken,
+          newPotatoId: !!modalData.newPotatoId
         })
+        console.log('================================================')
+
+        setSuccessData(modalData)
         setShowSuccess(true)
         setIsClaiming(false)
       } catch (error) {
