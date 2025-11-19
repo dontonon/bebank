@@ -43,6 +43,10 @@ export const TOKENS = [
 ]
 
 export const getTokenByAddress = (address) => {
+  if (!address) {
+    console.error('getTokenByAddress called with undefined/null address')
+    return null
+  }
   return TOKENS.find(t => t.address.toLowerCase() === address.toLowerCase())
 }
 

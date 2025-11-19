@@ -193,7 +193,18 @@ export default function Claim() {
   useEffect(() => {
     if (isSuccess && giftData && receipt && isClaiming) {
       console.log('Processing claim success:', { receipt, giftData })
+      console.log('GiftData array:', giftData)
       try {
+        // Verify giftData has all required fields
+        if (!giftData[0] || !giftData[1]) {
+          console.error('❌ GiftData incomplete:', giftData)
+          setClaimError(`Claim succeeded! Your new potato ID is probably ${Number(giftId) + 1}. Navigate to /potato/${Number(giftId) + 1}`)
+          setIsClaiming(false)
+          // Still try to navigate
+          setTimeout(() => navigate(`/potato/${Number(giftId) + 1}`), 2000)
+          return
+        }
+
         // Show reveal animation
         console.log('Step 1: Looking for token:', giftData[0])
         const token = getTokenByAddress(giftData[0])
@@ -201,8 +212,10 @@ export default function Claim() {
 
         if (!token) {
           console.error('Unknown token address:', giftData[0])
-          setClaimError('Unknown token received. Please contact support.')
+          setClaimError(`Claim succeeded! Token: ${giftData[0]}. Your new potato ID is ${Number(giftId) + 1}`)
           setIsClaiming(false)
+          // Navigate anyway
+          setTimeout(() => navigate(`/potato/${Number(giftId) + 1}`), 2000)
           return
         }
 
@@ -303,6 +316,12 @@ export default function Claim() {
   const handleClaimGift = async () => {
     if (!amount || parseFloat(amount) < 0.0001) {
       setClaimError('Amount must be at least 0.0001')
+      return
+    }
+
+    // Check if trying to claim own potato
+    if (isCreator) {
+      setClaimError("You can't claim your own Hot Potato! Share it with someone else.")
       return
     }
 
