@@ -259,20 +259,36 @@ export default function Claim() {
           if (receipt.logs && receipt.logs.length > 0) {
             console.log('Total logs:', receipt.logs.length)
 
-            // Look for the LAST GiftCreated event (your new potato)
+            // Look for GiftClaimed event (has newGiftId in topics[2]) or GiftCreated event (has giftId in topics[1])
             for (let i = receipt.logs.length - 1; i >= 0; i--) {
               const log = receipt.logs[i]
               console.log(`Log ${i}:`, log)
 
               if (log.topics && log.topics.length > 1) {
                 try {
+                  // GiftClaimed event structure: topics[0] = event signature, topics[1] = oldGiftId, topics[2] = newGiftId, topics[3] = claimer
+                  // GiftCreated event structure: topics[0] = event signature, topics[1] = giftId, topics[2] = giver
+
+                  // Try topics[2] first (newGiftId from GiftClaimed event)
+                  if (log.topics.length > 2) {
+                    const potentialNewId = BigInt(log.topics[2])
+                    console.log(`Topics[2] as BigInt: ${potentialNewId}`)
+                    if (potentialNewId > 0n && potentialNewId < 1000000n) {
+                      newGiftId = Number(potentialNewId)
+                      console.log('✅ Extracted NEW potato ID from GiftClaimed topics[2]:', newGiftId)
+                      break
+                    }
+                  }
+
+                  // Fallback: Try topics[1] (giftId from GiftCreated event)
                   const potentialId = BigInt(log.topics[1])
                   console.log(`Topics[1] as BigInt: ${potentialId}`)
-
                   if (potentialId > 0n && potentialId < 1000000n) {
-                    newGiftId = Number(potentialId)
-                    console.log('✅ Extracted potato ID from topics[1]:', newGiftId)
-                    break
+                    // Only use this if we haven't found a better match from topics[2]
+                    if (!newGiftId) {
+                      newGiftId = Number(potentialId)
+                      console.log('✅ Extracted potato ID from GiftCreated topics[1]:', newGiftId)
+                    }
                   }
                 } catch (e) {
                   console.log(`Failed to parse log ${i}:`, e)
@@ -592,13 +608,52 @@ export default function Claim() {
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-xl font-bold text-white mb-2">Choose What to Pass On:</h3>
-                <p className="text-gray-400 text-sm">This will be YOUR Hot Potato that you give to claim theirs</p>
-              </div>
+              {/* Can't Claim Own Potato Warning */}
+              {isCreator && (
+                <div className="bg-yellow-900/40 border-2 border-yellow-500 rounded-xl p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">🚫</div>
+                    <div>
+                      <p className="text-yellow-400 font-bold text-lg mb-2">YOU CAN'T CLAIM YOUR OWN POTATO!</p>
+                      <p className="text-yellow-300 text-sm mb-3">
+                        You created this potato. You need to share it with someone else to claim it!
+                      </p>
+                      <p className="text-yellow-200 text-sm font-semibold">
+                        👉 Share the link with a friend and they can claim it.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-              {/* Smart Contract Wallet Warning */}
-              {isClaimerContract && (
+              {/* Already Claimed Warning */}
+              {isGiftClaimed && !isCreator && (
+                <div className="bg-red-900/40 border-2 border-red-500 rounded-xl p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">😢</div>
+                    <div>
+                      <p className="text-red-400 font-bold text-lg mb-2">POTATO ALREADY CLAIMED!</p>
+                      <p className="text-red-300 text-sm mb-3">
+                        Someone else already claimed this potato at {new Date(Number(giftData[6] * 1000n)).toLocaleString()}
+                      </p>
+                      <p className="text-red-200 text-sm">
+                        Claimed by: <span className="font-mono text-xs">{giftData[4]}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Only show form if can claim */}
+              {!isCreator && !isGiftClaimed && (
+                <>
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-2">Choose What to Pass On:</h3>
+                    <p className="text-gray-400 text-sm">This will be YOUR Hot Potato that you give to claim theirs</p>
+                  </div>
+
+                  {/* Smart Contract Wallet Warning */}
+                  {isClaimerContract && (
                 <div className="bg-red-900/30 border-2 border-red-500 rounded-xl p-5">
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">⚠️</div>
@@ -704,6 +759,8 @@ export default function Claim() {
                   All in ONE transaction - instant swap!
                 </div>
               </div>
+                </>
+              )}
             </div>
           )}
 
