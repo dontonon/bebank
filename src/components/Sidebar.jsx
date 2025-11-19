@@ -45,7 +45,9 @@ const EVENT_ABIS = [
 
 export default function Sidebar() {
   const { chain } = useAccount()
+  const publicClient = usePublicClient()
   const [recentActivity, setRecentActivity] = useState([])
+  const [isLoadingActivity, setIsLoadingActivity] = useState(true)
 
   // Get total potatoes created
   const { data: nextGiftId, isError, isLoading } = useReadContract({
@@ -54,6 +56,92 @@ export default function Sidebar() {
     functionName: 'nextGiftId',
     enabled: !!chain?.id
   })
+
+  // Load initial recent activity from blockchain
+  useEffect(() => {
+    async function loadRecentActivity() {
+      if (!chain || !publicClient) {
+        setIsLoadingActivity(false)
+        return
+      }
+
+      try {
+        const contractAddress = getContractAddress(chain.id)
+        const currentBlock = await publicClient.getBlockNumber()
+
+        // Get logs from last ~1000 blocks (roughly last 30-60 minutes on Base)
+        const fromBlock = currentBlock - 1000n
+
+        // Fetch GiftClaimed events
+        const claimedLogs = await publicClient.getLogs({
+          address: contractAddress,
+          event: EVENT_ABIS[1], // GiftClaimed
+          fromBlock,
+          toBlock: 'latest'
+        })
+
+        // Fetch GiftCreated events
+        const createdLogs = await publicClient.getLogs({
+          address: contractAddress,
+          event: EVENT_ABIS[0], // GiftCreated
+          fromBlock,
+          toBlock: 'latest'
+        })
+
+        const activities = []
+
+        // Process claimed events
+        claimedLogs.forEach(log => {
+          try {
+            const { claimer, tokenReceived, amountReceived } = log.args
+            const token = getTokenByAddress(tokenReceived)
+            if (token) {
+              activities.push({
+                type: 'claim',
+                address: claimer,
+                token: token.symbol,
+                amount: formatUnits(amountReceived, token.decimals),
+                timestamp: Date.now() - Math.random() * 3600000, // Approximate time
+                blockNumber: log.blockNumber
+              })
+            }
+          } catch (error) {
+            console.error('Error processing claim log:', error)
+          }
+        })
+
+        // Process created events
+        createdLogs.forEach(log => {
+          try {
+            const { giver, token: tokenAddr, amount } = log.args
+            const token = getTokenByAddress(tokenAddr)
+            if (token) {
+              activities.push({
+                type: 'create',
+                address: giver,
+                token: token.symbol,
+                amount: formatUnits(amount, token.decimals),
+                timestamp: Date.now() - Math.random() * 3600000,
+                blockNumber: log.blockNumber
+              })
+            }
+          } catch (error) {
+            console.error('Error processing create log:', error)
+          }
+        })
+
+        // Sort by block number (most recent first) and take top 10
+        activities.sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber))
+        setRecentActivity(activities.slice(0, 10))
+      } catch (error) {
+        console.error('Error loading recent activity:', error)
+      } finally {
+        setIsLoadingActivity(false)
+      }
+    }
+
+    loadRecentActivity()
+  }, [chain, publicClient])
 
   // Watch for new GiftClaimed events
   useWatchContractEvent({
@@ -159,7 +247,12 @@ export default function Sidebar() {
         <h3 className="text-xl font-bold text-white mb-4">⚡ Live Activity</h3>
 
         <div className="space-y-3">
-          {recentActivity.length > 0 ? (
+          {isLoadingActivity ? (
+            <div className="text-center text-gray-500 py-8">
+              <div className="text-4xl mb-2 animate-spin">🥔</div>
+              <div className="text-sm">Loading activity...</div>
+            </div>
+          ) : recentActivity.length > 0 ? (
             recentActivity.map((activity, index) => (
               <div key={index} className="bg-dark/50 rounded-lg p-3 border border-gray-800/50 animate-fade-in">
                 <div className="flex items-start space-x-2">
@@ -181,8 +274,8 @@ export default function Sidebar() {
           ) : (
             <div className="text-center text-gray-500 py-8">
               <div className="text-4xl mb-2">👀</div>
-              <div className="text-sm">Waiting for activity...</div>
-              <div className="text-xs text-gray-600 mt-2">Events will appear here in real-time!</div>
+              <div className="text-sm">No recent activity</div>
+              <div className="text-xs text-gray-600 mt-2">New events will appear here in real-time!</div>
             </div>
           )}
         </div>

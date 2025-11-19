@@ -6,6 +6,7 @@ import Header from '../components/Header'
 import NetworkGuard from '../components/NetworkGuard'
 import TokenSelector from '../components/TokenSelector'
 import RevealAnimation from '../components/RevealAnimation'
+import SuccessModal from '../components/SuccessModal'
 import Sidebar from '../components/Sidebar'
 import { TOKENS, getTokenByAddress, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
@@ -94,6 +95,8 @@ export default function Claim() {
   const [claimError, setClaimError] = useState(null)
   const [isClaimerContract, setIsClaimerContract] = useState(false)
   const [contractBalance, setContractBalance] = useState(null)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [successData, setSuccessData] = useState(null)
 
   // Read gift data
   const { data: giftData, isLoading: isLoadingGift } = useReadContract({
@@ -265,12 +268,15 @@ export default function Claim() {
 
         console.log('✅ Final potato ID:', newGiftId)
 
-        setRevealedGift({
-          token,
-          amount: receivedAmount,
-          newGiftId
+        // Show success modal with claim details
+        setSuccessData({
+          received: receivedAmount,
+          token: token.symbol,
+          gave: amount,
+          gaveToken: selectedToken.symbol,
+          newPotatoId: newGiftId
         })
-        setShowReveal(true)
+        setShowSuccess(true)
         setIsClaiming(false)
       } catch (error) {
         console.error('❌ Error processing claim result:', error)
@@ -279,7 +285,7 @@ export default function Claim() {
         setIsClaiming(false)
       }
     }
-  }, [isSuccess, giftData, receipt, giftId, isClaiming])
+  }, [isSuccess, giftData, receipt, giftId, isClaiming, amount, selectedToken])
 
   const needsApproval = () => {
     if (isNativeToken(selectedToken.address)) return false
@@ -642,6 +648,15 @@ export default function Claim() {
         {/* Sidebar */}
         <Sidebar />
       </div>
+
+      {/* Success Modal */}
+      {showSuccess && successData && (
+        <SuccessModal
+          type="claim"
+          data={successData}
+          onClose={() => setShowSuccess(false)}
+        />
+      )}
     </NetworkGuard>
   )
 }

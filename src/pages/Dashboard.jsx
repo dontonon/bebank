@@ -62,8 +62,13 @@ export default function Dashboard() {
         const created = []
         const claimed = []
 
-        // Check last 100 potatoes (or all if less than 100)
-        const startId = Math.max(1, totalPotatoes - 100)
+        console.log('Total potatoes in contract:', totalPotatoes)
+
+        // Check all potatoes (start from 1, not 0, as potato IDs start from 1)
+        // If there are many potatoes, we'll limit to last 200 for performance
+        const startId = Math.max(1, totalPotatoes - 200)
+
+        console.log('Scanning potatoes from', startId, 'to', totalPotatoes - 1)
 
         for (let i = startId; i < totalPotatoes; i++) {
           try {
@@ -88,11 +93,13 @@ export default function Dashboard() {
 
               // Check if user created this potato
               if (giftData[2].toLowerCase() === address.toLowerCase()) {
+                console.log('Found created potato:', i, potatoInfo)
                 created.push(potatoInfo)
               }
 
               // Check if user claimed this potato
-              if (giftData[3] && giftData[4].toLowerCase() === address.toLowerCase()) {
+              if (giftData[3] && giftData[4] && giftData[4].toLowerCase() === address.toLowerCase()) {
+                console.log('Found claimed potato:', i, potatoInfo)
                 claimed.push(potatoInfo)
               }
             }
@@ -101,6 +108,7 @@ export default function Dashboard() {
           }
         }
 
+        console.log('Final results - Created:', created.length, 'Claimed:', claimed.length)
         setMyPotatoes({ created, claimed })
       } catch (error) {
         console.error('Error fetching potatoes:', error)
