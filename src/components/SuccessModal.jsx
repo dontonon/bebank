@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 export default function SuccessModal({ type, data, onClose }) {
   const navigate = useNavigate()
 
+  console.log('SuccessModal rendered with type:', type, 'data:', data)
+
   const copyLink = () => {
     const link = `${window.location.origin}/claim/${data.potatoId}`
     navigator.clipboard.writeText(link)

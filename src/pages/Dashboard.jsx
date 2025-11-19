@@ -63,14 +63,17 @@ export default function Dashboard() {
         const claimed = []
 
         console.log('Total potatoes in contract:', totalPotatoes)
+        console.log('Your wallet address:', address)
 
-        // Check all potatoes (start from 1, not 0, as potato IDs start from 1)
+        // Potato IDs start from 1 and go up to (but not including) nextGiftId
+        // So if nextGiftId is 35, the last potato is ID 34
         // If there are many potatoes, we'll limit to last 200 for performance
-        const startId = Math.max(1, totalPotatoes - 200)
+        const lastPotatoId = totalPotatoes - 1
+        const startId = Math.max(1, lastPotatoId - 200)
 
-        console.log('Scanning potatoes from', startId, 'to', totalPotatoes - 1)
+        console.log('Scanning potatoes from', startId, 'to', lastPotatoId, '(inclusive)')
 
-        for (let i = startId; i < totalPotatoes; i++) {
+        for (let i = startId; i <= lastPotatoId; i++) {
           try {
             const giftData = await publicClient.readContract({
               address: getContractAddress(chain.id),
@@ -92,16 +95,25 @@ export default function Dashboard() {
               }
 
               // Check if user created this potato
-              if (giftData[2].toLowerCase() === address.toLowerCase()) {
-                console.log('Found created potato:', i, potatoInfo)
+              const isCreator = giftData[2].toLowerCase() === address.toLowerCase()
+              if (isCreator) {
+                console.log('✅ Found created potato #', i, '- Creator:', giftData[2])
                 created.push(potatoInfo)
               }
 
               // Check if user claimed this potato
-              if (giftData[3] && giftData[4] && giftData[4].toLowerCase() === address.toLowerCase()) {
-                console.log('Found claimed potato:', i, potatoInfo)
+              const isClaimer = giftData[3] && giftData[4] && giftData[4].toLowerCase() === address.toLowerCase()
+              if (isClaimer) {
+                console.log('✅ Found claimed potato #', i, '- Claimer:', giftData[4])
                 claimed.push(potatoInfo)
               }
+
+              // Debug: Log first few potatoes to verify data structure
+              if (i <= startId + 3) {
+                console.log(`Potato #${i} - Creator: ${giftData[2]}, Claimed: ${giftData[3]}, Claimer: ${giftData[4]}, IsCreator: ${isCreator}, IsClaimer: ${isClaimer}`)
+              }
+            } else {
+              console.log(`Potato #${i} - No data or invalid data`)
             }
           } catch (error) {
             console.error(`Error fetching potato ${i}:`, error)
