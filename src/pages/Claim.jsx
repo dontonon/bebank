@@ -97,6 +97,7 @@ export default function Claim() {
   const [contractBalance, setContractBalance] = useState(null)
   const [showSuccess, setShowSuccess] = useState(false)
   const [successData, setSuccessData] = useState(null)
+  const [claimingGiftData, setClaimingGiftData] = useState(null) // Store gift data before claiming
 
   // Read gift data
   const { data: giftData, isLoading: isLoadingGift } = useReadContract({
@@ -194,28 +195,35 @@ export default function Claim() {
 
   // Process claim success with robust error handling
   useEffect(() => {
-    if (isSuccess && giftData && receipt && isClaiming) {
-      console.log('Processing claim success:', { receipt, giftData })
-      console.log('GiftData array:', giftData)
+    if (isSuccess && receipt && isClaiming && claimingGiftData) {
+      console.log('✅ Processing claim success!')
+      console.log('Receipt:', receipt)
+      console.log('Stored gift data:', claimingGiftData)
       try {
-        // Verify giftData has all required fields
-        if (!giftData[0] || !giftData[1]) {
-          console.error('❌ GiftData incomplete:', giftData)
+        // Extract token and amount from STORED gift data (not current giftData which may be stale)
+        const tokenAddr = claimingGiftData[0] || claimingGiftData.token
+        const giftAmount = claimingGiftData[1] || claimingGiftData.amount
+
+        console.log('Token address from stored data:', tokenAddr)
+        console.log('Amount from stored data:', giftAmount)
+
+        // Verify we have required fields
+        if (!tokenAddr || !giftAmount) {
+          console.error('❌ Stored gift data incomplete:', claimingGiftData)
           setClaimError(`Claim succeeded! Your new potato ID is probably ${Number(giftId) + 1}. Navigate to /potato/${Number(giftId) + 1}`)
           setIsClaiming(false)
-          // Still try to navigate
           setTimeout(() => navigate(`/potato/${Number(giftId) + 1}`), 2000)
           return
         }
 
-        // Show reveal animation
-        console.log('Step 1: Looking for token:', giftData[0])
-        const token = getTokenByAddress(giftData[0])
+        // Get token info
+        console.log('Step 1: Looking for token:', tokenAddr)
+        const token = getTokenByAddress(tokenAddr)
         console.log('Token found:', token)
 
         if (!token) {
-          console.error('Unknown token address:', giftData[0])
-          setClaimError(`Claim succeeded! Token: ${giftData[0]}. Your new potato ID is ${Number(giftId) + 1}`)
+          console.error('Unknown token address:', tokenAddr)
+          setClaimError(`Claim succeeded! Token: ${tokenAddr}. Your new potato ID is ${Number(giftId) + 1}`)
           setIsClaiming(false)
           // Navigate anyway
           setTimeout(() => navigate(`/potato/${Number(giftId) + 1}`), 2000)
@@ -223,9 +231,9 @@ export default function Claim() {
         }
 
         // Safely handle BigInt conversion
-        console.log('Step 2: Converting gift amount:', giftData[1])
-        const giftAmount = BigInt(giftData[1])
-        const receivedAmount = formatUnits((giftAmount * 99n) / 100n, token.decimals)
+        console.log('Step 2: Converting gift amount:', giftAmount)
+        const giftAmountBigInt = BigInt(giftAmount)
+        const receivedAmount = formatUnits((giftAmountBigInt * 99n) / 100n, token.decimals)
         console.log('Received amount formatted:', receivedAmount)
 
         // Get new potato ID from logs - try multiple approaches
@@ -292,14 +300,16 @@ export default function Claim() {
         setSuccessData(modalData)
         setShowSuccess(true)
         setIsClaiming(false)
+        setClaimingGiftData(null) // Clear stored data after using it
       } catch (error) {
         console.error('❌ Error processing claim result:', error)
         console.error('Error stack:', error.stack)
         setClaimError(`Claim succeeded but failed to process: ${error.message}. Your new potato ID might be ${Number(giftId) + 1}`)
         setIsClaiming(false)
+        setClaimingGiftData(null) // Clear stored data on error too
       }
     }
-  }, [isSuccess, giftData, receipt, giftId, isClaiming, amount, selectedToken])
+  }, [isSuccess, claimingGiftData, receipt, giftId, isClaiming, amount, selectedToken, navigate])
 
   const needsApproval = () => {
     if (isNativeToken(selectedToken.address)) return false
@@ -344,6 +354,10 @@ export default function Claim() {
       setClaimError("You can't claim your own Hot Potato! Share it with someone else.")
       return
     }
+
+    // CRITICAL: Store the gift data BEFORE claiming so we can use it after transaction succeeds
+    console.log('💾 Storing gift data before claiming:', giftData)
+    setClaimingGiftData(giftData)
 
     setIsClaiming(true)
     setClaimError(null)
