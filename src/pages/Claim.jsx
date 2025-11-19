@@ -72,6 +72,13 @@ const GET_GIFT_ABI = [
     }]
   },
   {
+    name: 'nextGiftId',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
     name: 'treasury',
     type: 'function',
     stateMutability: 'view',
@@ -98,6 +105,7 @@ export default function Claim() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [successData, setSuccessData] = useState(null)
   const [claimingGiftData, setClaimingGiftData] = useState(null) // Store gift data before claiming
+  const [expectedNewPotatoId, setExpectedNewPotatoId] = useState(null) // Store expected new potato ID
 
   // Read gift data
   const { data: giftData, isLoading: isLoadingGift } = useReadContract({
@@ -106,6 +114,14 @@ export default function Claim() {
     functionName: 'getGift',
     args: giftId ? [BigInt(giftId)] : undefined,
     enabled: isConnected && !!chain && !!giftId
+  })
+
+  // Read nextGiftId to know what ID the new potato will have
+  const { data: nextGiftId } = useReadContract({
+    address: getContractAddress(chain?.id),
+    abi: GET_GIFT_ABI,
+    functionName: 'nextGiftId',
+    enabled: isConnected && !!chain
   })
 
   // Read treasury address for debugging
@@ -195,7 +211,7 @@ export default function Claim() {
 
   // Process claim success with robust error handling
   useEffect(() => {
-    if (isSuccess && receipt && isClaiming && claimingGiftData) {
+    if (isSuccess && receipt && isClaiming && claimingGiftData && expectedNewPotatoId !== null) {
       console.log('✅ Processing claim success!')
       console.log('Receipt:', receipt)
       console.log('Stored gift data:', claimingGiftData)
@@ -268,10 +284,11 @@ export default function Claim() {
           console.warn('Could not parse log for potato ID:', logError)
         }
 
-        // Fallback: increment current giftId
+        // Fallback: use expected new potato ID (stored before claiming)
         if (!newGiftId || isNaN(newGiftId) || newGiftId <= 0) {
-          newGiftId = Number(giftId) + 1
-          console.log('Using fallback potato ID:', newGiftId)
+          newGiftId = expectedNewPotatoId
+          console.log('⚠️ Could not extract from logs, using expected potato ID:', newGiftId)
+          console.log('   (This is nextGiftId from before the claim transaction)')
         }
 
         console.log('✅ Final potato ID:', newGiftId)
@@ -301,15 +318,17 @@ export default function Claim() {
         setShowSuccess(true)
         setIsClaiming(false)
         setClaimingGiftData(null) // Clear stored data after using it
+        setExpectedNewPotatoId(null) // Clear expected ID
       } catch (error) {
         console.error('❌ Error processing claim result:', error)
         console.error('Error stack:', error.stack)
-        setClaimError(`Claim succeeded but failed to process: ${error.message}. Your new potato ID might be ${Number(giftId) + 1}`)
+        setClaimError(`Claim succeeded but failed to process: ${error.message}. Your new potato ID might be ${expectedNewPotatoId}`)
         setIsClaiming(false)
         setClaimingGiftData(null) // Clear stored data on error too
+        setExpectedNewPotatoId(null) // Clear expected ID on error too
       }
     }
-  }, [isSuccess, claimingGiftData, receipt, giftId, isClaiming, amount, selectedToken, navigate])
+  }, [isSuccess, claimingGiftData, expectedNewPotatoId, receipt, giftId, isClaiming, amount, selectedToken, navigate])
 
   const needsApproval = () => {
     if (isNativeToken(selectedToken.address)) return false
@@ -355,9 +374,11 @@ export default function Claim() {
       return
     }
 
-    // CRITICAL: Store the gift data BEFORE claiming so we can use it after transaction succeeds
+    // CRITICAL: Store the gift data AND expected new potato ID BEFORE claiming
     console.log('💾 Storing gift data before claiming:', giftData)
+    console.log('💾 Current nextGiftId (this will be YOUR new potato ID):', nextGiftId)
     setClaimingGiftData(giftData)
+    setExpectedNewPotatoId(nextGiftId ? Number(nextGiftId) : null)
 
     setIsClaiming(true)
     setClaimError(null)
