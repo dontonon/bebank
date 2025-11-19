@@ -31,13 +31,14 @@ export default function SuccessModal({ type, data, onClose }) {
   }
 
   if (type === 'create') {
+    console.log('🎉 Rendering CREATE modal (green border)')
     return (
-      <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-fade-in">
-        <div className="bg-dark-card rounded-2xl p-8 max-w-md w-full border-2 border-toxic animate-scale-in">
+      <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="bg-dark-card rounded-2xl p-8 max-w-md w-full border-4 border-toxic animate-scale-in">
           {/* Success Icon */}
           <div className="text-center mb-6">
             <div className="text-7xl mb-4 animate-bounce">🎉</div>
-            <h2 className="text-3xl font-bold text-white mb-2">Hot Potato Created!</h2>
+            <h2 className="text-3xl font-bold text-toxic mb-2">✅ Hot Potato CREATED!</h2>
             <p className="text-gray-400">Your gift is ready to be passed on</p>
           </div>
 
@@ -121,14 +122,19 @@ export default function SuccessModal({ type, data, onClose }) {
       )
     }
 
+    console.log('🔥🔥🔥 Rendering CLAIM modal (PURPLE border) 🔥🔥🔥')
+    console.log('Claim modal data received:', data.received, data.token)
+    console.log('Claim modal data gave:', data.gave, data.gaveToken)
+    console.log('Claim modal new potato ID:', data.newPotatoId)
+
     return (
-      <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-fade-in">
-        <div className="bg-dark-card rounded-2xl p-8 max-w-md w-full border-2 border-purple animate-scale-in">
+      <div className="fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[9999] animate-fade-in">
+        <div className="bg-gradient-to-br from-purple-900 to-dark-card rounded-2xl p-8 max-w-md w-full border-4 border-purple animate-scale-in shadow-2xl shadow-purple/50">
           {/* Success Icon */}
           <div className="text-center mb-6">
-            <div className="text-7xl mb-4 animate-bounce">🔥</div>
-            <h2 className="text-3xl font-bold text-white mb-2">You Received!</h2>
-            <p className="text-gray-400">Hot Potato claimed successfully</p>
+            <div className="text-8xl mb-4 animate-bounce">🎁</div>
+            <h2 className="text-4xl font-black text-purple mb-2">🔥 YOU GOT CRYPTO! 🔥</h2>
+            <p className="text-white font-bold text-lg">Claim Successful!</p>
           </div>
 
           {/* What You Got */}

@@ -104,47 +104,59 @@ export default function Dashboard() {
 
             // Always log each potato scan for debugging
             if (i <= startId + 5 || i >= lastPotatoId - 2) {
-              console.log(`[Scan] Potato #${i}:`, {
-                exists: !!giftData,
-                creator: giftData?.[2]?.substring(0, 10) + '...',
-                claimed: giftData?.[3],
-                claimer: giftData?.[4]?.substring(0, 10) + '...'
-              })
+              console.log(`[Scan] Potato #${i}:`, giftData)
+              console.log(`  Type: ${typeof giftData}, IsArray: ${Array.isArray(giftData)}`)
+              console.log(`  Keys:`, Object.keys(giftData || {}))
+              console.log(`  giftData[2]:`, giftData?.[2])
+              console.log(`  giftData.giver:`, giftData?.giver)
             }
 
-            if (giftData && giftData[2] && giftData[2] !== '0x0000000000000000000000000000000000000000') {
+            // viem returns struct as both array AND object, check both
+            const creator = giftData?.[2] || giftData?.giver
+            const isValidPotato = creator && creator !== '0x0000000000000000000000000000000000000000'
+
+            if (giftData && isValidPotato) {
+              // Extract fields (viem returns tuple as both array and object)
+              const tokenAddr = giftData[0] || giftData.token
+              const amount = giftData[1] || giftData.amount
+              const giver = giftData[2] || giftData.giver
+              const claimed = giftData[3] !== undefined ? giftData[3] : giftData.claimed
+              const claimer = giftData[4] || giftData.claimer
+              const timestamp = giftData[5] || giftData.timestamp
+              const claimedAt = giftData[6] || giftData.claimedAt
+
               const potatoInfo = {
                 id: i,
-                token: getTokenByAddress(giftData[0]),
-                amount: giftData[1],
-                giver: giftData[2],
-                claimed: giftData[3],
-                claimer: giftData[4],
-                timestamp: Number(giftData[5]),
-                claimedAt: giftData[6] ? Number(giftData[6]) : null
+                token: getTokenByAddress(tokenAddr),
+                amount: amount,
+                giver: giver,
+                claimed: claimed,
+                claimer: claimer,
+                timestamp: Number(timestamp),
+                claimedAt: claimedAt ? Number(claimedAt) : null
               }
 
               // Check if user created this potato
-              const isCreator = giftData[2].toLowerCase() === address.toLowerCase()
+              const isCreator = giver.toLowerCase() === address.toLowerCase()
               if (isCreator) {
                 console.log('✅ FOUND CREATED POTATO #' + i)
-                console.log('   Creator:', giftData[2])
+                console.log('   Creator:', giver)
                 console.log('   Your address:', address)
-                console.log('   Match:', isCreator)
                 created.push(potatoInfo)
               }
 
               // Check if user claimed this potato
-              const isClaimer = giftData[3] && giftData[4] && giftData[4].toLowerCase() === address.toLowerCase()
+              const isClaimer = claimed && claimer && claimer.toLowerCase() === address.toLowerCase()
               if (isClaimer) {
                 console.log('✅ FOUND CLAIMED POTATO #' + i)
-                console.log('   Claimer:', giftData[4])
+                console.log('   Claimer:', claimer)
                 console.log('   Your address:', address)
-                console.log('   Match:', isClaimer)
                 claimed.push(potatoInfo)
               }
             } else {
-              console.log(`⚠️ Potato #${i} - Invalid or empty data`)
+              if (i <= startId + 5 || i >= lastPotatoId - 2) {
+                console.log(`⚠️ Potato #${i} - Invalid or empty (creator: ${creator})`)
+              }
             }
           } catch (error) {
             console.error(`❌ Error fetching potato ${i}:`, error)
