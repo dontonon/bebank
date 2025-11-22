@@ -4,6 +4,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
 import NetworkGuard from '../components/NetworkGuard'
+import SuccessModal from '../components/SuccessModal'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import TokenSelector from '../components/TokenSelector'
 import { TOKENS, isNativeToken } from '../config/tokens'
@@ -42,11 +43,13 @@ export default function Home() {
   const [selectedToken, setSelectedToken] = useState(TOKENS[0])
   const [amount, setAmount] = useState('')
   const [error, setError] = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [successData, setSuccessData] = useState(null)
 
   const { writeContract, data: hash, isPending, isError: isWriteError, error: writeError } = useWriteContract()
   const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({ hash })
 
-  // When transaction confirms, extract potato ID and navigate
+  // When transaction confirms, extract potato ID and show success modal
   useEffect(() => {
     if (isSuccess && receipt) {
       try {
@@ -96,14 +99,19 @@ export default function Home() {
           console.log('Using fallback potato ID:', potatoId)
         }
 
-        // Navigate directly to potato page (no modal)
-        navigate(`/potato/${potatoId}`)
+        // Show success modal
+        setSuccessData({
+          potatoId,
+          amount,
+          token: selectedToken.symbol
+        })
+        setShowSuccess(true)
       } catch (error) {
         console.error('Error extracting potato ID:', error)
         setError('Potato created but failed to get ID. Check your wallet.')
       }
     }
-  }, [isSuccess, receipt, chain, navigate])
+  }, [isSuccess, receipt, chain, amount, selectedToken])
 
   // Handle write errors
   useEffect(() => {
@@ -267,6 +275,15 @@ export default function Home() {
         {/* Sidebar */}
         <Sidebar />
       </div>
+
+      {/* Success Modal */}
+      {showSuccess && successData && (
+        <SuccessModal
+          type="create"
+          data={successData}
+          onClose={() => setShowSuccess(false)}
+        />
+      )}
     </NetworkGuard>
   )
 }
