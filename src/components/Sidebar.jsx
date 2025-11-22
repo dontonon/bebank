@@ -212,11 +212,6 @@ export default function Sidebar() {
           </div>
 
           <div className="bg-dark rounded-xl p-4 border border-gray-800">
-            <div className="text-gray-400 text-sm mb-1">Hot Potatos to be claimed</div>
-            <div className="text-3xl font-bold text-purple">{activePotatos}</div>
-          </div>
-
-          <div className="bg-dark rounded-xl p-4 border border-gray-800">
             <div className="text-gray-400 text-sm mb-1">Total Claimed Value</div>
             <div className="text-3xl font-bold text-green-400">
               ${totalClaimedUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
