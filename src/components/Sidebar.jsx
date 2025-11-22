@@ -170,6 +170,27 @@ export default function Sidebar() {
   const estimatedClaimed = Math.floor(totalCreated * 0.7)
   const activePotatos = totalCreated - estimatedClaimed
 
+  // Calculate total claimed value in USD (approximate)
+  const calculateClaimedValueUSD = () => {
+    let totalUSD = 0
+    recentActivity.forEach(activity => {
+      const amount = parseFloat(activity.amount)
+      // Simple price estimates (you can update these or use an oracle later)
+      const prices = {
+        'ETH': 3000,
+        'WETH': 3000,
+        'USDC': 1,
+        'DAI': 1,
+        'cbETH': 3000
+      }
+      const price = prices[activity.token] || 0
+      totalUSD += amount * price
+    })
+    return totalUSD
+  }
+
+  const totalClaimedUSD = calculateClaimedValueUSD()
+
   const formatTimeAgo = (timestamp) => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000)
     if (seconds < 60) return `${seconds}s ago`
@@ -193,6 +214,14 @@ export default function Sidebar() {
           <div className="bg-dark rounded-xl p-4 border border-gray-800">
             <div className="text-gray-400 text-sm mb-1">Hot Potatos to be claimed</div>
             <div className="text-3xl font-bold text-purple">{activePotatos}</div>
+          </div>
+
+          <div className="bg-dark rounded-xl p-4 border border-gray-800">
+            <div className="text-gray-400 text-sm mb-1">Total Claimed Value</div>
+            <div className="text-3xl font-bold text-green-400">
+              ${totalClaimedUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">From recent activity</div>
           </div>
         </div>
       </div>
