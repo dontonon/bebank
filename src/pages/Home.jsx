@@ -91,8 +91,8 @@ export default function Home() {
   }
 
   const handleCreateGift = async () => {
-    if (!amount || parseFloat(amount) < 0.0001) {
-      setCreateError('Amount must be at least 0.0001')
+    if (!amount || parseFloat(amount) < 0.000334) {
+      setCreateError('Amount must be at least $1 USD (≈ 0.000334 ETH)')
       return
     }
 

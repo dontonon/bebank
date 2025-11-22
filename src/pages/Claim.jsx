@@ -187,8 +187,8 @@ export default function Claim() {
   }
 
   const handleClaimGift = async () => {
-    if (!amount || parseFloat(amount) < 0.0001) {
-      setClaimError('Amount must be at least 0.0001')
+    if (!amount || parseFloat(amount) < 0.000334) {
+      setClaimError('Amount must be at least $1 USD (≈ 0.000334 ETH)')
       return
     }
 

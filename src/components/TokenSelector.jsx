@@ -55,7 +55,7 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
       {/* Amount Input */}
       <div>
         <label className="block text-gray-300 font-semibold mb-2">
-          Amount (min 0.0001 {selectedToken.symbol})
+          Amount (min $1 USD ≈ 0.000334 {selectedToken.symbol})
         </label>
         <div className="relative">
           <input
@@ -64,7 +64,7 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
             onChange={(e) => onAmountChange(e.target.value)}
             placeholder="0.001"
             step="0.0001"
-            min="0.0001"
+            min="0.000334"
             className="w-full bg-dark-card border border-gray-700 rounded-xl px-4 py-4 text-white text-2xl font-bold focus:border-toxic focus:outline-none transition-all"
           />
           <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">

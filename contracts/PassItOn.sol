@@ -32,7 +32,7 @@ contract PassItOn {
     address public treasury;
 
     // Minimum gift value in wei (prevents spam)
-    uint256 public constant MIN_GIFT_VALUE = 0.0001 ether; // ~$0.30 at $3000 ETH
+    uint256 public constant MIN_GIFT_VALUE = 0.000334 ether; // ~$1.00 at $3000 ETH
 
     // Protocol fee (1% = 100 basis points)
     uint256 public constant PROTOCOL_FEE_BPS = 100; // 1%
