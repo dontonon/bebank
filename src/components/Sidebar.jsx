@@ -6,29 +6,35 @@ import { getTokenByAddress } from '../config/tokens'
 import { useAccount } from 'wagmi'
 import { formatUnits } from 'viem'
 
-const NEXT_GIFT_ID_ABI = [
+const CONTRACT_ABI = [
   {
     name: 'nextGiftId',
     type: 'function',
     stateMutability: 'view',
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }]
+  },
+  {
+    name: 'getGift',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'giftId', type: 'uint256' }],
+    outputs: [{
+      type: 'tuple',
+      components: [
+        { name: 'token', type: 'address' },
+        { name: 'amount', type: 'uint256' },
+        { name: 'giver', type: 'address' },
+        { name: 'claimed', type: 'bool' },
+        { name: 'claimer', type: 'address' },
+        { name: 'timestamp', type: 'uint256' },
+        { name: 'claimedAt', type: 'uint256' }
+      ]
+    }]
   }
 ]
 
 const EVENT_ABIS = [
-  {
-    name: 'GiftCreated',
-    type: 'event',
-    anonymous: false,
-    inputs: [
-      { indexed: true, name: 'giftId', type: 'uint256' },
-      { indexed: true, name: 'giver', type: 'address' },
-      { indexed: false, name: 'token', type: 'address' },
-      { indexed: false, name: 'amount', type: 'uint256' },
-      { indexed: false, name: 'timestamp', type: 'uint256' }
-    ]
-  },
   {
     name: 'GiftClaimed',
     type: 'event',
@@ -52,71 +58,83 @@ export default function Sidebar() {
   // Get total potatoes created
   const { data: nextGiftId, isError, isLoading } = useReadContract({
     address: chain?.id ? getContractAddress(chain.id) : undefined,
-    abi: NEXT_GIFT_ID_ABI,
+    abi: CONTRACT_ABI,
     functionName: 'nextGiftId',
     enabled: !!chain?.id
   })
 
-  // Load initial recent activity from blockchain
+  // Load initial recent activity from blockchain by scanning recent potatoes
   useEffect(() => {
     async function loadRecentActivity() {
-      if (!chain || !publicClient) {
+      if (!chain || !publicClient || !nextGiftId) {
         setIsLoadingActivity(false)
         return
       }
 
       try {
         const contractAddress = getContractAddress(chain.id)
-        const currentBlock = await publicClient.getBlockNumber()
+        const totalPotatoes = Number(nextGiftId)
 
-        // Load last 100k blocks (RPC limit) - roughly last 55 hours on Base Sepolia
-        const fromBlock = currentBlock > 100000n ? currentBlock - 100000n : 0n
+        console.log('🔍 Scanning recent potatoes for claimed activity')
+        console.log('📍 Total potatoes:', totalPotatoes)
 
-        console.log('🔍 Loading activity from block', fromBlock.toString(), 'to', currentBlock.toString())
-        console.log('📍 Contract address:', contractAddress)
-
-        // Fetch GiftClaimed events
-        const claimedLogs = await publicClient.getLogs({
-          address: contractAddress,
-          event: EVENT_ABIS[1], // GiftClaimed
-          fromBlock,
-          toBlock: 'latest'
-        })
-
-        console.log('📊 Found', claimedLogs.length, 'claim events')
-        console.log('📋 Raw logs:', claimedLogs)
+        if (totalPotatoes <= 1) {
+          console.log('⚠️ No potatoes exist yet')
+          setRecentActivity([])
+          setIsLoadingActivity(false)
+          return
+        }
 
         const activities = []
+        const lastPotatoId = totalPotatoes - 1
+        const startId = Math.max(1, lastPotatoId - 99) // Scan last 100 potatoes
 
-        // Process ONLY claimed events (don't show creates - that would spoil the surprise!)
-        claimedLogs.forEach(log => {
+        console.log('🔍 Scanning potatoes from', startId, 'to', lastPotatoId)
+
+        for (let i = lastPotatoId; i >= startId; i--) {
           try {
-            const { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived } = log.args
-            const token = getTokenByAddress(tokenReceived)
-            if (token) {
-              activities.push({
-                type: 'claim',
-                potatoId: Number(oldGiftId),
-                newPotatoId: Number(newGiftId),
-                address: claimer,
-                token: token.symbol,
-                amount: formatUnits(amountReceived, token.decimals),
-                timestamp: Date.now() - Math.random() * 3600000, // Approximate time
-                blockNumber: log.blockNumber
-              })
-            } else {
-              console.warn('⚠️ Unknown token:', tokenReceived)
-            }
-          } catch (error) {
-            console.error('❌ Error processing claim log:', error)
-          }
-        })
+            const giftData = await publicClient.readContract({
+              address: contractAddress,
+              abi: CONTRACT_ABI,
+              functionName: 'getGift',
+              args: [BigInt(i)]
+            })
 
-        // Sort by block number (most recent first) and take top 15
-        activities.sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber))
-        const topActivities = activities.slice(0, 15)
-        console.log('✅ Setting', topActivities.length, 'activities')
-        setRecentActivity(topActivities)
+            // Check if this potato was claimed
+            const isClaimed = giftData?.[3] !== undefined ? giftData[3] : giftData?.claimed
+
+            if (isClaimed) {
+              const tokenAddr = giftData[0] || giftData.token
+              const amount = giftData[1] || giftData.amount
+              const claimer = giftData[4] || giftData.claimer
+              const claimedAt = giftData[6] || giftData.claimedAt
+
+              const token = getTokenByAddress(tokenAddr)
+              if (token) {
+                // Calculate amount received (99% of original)
+                const amountReceived = (BigInt(amount) * 99n) / 100n
+
+                activities.push({
+                  type: 'claim',
+                  potatoId: i,
+                  address: claimer,
+                  token: token.symbol,
+                  amount: formatUnits(amountReceived, token.decimals),
+                  timestamp: claimedAt ? Number(claimedAt) * 1000 : Date.now(),
+                  id: i
+                })
+              }
+            }
+
+            // Stop once we have 15 claimed potatoes
+            if (activities.length >= 15) break
+          } catch (error) {
+            console.error(`❌ Error reading potato ${i}:`, error)
+          }
+        }
+
+        console.log('✅ Found', activities.length, 'claimed potatoes')
+        setRecentActivity(activities)
       } catch (error) {
         console.error('❌ Error loading recent activity:', error)
       } finally {
@@ -125,7 +143,7 @@ export default function Sidebar() {
     }
 
     loadRecentActivity()
-  }, [chain, publicClient]) // Reload activity when chain/client changes
+  }, [chain, publicClient, nextGiftId]) // Reload when nextGiftId changes
 
   // Watch for new GiftClaimed events (real-time updates)
   useWatchContractEvent({
@@ -134,57 +152,29 @@ export default function Sidebar() {
     eventName: 'GiftClaimed',
     enabled: !!chain?.id,
     onLogs(logs) {
-      console.log('🔥🔥🔥 REAL-TIME WATCHER FIRED! Events:', logs.length)
-      console.log('📋 Raw event logs:', logs)
+      console.log('🔥 Real-time claim detected:', logs.length, 'events')
 
-      if (logs.length === 0) {
-        console.warn('⚠️ Watcher fired but got 0 logs!')
-        return
-      }
-
-      logs.forEach((log, index) => {
+      logs.forEach((log) => {
         try {
-          console.log(`\n=== Processing real-time event ${index} ===`)
-          console.log('Full log:', log)
-          console.log('Log args:', log.args)
-
-          const { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived } = log.args || {}
-
-          console.log('Extracted args:', { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived })
-
-          if (!tokenReceived) {
-            console.error('❌ No tokenReceived in args!')
-            return
-          }
+          const { oldGiftId, tokenReceived, amountReceived, claimer } = log.args || {}
 
           const token = getTokenByAddress(tokenReceived)
-          console.log('Token lookup result:', token)
-
           if (token) {
             const newActivity = {
               type: 'claim',
               potatoId: Number(oldGiftId),
-              newPotatoId: Number(newGiftId),
               address: claimer,
               token: token.symbol,
               amount: formatUnits(amountReceived, token.decimals),
               timestamp: Date.now(),
-              blockNumber: log.blockNumber
+              id: Number(oldGiftId)
             }
-            console.log('✅ Adding new real-time activity:', newActivity)
 
-            setRecentActivity(prev => {
-              const updated = [newActivity, ...prev].slice(0, 15)
-              console.log('📊 Updated activity count:', updated.length)
-              console.log('📊 Full activity list:', updated)
-              return updated
-            })
-          } else {
-            console.warn('⚠️ Token not found for address:', tokenReceived)
+            setRecentActivity(prev => [newActivity, ...prev].slice(0, 15))
+            console.log('✅ Added real-time claim for potato #' + oldGiftId)
           }
         } catch (error) {
           console.error('❌ Error processing real-time event:', error)
-          console.error('Error stack:', error.stack)
         }
       })
     },
@@ -192,8 +182,6 @@ export default function Sidebar() {
       console.error('❌ Watch contract event error:', error)
     }
   })
-
-  console.log('👀 Event watcher is', chain?.id ? 'ENABLED' : 'DISABLED', 'for chain', chain?.id)
 
   // Safely convert BigInt to Number with extra defensive checks
   let totalCreated = 0
@@ -271,8 +259,8 @@ export default function Sidebar() {
               <div className="text-sm">Loading activity...</div>
             </div>
           ) : recentActivity.length > 0 ? (
-            recentActivity.map((activity, index) => (
-              <div key={index} className="bg-dark/50 rounded-lg p-3 border border-gray-800/50 animate-fade-in">
+            recentActivity.map((activity) => (
+              <div key={activity.id} className="bg-dark/50 rounded-lg p-3 border border-gray-800/50 animate-fade-in">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <span className="text-lg">🔥</span>
