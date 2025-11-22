@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { useAccount, useReadContract, useBalance } from 'wagmi'
 import { TOKENS, isNativeToken } from '../config/tokens'
 import { ERC20_ABI } from '../config/abis'
@@ -6,7 +6,7 @@ import { formatUnits } from 'viem'
 import { fetchTokenPrices, calculateUSDValue } from '../utils/prices'
 import { debounce } from '../utils/debounce'
 
-export default function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
+function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
   const [isOpen, setIsOpen] = useState(false)
   const [tokensWithBalances, setTokensWithBalances] = useState([])
   const [usdValue, setUsdValue] = useState(0)
@@ -181,3 +181,5 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
     </div>
   )
 }
+
+export default memo(TokenSelector)

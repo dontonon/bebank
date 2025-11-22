@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { memo } from 'react'
 
 function Header() {
   const location = useLocation();
@@ -58,4 +59,4 @@ function Header() {
   );
 }
 
-export default Header;
+export default memo(Header);

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { useReadContract, useWatchContractEvent, usePublicClient } from 'wagmi'
 import { getContractAddress } from '../config/wagmi'
 import { getTokenByAddress } from '../config/tokens'
@@ -49,7 +49,7 @@ const EVENT_ABIS = [
   }
 ]
 
-export default function Sidebar() {
+function Sidebar() {
   const { chain } = useAccount()
   const publicClient = usePublicClient()
   const [recentActivity, setRecentActivity] = useState([])
@@ -284,3 +284,5 @@ export default function Sidebar() {
     </div>
   )
 }
+
+export default memo(Sidebar)
