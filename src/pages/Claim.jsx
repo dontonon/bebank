@@ -805,25 +805,25 @@ export default function Claim() {
 
         {/* Sidebar */}
         <Sidebar />
-      </div>
 
-      {/* Success Modal */}
-      {showSuccess && successData && (
-        <>
-          {console.log('🚨🚨🚨 CLAIM PAGE RENDERING SUCCESS MODAL 🚨🚨🚨')}
-          {console.log('showSuccess:', showSuccess)}
-          {console.log('successData:', successData)}
-          {console.log('Type being passed:', "claim")}
-          <SuccessModal
-            type="claim"
-            data={successData}
-            onClose={() => {
-              console.log('Claim modal closed')
-              setShowSuccess(false)
-            }}
-          />
-        </>
-      )}
+        {/* Success Modal */}
+        {showSuccess && successData && (
+          <>
+            {console.log('🚨🚨🚨 CLAIM PAGE RENDERING SUCCESS MODAL 🚨🚨🚨')}
+            {console.log('showSuccess:', showSuccess)}
+            {console.log('successData:', successData)}
+            {console.log('Type being passed:', "claim")}
+            <SuccessModal
+              type="claim"
+              data={successData}
+              onClose={() => {
+                console.log('Claim modal closed')
+                setShowSuccess(false)
+              }}
+            />
+          </>
+        )}
+      </div>
       )}
     </NetworkGuard>
   )
