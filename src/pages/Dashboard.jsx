@@ -93,15 +93,32 @@ export default function Dashboard() {
         console.log('Total potatoes to scan:', lastPotatoId - startId + 1)
         console.log('========================================================')
 
+        // Create array of promises to fetch all potatoes in parallel
+        const fetchPromises = []
         for (let i = startId; i <= lastPotatoId; i++) {
-          try {
-            const giftData = await publicClient.readContract({
+          fetchPromises.push(
+            publicClient.readContract({
               address: getContractAddress(chain.id),
               abi: GET_GIFT_ABI,
               functionName: 'getGift',
               args: [BigInt(i)]
             })
+            .then(giftData => ({ id: i, giftData, error: null }))
+            .catch(error => ({ id: i, giftData: null, error }))
+          )
+        }
 
+        // Fetch all potatoes in parallel
+        const results = await Promise.all(fetchPromises)
+
+        // Process results
+        for (const { id: i, giftData, error } of results) {
+          if (error) {
+            console.error(`❌ Error fetching potato ${i}:`, error)
+            continue
+          }
+
+          try {
             // Always log each potato scan for debugging
             if (i <= startId + 5 || i >= lastPotatoId - 2) {
               console.log(`[Scan] Potato #${i}:`, giftData)
@@ -160,7 +177,7 @@ export default function Dashboard() {
               }
             }
           } catch (error) {
-            console.error(`❌ Error fetching potato ${i}:`, error)
+            console.error(`❌ Error processing potato ${i}:`, error)
           }
         }
 

@@ -91,15 +91,32 @@ export default function Sidebar() {
 
         console.log('🔍 Scanning potatoes from', startId, 'to', lastPotatoId)
 
+        // Create array of promises to fetch all potatoes in parallel
+        const fetchPromises = []
         for (let i = lastPotatoId; i >= startId; i--) {
-          try {
-            const giftData = await publicClient.readContract({
+          fetchPromises.push(
+            publicClient.readContract({
               address: contractAddress,
               abi: CONTRACT_ABI,
               functionName: 'getGift',
               args: [BigInt(i)]
             })
+            .then(giftData => ({ id: i, giftData, error: null }))
+            .catch(error => ({ id: i, giftData: null, error }))
+          )
+        }
 
+        // Fetch all potatoes in parallel
+        const results = await Promise.all(fetchPromises)
+
+        // Process results (already sorted newest first)
+        for (const { id: i, giftData, error } of results) {
+          if (error) {
+            console.error(`❌ Error reading potato ${i}:`, error)
+            continue
+          }
+
+          try {
             // Check if this potato was claimed
             const isClaimed = giftData?.[3] !== undefined ? giftData[3] : giftData?.claimed
 
@@ -129,7 +146,7 @@ export default function Sidebar() {
             // Stop once we have 5 claimed potatoes
             if (activities.length >= 5) break
           } catch (error) {
-            console.error(`❌ Error reading potato ${i}:`, error)
+            console.error(`❌ Error processing potato ${i}:`, error)
           }
         }
 
