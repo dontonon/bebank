@@ -4,7 +4,7 @@ import { http } from 'wagmi'
 
 export const config = getDefaultConfig({
   appName: 'Pass It On',
-  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID,
+  projectId: '3fcbfaff90971f8b41972652f6a4d721',
   chains: [base, baseSepolia],
   transports: {
     [base.id]: http(),
