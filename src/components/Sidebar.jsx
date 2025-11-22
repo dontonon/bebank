@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom'
-import { useReadContract, useReadContracts } from 'wagmi'
+import { useReadContract } from 'wagmi'
 import { getContractAddress } from '../config/wagmi'
 import { useAccount } from 'wagmi'
 import { useState, useEffect } from 'react'
-import { formatUnits } from 'viem'
 
 const NEXT_GIFT_ID_ABI = [
   {
@@ -12,27 +11,6 @@ const NEXT_GIFT_ID_ABI = [
     stateMutability: 'view',
     inputs: [],
     outputs: [{ name: '', type: 'uint256' }]
-  }
-]
-
-const GET_GIFT_ABI = [
-  {
-    name: 'getGift',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'giftId', type: 'uint256' }],
-    outputs: [{
-      type: 'tuple',
-      components: [
-        { name: 'token', type: 'address' },
-        { name: 'amount', type: 'uint256' },
-        { name: 'giver', type: 'address' },
-        { name: 'claimed', type: 'bool' },
-        { name: 'claimer', type: 'address' },
-        { name: 'timestamp', type: 'uint256' },
-        { name: 'claimedAt', type: 'uint256' }
-      ]
-    }]
   }
 ]
 
@@ -63,56 +41,23 @@ export default function Sidebar() {
     totalCreated = 0
   }
 
-  // Calculate total claimed value in batches
+  // Calculate total claimed value using estimation
+  // TODO: For more accuracy, query GiftClaimed events or batch getGift() calls
   useEffect(() => {
-    async function calculateClaimedValue() {
-      if (!chain?.id || totalCreated === 0) {
+    function calculateClaimedValue() {
+      if (totalCreated === 0) {
         setTotalClaimedUSD(0)
+        setIsCalculating(false)
         return
       }
 
       setIsCalculating(true)
 
       try {
-        const contractAddress = getContractAddress(chain.id)
-        const batchSize = 50 // Query 50 gifts at a time
-        let totalValue = 0
-
-        // Process in batches to avoid overwhelming the RPC
-        for (let i = 0; i < totalCreated; i += batchSize) {
-          const end = Math.min(i + batchSize, totalCreated)
-          const giftIds = Array.from({ length: end - i }, (_, idx) => i + idx)
-
-          // Create contract calls for this batch
-          const contracts = giftIds.map(id => ({
-            address: contractAddress,
-            abi: GET_GIFT_ABI,
-            functionName: 'getGift',
-            args: [BigInt(id)]
-          }))
-
-          // Use fetch instead of useReadContracts for dynamic calls
-          const response = await fetch(chain.rpcUrls.default.http[0], {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              id: 1,
-              method: 'eth_call',
-              params: [{ to: contractAddress, data: '0x...' }, 'latest']
-            })
-          })
-
-          // For now, use a simpler estimation approach
-          // In production, you'd want to properly batch these calls
-          break
-        }
-
-        // Fallback: Use estimated claimed count with average value
-        // Assuming average potato value of 0.001 ETH (~$3)
+        // Use estimation: 70% claimed rate with average value of 0.001 ETH (~$3)
         const estimatedClaimed = Math.floor(totalCreated * 0.7)
         const avgValueInETH = 0.001 // Conservative estimate
-        totalValue = estimatedClaimed * avgValueInETH * ETH_USD_RATE
+        const totalValue = estimatedClaimed * avgValueInETH * ETH_USD_RATE
 
         setTotalClaimedUSD(totalValue)
       } catch (error) {
@@ -124,13 +69,13 @@ export default function Sidebar() {
     }
 
     calculateClaimedValue()
-  }, [chain?.id, totalCreated])
+  }, [totalCreated])
 
   // For claimed count, we'd need to track or estimate - using a simple estimate for now
   const estimatedClaimed = Math.floor(totalCreated * 0.7) // Rough estimate
 
   return (
-    <div className="w-80 bg-dark-card border-l border-gray-800 p-6 overflow-y-auto">
+    <div className="hidden lg:block w-80 bg-dark-card border-l border-gray-800 p-6 overflow-y-auto shrink-0">
       {/* Stats */}
       <div className="mb-8">
         <h3 className="text-xl font-bold text-white mb-4">🔥 Stats</h3>

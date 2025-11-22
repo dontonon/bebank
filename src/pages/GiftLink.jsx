@@ -27,9 +27,9 @@ export default function GiftLink() {
   const randomMessage = shareMessages[Math.floor(Math.random() * shareMessages.length)]
 
   return (
-    <div className="min-h-screen bg-dark flex">
+    <div className="min-h-screen bg-dark flex flex-col lg:flex-row">
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         <Header />
 
         <main className="flex-1 flex items-center justify-center p-4">

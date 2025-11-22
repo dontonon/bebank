@@ -53,3 +53,27 @@ export const getTokenBySymbol = (symbol) => {
 export const isNativeToken = (address) => {
   return address === '0x0000000000000000000000000000000000000000'
 }
+
+// Check if token is a stablecoin
+export const isStablecoin = (token) => {
+  const stablecoins = ['USDC', 'DAI', 'USDT']
+  return stablecoins.includes(token.symbol)
+}
+
+// Get minimum amount for a token (in human-readable form)
+// Stablecoins: true $1 minimum
+// ETH/WETH/cbETH: approximate based on assumed $3000 ETH price
+export const getMinimumAmount = (token) => {
+  if (isStablecoin(token)) {
+    return 1 // 1 USD for stablecoins
+  }
+  return 0.000334 // ~$1 at $3000/ETH (approximate)
+}
+
+// Get minimum amount label for UI display
+export const getMinimumLabel = (token) => {
+  if (isStablecoin(token)) {
+    return `min $1 USD`
+  }
+  return `min ~$1 USD (≈0.000334 ${token.symbol} at $3000/ETH)`
+}

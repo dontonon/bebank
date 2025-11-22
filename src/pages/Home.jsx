@@ -5,7 +5,7 @@ import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import TokenSelector from '../components/TokenSelector'
-import { TOKENS, isNativeToken } from '../config/tokens'
+import { TOKENS, isNativeToken, getMinimumAmount } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
 import { parseUnits } from 'viem'
 import { ERC20_ABI } from '../config/abis'
@@ -91,8 +91,9 @@ export default function Home() {
   }
 
   const handleCreateGift = async () => {
-    if (!amount || parseFloat(amount) < 0.000334) {
-      setCreateError('Amount must be at least $1 USD (≈ 0.000334 ETH)')
+    const minAmount = getMinimumAmount(selectedToken)
+    if (!amount || parseFloat(amount) < minAmount) {
+      setCreateError(`Amount must be at least $1 USD (${minAmount} ${selectedToken.symbol})`)
       return
     }
 
@@ -139,9 +140,9 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-dark flex">
+    <div className="min-h-screen bg-dark flex flex-col lg:flex-row">
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         <Header />
 
         <main className="flex-1 flex items-center justify-center p-4">

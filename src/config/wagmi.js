@@ -4,7 +4,7 @@ import { http } from 'wagmi'
 
 export const config = getDefaultConfig({
   appName: 'Pass It On',
-  projectId: '3fcbfaff90971f8b41972652f6a4d721', // WalletConnect Cloud
+  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '3fcbfaff90971f8b41972652f6a4d721', // WalletConnect Cloud (fallback for dev)
   chains: [base, baseSepolia],
   transports: {
     [base.id]: http(),
@@ -13,10 +13,10 @@ export const config = getDefaultConfig({
   ssr: false,
 })
 
-// Contract addresses (update after deployment)
+// Contract addresses from environment variables
 export const CONTRACTS = {
-  [base.id]: '0x0000000000000000000000000000000000000000', // Production Base
-  [baseSepolia.id]: '0x28e763e348B87DB401bE3FFe44BbDfE152B9f003', // Testnet - DEPLOYED! ✅
+  [base.id]: import.meta.env.VITE_CONTRACT_ADDRESS_BASE || '0x0000000000000000000000000000000000000000', // Production Base
+  [baseSepolia.id]: import.meta.env.VITE_CONTRACT_ADDRESS_BASE_SEPOLIA || '0x28e763e348B87DB401bE3FFe44BbDfE152B9f003', // Testnet - DEPLOYED! ✅
 }
 
 export const getContractAddress = (chainId) => {
