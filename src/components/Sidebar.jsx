@@ -69,10 +69,10 @@ export default function Sidebar() {
         const contractAddress = getContractAddress(chain.id)
         const currentBlock = await publicClient.getBlockNumber()
 
-        // Load ALL claims from contract deployment (block 0) to ensure we catch everything
-        const fromBlock = 0n
+        // Load last 100k blocks (RPC limit) - roughly last 55 hours on Base Sepolia
+        const fromBlock = currentBlock > 100000n ? currentBlock - 100000n : 0n
 
-        console.log('🔍 Loading ALL activity from block', fromBlock.toString(), 'to', currentBlock.toString())
+        console.log('🔍 Loading activity from block', fromBlock.toString(), 'to', currentBlock.toString())
         console.log('📍 Contract address:', contractAddress)
 
         // Fetch GiftClaimed events
@@ -83,7 +83,7 @@ export default function Sidebar() {
           toBlock: 'latest'
         })
 
-        console.log('📊 Found', claimedLogs.length, 'total claim events')
+        console.log('📊 Found', claimedLogs.length, 'claim events')
         console.log('📋 Raw logs:', claimedLogs)
 
         const activities = []
