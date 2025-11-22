@@ -134,17 +134,31 @@ export default function Sidebar() {
     eventName: 'GiftClaimed',
     enabled: !!chain?.id,
     onLogs(logs) {
-      console.log('🔥🔥🔥 REAL-TIME: New GiftClaimed events detected!', logs.length, 'events')
-      console.log('📋 Event logs:', logs)
+      console.log('🔥🔥🔥 REAL-TIME WATCHER FIRED! Events:', logs.length)
+      console.log('📋 Raw event logs:', logs)
+
+      if (logs.length === 0) {
+        console.warn('⚠️ Watcher fired but got 0 logs!')
+        return
+      }
 
       logs.forEach((log, index) => {
         try {
-          console.log(`Processing real-time event ${index}:`, log)
-          const { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived } = log.args
-          console.log('Event args:', { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived })
+          console.log(`\n=== Processing real-time event ${index} ===`)
+          console.log('Full log:', log)
+          console.log('Log args:', log.args)
+
+          const { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived } = log.args || {}
+
+          console.log('Extracted args:', { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived })
+
+          if (!tokenReceived) {
+            console.error('❌ No tokenReceived in args!')
+            return
+          }
 
           const token = getTokenByAddress(tokenReceived)
-          console.log('Token found:', token)
+          console.log('Token lookup result:', token)
 
           if (token) {
             const newActivity = {
@@ -158,20 +172,28 @@ export default function Sidebar() {
               blockNumber: log.blockNumber
             }
             console.log('✅ Adding new real-time activity:', newActivity)
+
             setRecentActivity(prev => {
               const updated = [newActivity, ...prev].slice(0, 15)
-              console.log('📊 Updated activity list (length):', updated.length)
+              console.log('📊 Updated activity count:', updated.length)
+              console.log('📊 Full activity list:', updated)
               return updated
             })
           } else {
             console.warn('⚠️ Token not found for address:', tokenReceived)
           }
         } catch (error) {
-          console.error('❌ Error processing GiftClaimed event:', error, error.stack)
+          console.error('❌ Error processing real-time event:', error)
+          console.error('Error stack:', error.stack)
         }
       })
+    },
+    onError(error) {
+      console.error('❌ Watch contract event error:', error)
     }
   })
+
+  console.log('👀 Event watcher is', chain?.id ? 'ENABLED' : 'DISABLED', 'for chain', chain?.id)
 
   // Safely convert BigInt to Number with extra defensive checks
   let totalCreated = 0
