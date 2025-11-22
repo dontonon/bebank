@@ -93,6 +93,9 @@ export default function Claim() {
   const { address, isConnected, chain } = useAccount()
   const publicClient = usePublicClient()
 
+  // Validate giftId parameter
+  const isValidGiftId = giftId && !isNaN(giftId) && Number(giftId) > 0 && Number.isInteger(Number(giftId))
+
   const [selectedToken, setSelectedToken] = useState(TOKENS[0])
   const [amount, setAmount] = useState('')
   const [isClaiming, setIsClaiming] = useState(false)
@@ -112,8 +115,8 @@ export default function Claim() {
     address: getContractAddress(chain?.id),
     abi: GET_GIFT_ABI,
     functionName: 'getGift',
-    args: giftId ? [BigInt(giftId)] : undefined,
-    enabled: isConnected && !!chain && !!giftId
+    args: isValidGiftId ? [BigInt(giftId)] : undefined,
+    enabled: isConnected && !!chain && isValidGiftId
   })
 
   // Read nextGiftId to know what ID the new potato will have
@@ -542,6 +545,27 @@ export default function Claim() {
 
   return (
     <NetworkGuard>
+      {/* Invalid Gift ID Error */}
+      {!isValidGiftId ? (
+        <div className="min-h-screen bg-dark flex flex-col">
+          <Header />
+          <main className="flex-1 flex items-center justify-center p-4">
+            <div className="text-center max-w-md">
+              <div className="text-6xl mb-4">❌</div>
+              <h2 className="text-3xl font-bold text-white mb-4">Invalid Potato ID</h2>
+              <p className="text-gray-400 mb-6">
+                The potato ID "{giftId}" is not valid. Please check the link and try again.
+              </p>
+              <button
+                onClick={() => navigate('/')}
+                className="bg-gradient-to-r from-toxic to-purple text-dark px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+              >
+                Go Home
+              </button>
+            </div>
+          </main>
+        </div>
+      ) : (
       <div className="min-h-screen bg-dark flex">
         {/* Reveal Animation */}
         {showReveal && revealedGift && (
@@ -799,6 +823,7 @@ export default function Claim() {
             }}
           />
         </>
+      )}
       )}
     </NetworkGuard>
   )

@@ -8,6 +8,9 @@ export default function GiftLink() {
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
 
+  // Validate giftId parameter
+  const isValidGiftId = giftId && !isNaN(giftId) && Number(giftId) > 0 && Number.isInteger(Number(giftId))
+
   const shareUrl = `${window.location.origin}/claim/${giftId}`
 
   const copyToClipboard = () => {
@@ -25,6 +28,30 @@ export default function GiftLink() {
   ]
 
   const randomMessage = shareMessages[Math.floor(Math.random() * shareMessages.length)]
+
+  // Show error if invalid giftId
+  if (!isValidGiftId) {
+    return (
+      <div className="min-h-screen bg-dark flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <div className="text-6xl mb-4">❌</div>
+            <h2 className="text-3xl font-bold text-white mb-4">Invalid Potato ID</h2>
+            <p className="text-gray-400 mb-6">
+              The potato ID "{giftId}" is not valid.
+            </p>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-gradient-to-r from-toxic to-purple text-dark px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+            >
+              Go Home
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-dark flex">

@@ -8,8 +8,11 @@ export default function PotatoLink() {
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
 
-  // Validate giftId
-  if (!giftId || giftId === 'undefined' || giftId === 'null') {
+  // Validate giftId parameter
+  const isValidGiftId = giftId && !isNaN(giftId) && Number(giftId) > 0 && Number.isInteger(Number(giftId))
+
+  // Show error if invalid
+  if (!isValidGiftId) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-red-500/50 text-center">
