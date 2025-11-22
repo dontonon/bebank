@@ -5,6 +5,7 @@ import { getContractAddress } from '../config/wagmi'
 import { getTokenByAddress } from '../config/tokens'
 import { useAccount } from 'wagmi'
 import { formatUnits } from 'viem'
+import { fetchTokenPrices } from '../utils/prices'
 
 const CONTRACT_ABI = [
   {
@@ -54,6 +55,8 @@ export default function Sidebar() {
   const publicClient = usePublicClient()
   const [recentActivity, setRecentActivity] = useState([])
   const [isLoadingActivity, setIsLoadingActivity] = useState(true)
+  const [tokenPrices, setTokenPrices] = useState({})
+  const [totalClaimedUSD, setTotalClaimedUSD] = useState(0)
 
   // Get total potatoes created
   const { data: nextGiftId, isError, isLoading } = useReadContract({
@@ -62,6 +65,28 @@ export default function Sidebar() {
     functionName: 'nextGiftId',
     enabled: !!chain?.id
   })
+
+  // Fetch token prices on mount
+  useEffect(() => {
+    async function loadPrices() {
+      const prices = await fetchTokenPrices()
+      setTokenPrices(prices)
+    }
+    loadPrices()
+  }, [])
+
+  // Calculate total USD value when activity or prices change
+  useEffect(() => {
+    if (Object.keys(tokenPrices).length === 0) return
+
+    let totalUSD = 0
+    recentActivity.forEach(activity => {
+      const amount = parseFloat(activity.amount)
+      const price = tokenPrices[activity.token] || 0
+      totalUSD += amount * price
+    })
+    setTotalClaimedUSD(totalUSD)
+  }, [recentActivity, tokenPrices])
 
   // Load initial recent activity from blockchain by scanning recent potatoes
   useEffect(() => {
@@ -126,8 +151,8 @@ export default function Sidebar() {
               }
             }
 
-            // Stop once we have 15 claimed potatoes
-            if (activities.length >= 15) break
+            // Stop once we have 5 claimed potatoes
+            if (activities.length >= 5) break
           } catch (error) {
             console.error(`❌ Error reading potato ${i}:`, error)
           }
@@ -170,7 +195,7 @@ export default function Sidebar() {
               id: Number(oldGiftId)
             }
 
-            setRecentActivity(prev => [newActivity, ...prev].slice(0, 15))
+            setRecentActivity(prev => [newActivity, ...prev].slice(0, 5))
             console.log('✅ Added real-time claim for potato #' + oldGiftId)
           }
         } catch (error) {
@@ -196,27 +221,6 @@ export default function Sidebar() {
 
   const estimatedClaimed = Math.floor(totalCreated * 0.7)
   const activePotatos = totalCreated - estimatedClaimed
-
-  // Calculate total claimed value in USD (approximate)
-  const calculateClaimedValueUSD = () => {
-    let totalUSD = 0
-    recentActivity.forEach(activity => {
-      const amount = parseFloat(activity.amount)
-      // Simple price estimates (you can update these or use an oracle later)
-      const prices = {
-        'ETH': 3000,
-        'WETH': 3000,
-        'USDC': 1,
-        'DAI': 1,
-        'cbETH': 3000
-      }
-      const price = prices[activity.token] || 0
-      totalUSD += amount * price
-    })
-    return totalUSD
-  }
-
-  const totalClaimedUSD = calculateClaimedValueUSD()
 
   const formatTimeAgo = (timestamp) => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000)
@@ -263,9 +267,9 @@ export default function Sidebar() {
               <div key={activity.id} className="bg-dark/50 rounded-lg p-3 border border-gray-800/50 animate-fade-in">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="text-lg">🔥</span>
+                    <span className="text-lg">🥔</span>
                     <span className="text-sm font-semibold text-toxic">
-                      Claimed
+                      Hot Potato claimed
                     </span>
                   </div>
                   <span className="text-sm font-bold text-green-400">

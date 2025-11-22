@@ -10,6 +10,7 @@ import TokenSelector from '../components/TokenSelector'
 import { TOKENS, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
 import { parseUnits, decodeEventLog } from 'viem'
+import { validateMinimumUSD } from '../utils/prices'
 
 // ABI for createGift function and GiftCreated event
 const CREATE_GIFT_ABI = [
@@ -123,7 +124,7 @@ export default function Home() {
       } else if (writeError.message?.includes('insufficient funds')) {
         errorMsg = 'Insufficient funds for transaction + gas.'
       } else if (writeError.message?.includes('InsufficientValue')) {
-        errorMsg = 'Amount too small. Minimum is 0.0001'
+        errorMsg = 'Amount too small. Minimum is $1 USD equivalent'
       }
 
       setError(errorMsg)
@@ -133,8 +134,15 @@ export default function Home() {
   const handleCreateGift = async () => {
     setError('')
 
-    if (!amount || parseFloat(amount) < 0.0001) {
-      setError('Amount must be at least 0.0001')
+    if (!amount || parseFloat(amount) <= 0) {
+      setError('Please enter a valid amount')
+      return
+    }
+
+    // Validate minimum $1 USD
+    const validation = await validateMinimumUSD(amount, selectedToken.symbol)
+    if (!validation.isValid) {
+      setError(`Amount must be at least $1 USD (≈ ${validation.minimumAmount.toFixed(6)} ${selectedToken.symbol})`)
       return
     }
 

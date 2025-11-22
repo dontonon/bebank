@@ -3,11 +3,31 @@ import { useAccount, useReadContract, useBalance } from 'wagmi'
 import { TOKENS, isNativeToken } from '../config/tokens'
 import { ERC20_ABI } from '../config/abis'
 import { formatUnits } from 'viem'
+import { fetchTokenPrices, calculateUSDValue } from '../utils/prices'
 
 export default function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
   const [isOpen, setIsOpen] = useState(false)
   const [tokensWithBalances, setTokensWithBalances] = useState([])
+  const [usdValue, setUsdValue] = useState(0)
   const { address, isConnected } = useAccount()
+
+  // Fetch prices on mount
+  useEffect(() => {
+    fetchTokenPrices() // Pre-fetch prices
+  }, [])
+
+  // Calculate USD value when amount or token changes
+  useEffect(() => {
+    async function updateUsdValue() {
+      if (amount && !isNaN(amount) && parseFloat(amount) > 0) {
+        const value = await calculateUSDValue(amount, selectedToken.symbol)
+        setUsdValue(value)
+      } else {
+        setUsdValue(0)
+      }
+    }
+    updateUsdValue()
+  }, [amount, selectedToken])
 
   // Get ETH balance
   const { data: ethBalance } = useBalance({
@@ -132,7 +152,7 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
       {/* Amount Input */}
       <div>
         <label className="block text-gray-300 font-semibold mb-2">
-          Amount (min 0.0001 {selectedToken.symbol})
+          Amount (min equivalent to $1)
         </label>
         <div className="relative">
           <input
@@ -149,7 +169,7 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
           </div>
         </div>
         <div className="mt-2 text-sm text-gray-500">
-          ≈ ${amount && !isNaN(amount) ? (parseFloat(amount) * 3000).toFixed(2) : '0.00'} USD
+          ≈ ${usdValue.toFixed(2)} USD
         </div>
       </div>
     </div>
