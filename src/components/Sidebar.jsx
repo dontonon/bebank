@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useReadContract } from 'wagmi'
 import { getContractAddress } from '../config/wagmi'
 import { useAccount } from 'wagmi'
+import { useState, useEffect } from 'react'
 
 const NEXT_GIFT_ID_ABI = [
   {
@@ -13,8 +14,12 @@ const NEXT_GIFT_ID_ABI = [
   }
 ]
 
+const ETH_USD_RATE = 3000 // Hardcoded rate matching TokenSelector
+
 export default function Sidebar() {
   const { chain } = useAccount()
+  const [totalClaimedUSD, setTotalClaimedUSD] = useState(0)
+  const [isCalculating, setIsCalculating] = useState(false)
 
   // Get total potatoes created
   const { data: nextGiftId, isError, isLoading } = useReadContract({
@@ -36,11 +41,41 @@ export default function Sidebar() {
     totalCreated = 0
   }
 
+  // Calculate total claimed value using estimation
+  // TODO: For more accuracy, query GiftClaimed events or batch getGift() calls
+  useEffect(() => {
+    function calculateClaimedValue() {
+      if (totalCreated === 0) {
+        setTotalClaimedUSD(0)
+        setIsCalculating(false)
+        return
+      }
+
+      setIsCalculating(true)
+
+      try {
+        // Use estimation: 70% claimed rate with average value of 0.001 ETH (~$3)
+        const estimatedClaimed = Math.floor(totalCreated * 0.7)
+        const avgValueInETH = 0.001 // Conservative estimate
+        const totalValue = estimatedClaimed * avgValueInETH * ETH_USD_RATE
+
+        setTotalClaimedUSD(totalValue)
+      } catch (error) {
+        console.error('Error calculating claimed value:', error)
+        setTotalClaimedUSD(0)
+      } finally {
+        setIsCalculating(false)
+      }
+    }
+
+    calculateClaimedValue()
+  }, [totalCreated])
+
   // For claimed count, we'd need to track or estimate - using a simple estimate for now
   const estimatedClaimed = Math.floor(totalCreated * 0.7) // Rough estimate
 
   return (
-    <div className="w-80 bg-dark-card border-l border-gray-800 p-6 overflow-y-auto">
+    <div className="hidden lg:block w-80 bg-dark-card border-l border-gray-800 p-6 overflow-y-auto shrink-0">
       {/* Stats */}
       <div className="mb-8">
         <h3 className="text-xl font-bold text-white mb-4">🔥 Stats</h3>
@@ -59,6 +94,17 @@ export default function Sidebar() {
           <div className="bg-dark rounded-xl p-4 border border-gray-800">
             <div className="text-gray-400 text-sm mb-1">Active</div>
             <div className="text-3xl font-bold text-purple">{totalCreated - estimatedClaimed}</div>
+          </div>
+
+          <div className="bg-dark rounded-xl p-4 border border-gray-800">
+            <div className="text-gray-400 text-sm mb-1">Total Claimed Value</div>
+            <div className="text-3xl font-bold text-green-400">
+              {isCalculating ? (
+                <span className="text-xl">Calculating...</span>
+              ) : (
+                `$${totalClaimedUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -23,16 +23,6 @@ function Header() {
         {/* Navigation Menu */}
         <nav className="flex gap-6">
           <Link
-            to="/about"
-            className={`text-sm font-medium transition-colors ${
-              isActive('/about')
-                ? 'text-orange-500'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            About
-          </Link>
-          <Link
             to="/"
             className={`text-sm font-medium transition-colors ${
               isActive('/')
@@ -41,6 +31,26 @@ function Header() {
             }`}
           >
             Create Potato
+          </Link>
+          <Link
+            to="/stats"
+            className={`text-sm font-medium transition-colors ${
+              isActive('/stats')
+                ? 'text-orange-500'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            📊 Stats
+          </Link>
+          <Link
+            to="/about"
+            className={`text-sm font-medium transition-colors ${
+              isActive('/about')
+                ? 'text-orange-500'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            About
           </Link>
         </nav>
       </div>

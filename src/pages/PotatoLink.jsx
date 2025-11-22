@@ -46,9 +46,9 @@ export default function PotatoLink() {
   const randomMessage = shareMessages[Math.floor(Math.random() * shareMessages.length)]
 
   return (
-    <div className="min-h-screen bg-dark flex">
+    <div className="min-h-screen bg-dark flex flex-col lg:flex-row">
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         <Header />
 
         <main className="flex-1 flex items-center justify-center p-4">
@@ -142,10 +142,7 @@ export default function PotatoLink() {
               Create Another Potato
             </button>
             <button
-              onClick={() => {
-                // TODO: Navigate to stats/dashboard
-                alert('Stats page coming soon!')
-              }}
+              onClick={() => navigate('/stats')}
               className="flex-1 bg-dark-card border border-gray-700 text-white py-4 rounded-xl font-bold hover:border-toxic transition-all"
             >
               View Stats

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TOKENS } from '../config/tokens'
+import { TOKENS, getMinimumAmount, getMinimumLabel, isStablecoin } from '../config/tokens'
 
 export default function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -55,16 +55,16 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
       {/* Amount Input */}
       <div>
         <label className="block text-gray-300 font-semibold mb-2">
-          Amount (min 0.0001 {selectedToken.symbol})
+          Amount ({getMinimumLabel(selectedToken)})
         </label>
         <div className="relative">
           <input
             type="number"
             value={amount}
             onChange={(e) => onAmountChange(e.target.value)}
-            placeholder="0.001"
-            step="0.0001"
-            min="0.0001"
+            placeholder={isStablecoin(selectedToken) ? "1.00" : "0.001"}
+            step={isStablecoin(selectedToken) ? "0.01" : "0.0001"}
+            min={getMinimumAmount(selectedToken)}
             className="w-full bg-dark-card border border-gray-700 rounded-xl px-4 py-4 text-white text-2xl font-bold focus:border-toxic focus:outline-none transition-all"
           />
           <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
@@ -72,7 +72,11 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
           </div>
         </div>
         <div className="mt-2 text-sm text-gray-500">
-          ≈ ${amount && !isNaN(amount) ? (parseFloat(amount) * 3000).toFixed(2) : '0.00'} USD
+          {isStablecoin(selectedToken) ? (
+            `≈ $${amount && !isNaN(amount) ? parseFloat(amount).toFixed(2) : '0.00'} USD`
+          ) : (
+            `≈ $${amount && !isNaN(amount) ? (parseFloat(amount) * 3000).toFixed(2) : '0.00'} USD (at $3000/ETH)`
+          )}
         </div>
       </div>
     </div>

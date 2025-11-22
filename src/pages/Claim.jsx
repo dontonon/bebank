@@ -5,7 +5,7 @@ import Header from '../components/Header'
 import TokenSelector from '../components/TokenSelector'
 import RevealAnimation from '../components/RevealAnimation'
 import Sidebar from '../components/Sidebar'
-import { TOKENS, getTokenByAddress, isNativeToken } from '../config/tokens'
+import { TOKENS, getTokenByAddress, isNativeToken, getMinimumAmount } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
 import { parseUnits, formatUnits } from 'viem'
 import { ERC20_ABI } from '../config/abis'
@@ -187,8 +187,9 @@ export default function Claim() {
   }
 
   const handleClaimGift = async () => {
-    if (!amount || parseFloat(amount) < 0.0001) {
-      setClaimError('Amount must be at least 0.0001')
+    const minAmount = getMinimumAmount(selectedToken)
+    if (!amount || parseFloat(amount) < minAmount) {
+      setClaimError(`Amount must be at least $1 USD (${minAmount} ${selectedToken.symbol})`)
       return
     }
 
@@ -324,7 +325,7 @@ export default function Claim() {
   }
 
   return (
-    <div className="min-h-screen bg-dark flex">
+    <div className="min-h-screen bg-dark flex flex-col lg:flex-row">
       {/* Reveal Animation */}
       {showReveal && revealedGift && (
         <RevealAnimation
@@ -335,7 +336,7 @@ export default function Claim() {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         <Header />
 
         <main className="flex-1 flex items-center justify-center p-4">
