@@ -69,10 +69,11 @@ export default function Sidebar() {
         const contractAddress = getContractAddress(chain.id)
         const currentBlock = await publicClient.getBlockNumber()
 
-        // Get logs from last ~5000 blocks (roughly last 2-3 hours on Base)
-        const fromBlock = currentBlock > 5000n ? currentBlock - 5000n : 0n
+        // Get logs from last ~50000 blocks (roughly last day on Base) to ensure we catch claims
+        const fromBlock = currentBlock > 50000n ? currentBlock - 50000n : 0n
 
-        console.log('Loading activity from block', fromBlock.toString(), 'to', currentBlock.toString())
+        console.log('🔍 Loading activity from block', fromBlock.toString(), 'to', currentBlock.toString())
+        console.log('📍 Contract address:', contractAddress)
 
         // Fetch GiftClaimed events
         const claimedLogs = await publicClient.getLogs({
@@ -82,7 +83,7 @@ export default function Sidebar() {
           toBlock: 'latest'
         })
 
-        console.log('Found', claimedLogs.length, 'claim events')
+        console.log('📊 Found', claimedLogs.length, 'claim events in last 50k blocks')
 
         const activities = []
 
@@ -102,19 +103,21 @@ export default function Sidebar() {
                 timestamp: Date.now() - Math.random() * 3600000, // Approximate time
                 blockNumber: log.blockNumber
               })
+            } else {
+              console.warn('⚠️ Unknown token:', tokenReceived)
             }
           } catch (error) {
-            console.error('Error processing claim log:', error)
+            console.error('❌ Error processing claim log:', error)
           }
         })
 
         // Sort by block number (most recent first) and take top 15
         activities.sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber))
         const topActivities = activities.slice(0, 15)
-        console.log('Setting', topActivities.length, 'activities')
+        console.log('✅ Setting', topActivities.length, 'activities')
         setRecentActivity(topActivities)
       } catch (error) {
-        console.error('Error loading recent activity:', error)
+        console.error('❌ Error loading recent activity:', error)
       } finally {
         setIsLoadingActivity(false)
       }
