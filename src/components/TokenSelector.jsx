@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useReadContract, useBalance } from 'wagmi'
 import { TOKENS, isNativeToken } from '../config/tokens'
 import { ERC20_ABI } from '../config/abis'
 import { formatUnits } from 'viem'
 import { fetchTokenPrices, calculateUSDValue } from '../utils/prices'
+import { debounce } from '../utils/debounce'
 
 export default function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -16,18 +17,23 @@ export default function TokenSelector({ selectedToken, onSelect, amount, onAmoun
     fetchTokenPrices() // Pre-fetch prices
   }, [])
 
-  // Calculate USD value when amount or token changes
-  useEffect(() => {
-    async function updateUsdValue() {
-      if (amount && !isNaN(amount) && parseFloat(amount) > 0) {
-        const value = await calculateUSDValue(amount, selectedToken.symbol)
+  // Debounced USD value calculation (500ms delay)
+  const debouncedUpdateUsdValue = useCallback(
+    debounce(async (amt, token) => {
+      if (amt && !isNaN(amt) && parseFloat(amt) > 0) {
+        const value = await calculateUSDValue(amt, token.symbol)
         setUsdValue(value)
       } else {
         setUsdValue(0)
       }
-    }
-    updateUsdValue()
-  }, [amount, selectedToken])
+    }, 500),
+    []
+  )
+
+  // Calculate USD value when amount or token changes (debounced)
+  useEffect(() => {
+    debouncedUpdateUsdValue(amount, selectedToken)
+  }, [amount, selectedToken, debouncedUpdateUsdValue])
 
   // Get ETH balance
   const { data: ethBalance } = useBalance({
