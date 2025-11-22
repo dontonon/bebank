@@ -5,7 +5,6 @@ import { getContractAddress } from '../config/wagmi'
 import { getTokenByAddress } from '../config/tokens'
 import { useAccount } from 'wagmi'
 import { formatUnits } from 'viem'
-import { fetchTokenPrices } from '../utils/prices'
 
 const CONTRACT_ABI = [
   {
@@ -55,8 +54,6 @@ export default function Sidebar() {
   const publicClient = usePublicClient()
   const [recentActivity, setRecentActivity] = useState([])
   const [isLoadingActivity, setIsLoadingActivity] = useState(true)
-  const [tokenPrices, setTokenPrices] = useState({})
-  const [totalClaimedUSD, setTotalClaimedUSD] = useState(0)
 
   // Get total potatoes created
   const { data: nextGiftId, isError, isLoading } = useReadContract({
@@ -65,28 +62,6 @@ export default function Sidebar() {
     functionName: 'nextGiftId',
     enabled: !!chain?.id
   })
-
-  // Fetch token prices on mount
-  useEffect(() => {
-    async function loadPrices() {
-      const prices = await fetchTokenPrices()
-      setTokenPrices(prices)
-    }
-    loadPrices()
-  }, [])
-
-  // Calculate total USD value when activity or prices change
-  useEffect(() => {
-    if (Object.keys(tokenPrices).length === 0) return
-
-    let totalUSD = 0
-    recentActivity.forEach(activity => {
-      const amount = parseFloat(activity.amount)
-      const price = tokenPrices[activity.token] || 0
-      totalUSD += amount * price
-    })
-    setTotalClaimedUSD(totalUSD)
-  }, [recentActivity, tokenPrices])
 
   // Load initial recent activity from blockchain by scanning recent potatoes
   useEffect(() => {
@@ -236,19 +211,9 @@ export default function Sidebar() {
       <div className="mb-8">
         <h3 className="text-xl font-bold text-white mb-4">🔥 Stats</h3>
 
-        <div className="space-y-4">
-          <div className="bg-dark rounded-xl p-4 border border-gray-800">
-            <div className="text-gray-400 text-sm mb-1">Hot Potatos passed on</div>
-            <div className="text-3xl font-bold gradient-text">{totalCreated}</div>
-          </div>
-
-          <div className="bg-dark rounded-xl p-4 border border-gray-800">
-            <div className="text-gray-400 text-sm mb-1">Total Claimed Value</div>
-            <div className="text-3xl font-bold text-green-400">
-              ${totalClaimedUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">From recent activity</div>
-          </div>
+        <div className="bg-dark rounded-xl p-4 border border-gray-800">
+          <div className="text-gray-400 text-sm mb-1">Hot Potatos passed on</div>
+          <div className="text-3xl font-bold gradient-text">{totalCreated}</div>
         </div>
       </div>
 
