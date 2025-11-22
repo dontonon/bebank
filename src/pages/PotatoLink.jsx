@@ -142,10 +142,7 @@ export default function PotatoLink() {
               Create Another Potato
             </button>
             <button
-              onClick={() => {
-                // TODO: Navigate to stats/dashboard
-                alert('Stats page coming soon!')
-              }}
+              onClick={() => navigate('/stats')}
               className="flex-1 bg-dark-card border border-gray-700 text-white py-4 rounded-xl font-bold hover:border-toxic transition-all"
             >
               View Stats
