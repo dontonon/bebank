@@ -69,10 +69,10 @@ export default function Sidebar() {
         const contractAddress = getContractAddress(chain.id)
         const currentBlock = await publicClient.getBlockNumber()
 
-        // Get logs from last ~50000 blocks (roughly last day on Base) to ensure we catch claims
-        const fromBlock = currentBlock > 50000n ? currentBlock - 50000n : 0n
+        // Load ALL claims from contract deployment (block 0) to ensure we catch everything
+        const fromBlock = 0n
 
-        console.log('🔍 Loading activity from block', fromBlock.toString(), 'to', currentBlock.toString())
+        console.log('🔍 Loading ALL activity from block', fromBlock.toString(), 'to', currentBlock.toString())
         console.log('📍 Contract address:', contractAddress)
 
         // Fetch GiftClaimed events
@@ -83,7 +83,8 @@ export default function Sidebar() {
           toBlock: 'latest'
         })
 
-        console.log('📊 Found', claimedLogs.length, 'claim events in last 50k blocks')
+        console.log('📊 Found', claimedLogs.length, 'total claim events')
+        console.log('📋 Raw logs:', claimedLogs)
 
         const activities = []
 
@@ -133,11 +134,18 @@ export default function Sidebar() {
     eventName: 'GiftClaimed',
     enabled: !!chain?.id,
     onLogs(logs) {
-      console.log('🔥 New GiftClaimed events:', logs)
-      logs.forEach(log => {
+      console.log('🔥🔥🔥 REAL-TIME: New GiftClaimed events detected!', logs.length, 'events')
+      console.log('📋 Event logs:', logs)
+
+      logs.forEach((log, index) => {
         try {
+          console.log(`Processing real-time event ${index}:`, log)
           const { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived } = log.args
+          console.log('Event args:', { oldGiftId, newGiftId, claimer, tokenReceived, amountReceived })
+
           const token = getTokenByAddress(tokenReceived)
+          console.log('Token found:', token)
+
           if (token) {
             const newActivity = {
               type: 'claim',
@@ -149,11 +157,17 @@ export default function Sidebar() {
               timestamp: Date.now(),
               blockNumber: log.blockNumber
             }
-            console.log('Adding new claim activity:', newActivity)
-            setRecentActivity(prev => [newActivity, ...prev].slice(0, 15))
+            console.log('✅ Adding new real-time activity:', newActivity)
+            setRecentActivity(prev => {
+              const updated = [newActivity, ...prev].slice(0, 15)
+              console.log('📊 Updated activity list (length):', updated.length)
+              return updated
+            })
+          } else {
+            console.warn('⚠️ Token not found for address:', tokenReceived)
           }
         } catch (error) {
-          console.error('Error processing GiftClaimed event:', error)
+          console.error('❌ Error processing GiftClaimed event:', error, error.stack)
         }
       })
     }
