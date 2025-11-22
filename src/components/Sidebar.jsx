@@ -234,25 +234,18 @@ export default function Sidebar() {
           ) : recentActivity.length > 0 ? (
             recentActivity.map((activity, index) => (
               <div key={index} className="bg-dark/50 rounded-lg p-3 border border-gray-800/50 animate-fade-in">
-                <div className="flex items-start space-x-2">
-                  <span className="text-lg">🔥</span>
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-400 mb-1">
-                      <span className="font-mono">
-                        {activity.address.substring(0, 6)}...{activity.address.substring(38)}
-                      </span>
-                    </div>
-                    <div className="text-sm font-semibold text-toxic">
-                      claimed {parseFloat(activity.amount).toFixed(4)} {activity.token}
-                    </div>
-                    {activity.potatoId && (
-                      <div className="text-xs text-gray-500">
-                        Potato #{activity.potatoId} → #{activity.newPotatoId}
-                      </div>
-                    )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-lg">🔥</span>
+                    <span className="text-sm font-semibold text-toxic">
+                      Claimed
+                    </span>
                   </div>
+                  <span className="text-sm font-bold text-green-400">
+                    {parseFloat(activity.amount).toFixed(4)} {activity.token}
+                  </span>
                 </div>
-                <div className="text-xs text-gray-500 mt-2 ml-7">{formatTimeAgo(activity.timestamp)}</div>
+                <div className="text-xs text-gray-500 mt-2">{formatTimeAgo(activity.timestamp)}</div>
               </div>
             ))
           ) : (
