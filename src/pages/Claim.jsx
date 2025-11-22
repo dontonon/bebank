@@ -824,6 +824,7 @@ export default function Claim() {
           />
         </>
       )}
+      </div>
       )}
     </NetworkGuard>
   )
