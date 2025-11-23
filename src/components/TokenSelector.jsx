@@ -5,12 +5,15 @@ import { ERC20_ABI } from '../config/abis'
 import { formatUnits } from 'viem'
 import { fetchTokenPrices, calculateUSDValue } from '../utils/prices'
 import { debounce } from '../utils/debounce'
+import { getValidTokensForPotato } from '../utils/walletTokens'
 
 function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
   const [isOpen, setIsOpen] = useState(false)
   const [tokensWithBalances, setTokensWithBalances] = useState([])
+  const [walletTokens, setWalletTokens] = useState([])
+  const [isLoadingWalletTokens, setIsLoadingWalletTokens] = useState(false)
   const [usdValue, setUsdValue] = useState(0)
-  const { address, isConnected } = useAccount()
+  const { address, isConnected, chain } = useAccount()
 
   // Fetch prices on mount
   useEffect(() => {
@@ -55,6 +58,30 @@ function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
     }
   })
 
+  // Load wallet tokens using Alchemy when connected
+  useEffect(() => {
+    async function loadWalletTokens() {
+      if (!address || !chain) {
+        setWalletTokens([])
+        return
+      }
+
+      setIsLoadingWalletTokens(true)
+      try {
+        const tokens = await getValidTokensForPotato(address, chain.id, 1)
+        setWalletTokens(tokens)
+        console.log(`Found ${tokens.length} wallet tokens worth >= $1 USD`)
+      } catch (error) {
+        console.error('Failed to load wallet tokens:', error)
+        setWalletTokens([])
+      } finally {
+        setIsLoadingWalletTokens(false)
+      }
+    }
+
+    loadWalletTokens()
+  }, [address, chain])
+
   // Update tokens with balances when data changes
   useEffect(() => {
     if (!isConnected || !address) {
@@ -88,13 +115,35 @@ function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
       })
     }
 
+    // Merge with auto-detected wallet tokens (remove duplicates by address)
+    if (walletTokens.length > 0) {
+      const existingAddresses = new Set(tokensWithBalance.map(t => t.address.toLowerCase()))
+
+      walletTokens.forEach(walletToken => {
+        if (!existingAddresses.has(walletToken.address.toLowerCase())) {
+          // Convert Alchemy format to our token format
+          tokensWithBalance.push({
+            address: walletToken.address,
+            symbol: walletToken.symbol,
+            name: walletToken.name,
+            decimals: walletToken.decimals,
+            logo: walletToken.icon,
+            balance: walletToken.balanceFormatted,
+            rawBalance: BigInt(walletToken.balance),
+            valueUSD: walletToken.valueUSD,
+            isWalletToken: true // Mark as auto-detected
+          })
+        }
+      })
+    }
+
     setTokensWithBalances(tokensWithBalance)
 
     // Auto-select first token with balance if no token selected
     if (tokensWithBalance.length > 0 && !selectedToken) {
       onSelect(tokensWithBalance[0])
     }
-  }, [isConnected, address, ethBalance, tokenBalances])
+  }, [isConnected, address, ethBalance, tokenBalances, walletTokens])
 
   return (
     <div className="space-y-4">
@@ -122,32 +171,90 @@ function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
           {/* Dropdown */}
           {isOpen && (
             <div className="absolute z-10 w-full mt-2 bg-dark-card border border-gray-700 rounded-xl overflow-hidden shadow-2xl max-h-96 overflow-y-auto">
+              {isLoadingWalletTokens && (
+                <div className="px-4 py-3 text-center text-gray-400 border-b border-gray-700">
+                  <div className="text-sm">🔍 Scanning wallet for tokens...</div>
+                </div>
+              )}
+
               {tokensWithBalances.length > 0 ? (
-                tokensWithBalances.map((token) => (
-                  <button
-                    key={token.address}
-                    type="button"
-                    onClick={() => {
-                      onSelect(token)
-                      setIsOpen(false)
-                    }}
-                    className="w-full px-4 py-3 hover:bg-gray-800 transition-colors flex items-center justify-between text-left"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <span className="text-2xl">{token.logo}</span>
-                      <div>
-                        <div className="font-bold text-white">{token.symbol}</div>
-                        <div className="text-sm text-gray-400">{token.name}</div>
+                <>
+                  {/* Popular Tokens Section */}
+                  {tokensWithBalances.filter(t => !t.isWalletToken).length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase bg-gray-800/50">
+                        Popular Tokens
                       </div>
+                      {tokensWithBalances
+                        .filter(t => !t.isWalletToken)
+                        .map((token) => (
+                          <button
+                            key={token.address}
+                            type="button"
+                            onClick={() => {
+                              onSelect(token)
+                              setIsOpen(false)
+                            }}
+                            className="w-full px-4 py-3 hover:bg-gray-800 transition-colors flex items-center justify-between text-left"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <span className="text-2xl">{token.logo}</span>
+                              <div>
+                                <div className="font-bold text-white">{token.symbol}</div>
+                                <div className="text-sm text-gray-400">{token.name}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-semibold text-toxic">
+                                {parseFloat(token.balance).toFixed(4)}
+                              </div>
+                              <div className="text-xs text-gray-500">balance</div>
+                            </div>
+                          </button>
+                        ))}
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold text-toxic">
-                        {parseFloat(token.balance).toFixed(4)}
+                  )}
+
+                  {/* Your Tokens Section */}
+                  {tokensWithBalances.filter(t => t.isWalletToken).length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase bg-gray-800/50 border-t border-gray-700">
+                        Your Tokens
                       </div>
-                      <div className="text-xs text-gray-500">balance</div>
+                      {tokensWithBalances
+                        .filter(t => t.isWalletToken)
+                        .map((token) => (
+                          <button
+                            key={token.address}
+                            type="button"
+                            onClick={() => {
+                              onSelect(token)
+                              setIsOpen(false)
+                            }}
+                            className="w-full px-4 py-3 hover:bg-gray-800 transition-colors flex items-center justify-between text-left"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <span className="text-2xl">{token.logo}</span>
+                              <div>
+                                <div className="font-bold text-white">{token.symbol}</div>
+                                <div className="text-sm text-gray-400">{token.name}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-semibold text-toxic">
+                                {parseFloat(token.balance).toFixed(4)}
+                              </div>
+                              {token.valueUSD && (
+                                <div className="text-xs text-gray-500">
+                                  ≈ ${token.valueUSD.toFixed(2)}
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        ))}
                     </div>
-                  </button>
-                ))
+                  )}
+                </>
               ) : (
                 <div className="px-4 py-6 text-center text-gray-400">
                   <div className="text-3xl mb-2">💰</div>
