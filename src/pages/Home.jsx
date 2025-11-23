@@ -117,8 +117,8 @@ export default function Home() {
           }
         }
 
-        // Validate we got a potato ID
-        if (!potatoId || isNaN(potatoId) || potatoId <= 0) {
+        // Validate we got a potato ID (0 is valid!)
+        if (potatoId === null || potatoId === undefined || isNaN(potatoId) || potatoId < 0) {
           console.error('❌ Invalid potato ID extracted:', potatoId)
           throw new Error('Invalid potato ID')
         }
