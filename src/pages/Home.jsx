@@ -220,7 +220,7 @@ export default function Home() {
           {/* Hero Section */}
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold gradient-text mb-6">
-              Give Blindly. Receive Surprisingly.
+              Give Mystery. Receive Wonder.
             </h2>
 
             {/* How It Works */}
@@ -232,7 +232,7 @@ export default function Home() {
               </div>
               <div className="text-center">
                 <div className="text-3xl mb-2">❓</div>
-                <h4 className="font-bold text-white mb-1 text-sm">2. They Claim Blindly</h4>
+                <h4 className="font-bold text-white mb-1 text-sm">2. They Claim in Mystery</h4>
                 <p className="text-xs text-gray-400">Must give to receive</p>
               </div>
               <div className="text-center">

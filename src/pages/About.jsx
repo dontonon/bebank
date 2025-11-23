@@ -103,10 +103,14 @@ function About() {
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-2">🔒 Smart Contract Security</h3>
                     <p className="text-gray-300">
-                      All potatoes are secured by a smart contract deployed on Base. Your crypto is
-                      locked until someone claims it by passing on their own potato. No one can access
-                      it without fulfilling the requirement.
+                      All potatoes are secured by a smart contract deployed on Base with multiple security features:
                     </p>
+                    <ul className="list-disc list-inside text-gray-300 mt-2 space-y-1 ml-4">
+                      <li>Reentrancy protection prevents double-claims</li>
+                      <li>Secret URLs make potatoes unpredictable and impossible to snipe</li>
+                      <li>Each potato can only be claimed once</li>
+                      <li>Smart contract wallet support for Coinbase Wallet, Safe, etc.</li>
+                    </ul>
                   </div>
 
                   <div>
@@ -120,9 +124,17 @@ function About() {
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-2">💰 Any Amount, Any Token</h3>
                     <p className="text-gray-300">
-                      You can create a potato with any amount of supported tokens. Send $5 USDC,
-                      0.001 ETH, or any value you choose. The recipient must pass on *a* potato
+                      You can create a potato with any amount of supported tokens (ETH, USDC, DAI, WETH, cbETH).
+                      Send $5 USDC, 0.001 ETH, or any value you choose. The recipient must pass on *a* potato
                       (any amount, any token) to claim yours.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-2">💸 Protocol Fee</h3>
+                    <p className="text-gray-300">
+                      A 1% protocol fee is deducted from each potato when claimed. Recipients receive 99%
+                      of the potato value, and 1% goes to the treasury to support development and operations.
                     </p>
                   </div>
 
