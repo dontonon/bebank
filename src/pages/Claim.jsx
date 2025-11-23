@@ -622,28 +622,20 @@ export default function Claim() {
 
         <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
-          {/* CLAIMING BANNER */}
-          <div className="bg-gradient-to-r from-purple/30 to-toxic/30 border-2 border-purple rounded-2xl p-6 mb-8 text-center">
-            <div className="text-6xl mb-3">🎯</div>
-            <h1 className="text-4xl font-black gradient-text mb-2">
-              YOU'RE CLAIMING POTATO #{giftId}!
-            </h1>
-            <p className="text-xl text-white font-semibold mb-1">
-              Someone sent you crypto 🎁
-            </p>
-            <p className="text-gray-300">
-              To claim it, you must pass on your own Hot Potato
-            </p>
-          </div>
-
-          {/* Mystery Section */}
-          <div className="text-center mb-8">
+          {/* CLAIMING BANNER - Simplified Single Box */}
+          <div className="bg-gradient-to-r from-purple/30 to-toxic/30 border-2 border-purple rounded-2xl p-8 mb-8 text-center">
             <div className="text-7xl mb-4 animate-float">🥔</div>
-            <p className="text-lg text-gray-400 mb-2">
-              What's inside? 🤔
+            <h1 className="text-4xl font-black gradient-text mb-3">
+              CLAIM POTATO #{giftId}
+            </h1>
+            <p className="text-xl text-white font-semibold mb-2">
+              Someone sent you crypto! 🎁
             </p>
-            <p className="text-md text-toxic font-semibold">
-              You'll find out AFTER you claim!
+            <p className="text-gray-300 mb-2">
+              Pass on your own Hot Potato to claim it
+            </p>
+            <p className="text-toxic font-bold text-lg">
+              What's inside? You'll find out after! 🤔
             </p>
           </div>
 
