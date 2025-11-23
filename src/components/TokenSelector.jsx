@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, memo } from 'react'
-import { useAccount, useReadContract, useBalance } from 'wagmi'
+import { useAccount, useReadContracts, useBalance } from 'wagmi'
 import { TOKENS, isNativeToken } from '../config/tokens'
 import { ERC20_ABI } from '../config/abis'
 import { formatUnits } from 'viem'
@@ -41,16 +41,19 @@ function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
     enabled: !!address
   })
 
-  // Get balances for all ERC20 tokens
-  const tokenBalanceResults = TOKENS.filter(t => !isNativeToken(t.address)).map(token =>
-    useReadContract({
+  // Get balances for all ERC20 tokens using multicall (batched)
+  const erc20Tokens = TOKENS.filter(t => !isNativeToken(t.address))
+  const { data: tokenBalances } = useReadContracts({
+    contracts: erc20Tokens.map(token => ({
       address: token.address,
       abi: ERC20_ABI,
       functionName: 'balanceOf',
-      args: [address],
+      args: [address]
+    })),
+    query: {
       enabled: !!address
-    })
-  )
+    }
+  })
 
   // Update tokens with balances when data changes
   useEffect(() => {
@@ -71,17 +74,19 @@ function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
       })
     }
 
-    // Add ERC20 tokens with balance
-    TOKENS.filter(t => !isNativeToken(t.address)).forEach((token, index) => {
-      const result = tokenBalanceResults[index]
-      if (result.data && result.data > 0n) {
-        tokensWithBalance.push({
-          ...token,
-          balance: formatUnits(result.data, token.decimals),
-          rawBalance: result.data
-        })
-      }
-    })
+    // Add ERC20 tokens with balance (from batched multicall results)
+    if (tokenBalances) {
+      erc20Tokens.forEach((token, index) => {
+        const result = tokenBalances[index]
+        if (result?.status === 'success' && result.result && result.result > 0n) {
+          tokensWithBalance.push({
+            ...token,
+            balance: formatUnits(result.result, token.decimals),
+            rawBalance: result.result
+          })
+        }
+      })
+    }
 
     setTokensWithBalances(tokensWithBalance)
 
@@ -89,7 +94,7 @@ function TokenSelector({ selectedToken, onSelect, amount, onAmountChange }) {
     if (tokensWithBalance.length > 0 && !selectedToken) {
       onSelect(tokensWithBalance[0])
     }
-  }, [isConnected, address, ethBalance, ...tokenBalanceResults.map(r => r.data)])
+  }, [isConnected, address, ethBalance, tokenBalances])
 
   return (
     <div className="space-y-4">
