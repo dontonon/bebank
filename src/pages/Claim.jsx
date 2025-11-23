@@ -263,16 +263,23 @@ export default function Claim() {
         console.log('Received amount formatted:', receivedAmount)
 
         // Get new potato ID and secret from logs - try multiple approaches
-        console.log('Step 3: Extracting new potato ID and secret from logs')
+        console.log('🔍 Step 3: Extracting new potato ID and secret from claim transaction logs')
         let newGiftId = null
         let newSecret = null
+        const contractAddress = getContractAddress(chain.id)
+
         try {
           if (receipt.logs && receipt.logs.length > 0) {
-            console.log('Total logs:', receipt.logs.length)
+            console.log('📦 Total logs in receipt:', receipt.logs.length)
 
             // Look for GiftCreated event to get newSecret
             for (let i = receipt.logs.length - 1; i >= 0; i--) {
               const log = receipt.logs[i]
+
+              // Skip logs not from our contract
+              if (log.address.toLowerCase() !== contractAddress.toLowerCase()) {
+                continue
+              }
 
               // Try to decode as GiftCreated event
               try {
@@ -282,17 +289,27 @@ export default function Claim() {
                   topics: log.topics,
                 })
 
+                console.log(`📋 Decoded event ${i}:`, decodedEvent.eventName)
+
                 if (decodedEvent.eventName === 'GiftCreated') {
                   newGiftId = Number(decodedEvent.args.giftId)
                   newSecret = decodedEvent.args.secret
-                  console.log('✅ Extracted from GiftCreated event - ID:', newGiftId, 'Secret:', newSecret)
+                  console.log('✅ Found GiftCreated event!')
+                  console.log('   New potato ID:', newGiftId)
+                  console.log('   New secret:', newSecret)
+
+                  if (!newSecret || newSecret === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+                    console.error('❌ NEW SECRET IS MISSING OR ZERO!')
+                    console.error('   This means the contract did not emit a proper secret for your new potato!')
+                  }
                   break
                 }
               } catch (e) {
-                // Not a GiftCreated event or decode failed, try manual extraction
+                // Not a GiftCreated event or decode failed
+                console.log(`  Log ${i}: Not GiftCreated or decode failed`)
               }
 
-              // Fallback: Manual extraction from topics
+              // Fallback: Manual extraction from topics if decode failed
               if (!newGiftId && log.topics && log.topics.length > 1) {
                 try {
                   // Try topics[2] first (newGiftId from GiftClaimed event)
@@ -300,7 +317,8 @@ export default function Claim() {
                     const potentialNewId = BigInt(log.topics[2])
                     if (potentialNewId > 0n && potentialNewId < 1000000n) {
                       newGiftId = Number(potentialNewId)
-                      console.log('✅ Extracted NEW potato ID from topics[2]:', newGiftId)
+                      console.warn('⚠️ Extracted NEW potato ID from topics[2]:', newGiftId)
+                      console.warn('⚠️ Secret extraction failed - URL will not have secret!')
                     }
                   }
 
@@ -309,27 +327,29 @@ export default function Claim() {
                     const potentialId = BigInt(log.topics[1])
                     if (potentialId > 0n && potentialId < 1000000n) {
                       newGiftId = Number(potentialId)
-                      console.log('✅ Extracted potato ID from topics[1]:', newGiftId)
+                      console.warn('⚠️ Extracted potato ID from topics[1]:', newGiftId)
+                      console.warn('⚠️ Secret extraction failed - URL will not have secret!')
                     }
                   }
                 } catch (e) {
-                  console.log(`Failed to parse log ${i}:`, e)
+                  console.log(`  Failed to parse log ${i}:`, e)
                 }
               }
             }
           }
         } catch (logError) {
-          console.warn('Could not parse log for potato ID:', logError)
+          console.error('❌ Error parsing logs for potato ID and secret:', logError)
         }
 
         // Fallback: use expected new potato ID (stored before claiming)
         if (!newGiftId || isNaN(newGiftId) || newGiftId <= 0) {
           newGiftId = expectedNewPotatoId
-          console.log('⚠️ Could not extract from logs, using expected potato ID:', newGiftId)
-          console.log('   (This is nextGiftId from before the claim transaction)')
+          console.warn('⚠️ Could not extract from logs, using expected potato ID:', newGiftId)
+          console.warn('   (This is nextGiftId from before the claim transaction)')
         }
 
-        console.log('✅ Final potato ID:', newGiftId)
+        console.log('🎊 Final new potato ID:', newGiftId)
+        console.log('🔐 Final new secret:', newSecret || 'NONE (URL will not work!)')
 
         // Show success modal with claim details
         const modalData = {
