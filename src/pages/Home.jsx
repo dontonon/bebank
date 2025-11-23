@@ -13,7 +13,7 @@ import { getContractAddress } from '../config/wagmi'
 import { parseUnits, decodeEventLog } from 'viem'
 import { validateMinimumUSD } from '../utils/prices'
 
-// ABI for createGift function and GiftCreated event
+// ABI for createGift function and GiftCreated event (V2 with secrets)
 const CREATE_GIFT_ABI = [
   {
     name: 'createGift',
@@ -23,7 +23,10 @@ const CREATE_GIFT_ABI = [
       { name: 'token', type: 'address' },
       { name: 'amount', type: 'uint256' }
     ],
-    outputs: [{ name: 'potatoId', type: 'uint256' }]
+    outputs: [
+      { name: 'giftId', type: 'uint256' },
+      { name: 'secret', type: 'bytes32' }
+    ]
   },
   {
     name: 'GiftCreated',
@@ -34,7 +37,8 @@ const CREATE_GIFT_ABI = [
       { indexed: true, name: 'giver', type: 'address' },
       { indexed: false, name: 'token', type: 'address' },
       { indexed: false, name: 'amount', type: 'uint256' },
-      { indexed: false, name: 'timestamp', type: 'uint256' }
+      { indexed: false, name: 'timestamp', type: 'uint256' },
+      { indexed: false, name: 'secret', type: 'bytes32' }
     ]
   }
 ]
@@ -51,12 +55,13 @@ export default function Home() {
   const { writeContract, data: hash, isPending, isError: isWriteError, error: writeError } = useWriteContract()
   const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({ hash })
 
-  // When transaction confirms, extract potato ID and show success modal
+  // When transaction confirms, extract potato ID and secret and show success modal
   useEffect(() => {
     if (isSuccess && receipt) {
       try {
         const contractAddress = getContractAddress(chain.id)
         let potatoId = null
+        let secret = null
 
         // Try proper event decoding first
         try {
@@ -71,6 +76,7 @@ export default function Home() {
               topics: giftCreatedLog.topics,
             })
             potatoId = decodedEvent.args.giftId.toString()
+            secret = decodedEvent.args.secret // Extract secret from event!
           }
         } catch (decodeError) {
           console.log('Event decode failed, trying fallback extraction:', decodeError)
@@ -101,15 +107,16 @@ export default function Home() {
           console.log('Using fallback potato ID:', potatoId)
         }
 
-        // Show success modal
+        // Show success modal with secret
         setSuccessData({
           potatoId,
+          secret, // Include secret for share URL!
           amount,
           token: selectedToken.symbol
         })
         setShowSuccess(true)
       } catch (error) {
-        console.error('Error extracting potato ID:', error)
+        console.error('Error extracting potato ID and secret:', error)
         setError('Potato created but failed to get ID. Check your wallet.')
       }
     }

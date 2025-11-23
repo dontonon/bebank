@@ -16,13 +16,19 @@ export default function SuccessModal({ type, data, onClose }) {
   }
 
   const copyLink = () => {
-    const link = `${window.location.origin}/claim/${data.potatoId}`
+    // V2: Include secret in URL
+    const link = type === 'create'
+      ? `${window.location.origin}/claim/${data.potatoId}/${data.secret || ''}`
+      : `${window.location.origin}/claim/${data.newPotatoId}/${data.newSecret || ''}`
     navigator.clipboard.writeText(link)
     alert('Link copied! 🔗')
   }
 
   const shareTwitter = () => {
-    const link = `${window.location.origin}/claim/${data.potatoId}`
+    // V2: Include secret in URL
+    const link = type === 'create'
+      ? `${window.location.origin}/claim/${data.potatoId}/${data.secret || ''}`
+      : `${window.location.origin}/claim/${data.newPotatoId}/${data.newSecret || ''}`
     const text = type === 'create'
       ? `I just created a Hot Potato 🥔 with ${data.amount} ${data.token}! Can you claim it?`
       : `I just claimed a Hot Potato and received ${data.received} ${data.token}! 🔥`
@@ -57,7 +63,7 @@ export default function SuccessModal({ type, data, onClose }) {
           <div className="bg-gradient-to-r from-toxic/20 to-purple/20 rounded-xl p-4 mb-6 border border-toxic/50">
             <div className="text-sm text-gray-300 mb-2 font-semibold">📋 Share This Link:</div>
             <div className="bg-dark rounded-lg p-3 mb-3 font-mono text-xs text-gray-400 break-all">
-              {window.location.origin}/claim/{data.potatoId}
+              {window.location.origin}/claim/{data.potatoId}/{data.secret || '...'}
             </div>
             <div className="text-xs text-gray-400">
               💡 They won't see what's inside until they pass on their own potato!
@@ -157,7 +163,7 @@ export default function SuccessModal({ type, data, onClose }) {
           <div className="bg-gradient-to-r from-purple/30 to-toxic/30 rounded-xl p-5 mb-6 border-2 border-purple">
             <div className="text-base text-white mb-2 font-black text-center">🔗 NOW SHARE YOUR POTATO!</div>
             <div className="bg-dark rounded-lg p-3 mb-3 font-mono text-xs text-white break-all">
-              {window.location.origin}/claim/{data.newPotatoId}
+              {window.location.origin}/claim/{data.newPotatoId}/{data.newSecret || '...'}
             </div>
             <div className="text-xs text-center text-gray-300 font-semibold">
               ⬆️ This is YOUR new potato #{data.newPotatoId} - share it to continue the chain!
@@ -168,7 +174,7 @@ export default function SuccessModal({ type, data, onClose }) {
           <div className="space-y-3">
             <button
               onClick={() => {
-                const link = `${window.location.origin}/claim/${data.newPotatoId}`
+                const link = `${window.location.origin}/claim/${data.newPotatoId}/${data.newSecret || ''}`
                 navigator.clipboard.writeText(link)
                 alert('New potato link copied! Share it to pass on your ' + data.gave + ' ' + data.gaveToken + ' 🔗')
               }}
@@ -179,7 +185,7 @@ export default function SuccessModal({ type, data, onClose }) {
 
             <button
               onClick={() => {
-                const link = `${window.location.origin}/claim/${data.newPotatoId}`
+                const link = `${window.location.origin}/claim/${data.newPotatoId}/${data.newSecret || ''}`
                 const text = `I just claimed a Hot Potato and got ${data.received} ${data.token}! 🔥 Can you claim mine?`
                 const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`
                 window.open(twitterUrl, '_blank')

@@ -4,7 +4,7 @@ import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
 
 export default function PotatoLink() {
-  const { giftId } = useParams()
+  const { giftId, secret } = useParams()
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
 
@@ -30,7 +30,8 @@ export default function PotatoLink() {
     )
   }
 
-  const shareUrl = `${window.location.origin}/claim/${giftId}`
+  // Include secret in share URL (V2 format: /claim/[id]/[secret])
+  const shareUrl = `${window.location.origin}/claim/${giftId}/${secret || ''}`
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shareUrl)
