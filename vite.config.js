@@ -7,6 +7,8 @@ export default defineConfig(({ mode }) => ({
     global: 'globalThis',
   },
   esbuild: {
-    drop: mode === 'production' ? ['console', 'debugger'] : [],
+    // TEMPORARILY DISABLED: Keep console.logs for debugging secret extraction issue
+    // drop: mode === 'production' ? ['console', 'debugger'] : [],
+    drop: [], // Keep all console.logs even in production
   },
 }))
