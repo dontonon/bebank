@@ -15,6 +15,7 @@ import { parseUnits, formatUnits, decodeEventLog, getCode } from 'viem'
 import { usePublicClient } from 'wagmi'
 import { ERC20_ABI } from '../config/abis'
 
+// V2 ABI with secrets
 const CLAIM_GIFT_ABI = [
   {
     name: 'claimGift',
@@ -22,6 +23,7 @@ const CLAIM_GIFT_ABI = [
     stateMutability: 'payable',
     inputs: [
       { name: 'giftIdToClaim', type: 'uint256' },
+      { name: 'secret', type: 'bytes32' },
       { name: 'newGiftToken', type: 'address' },
       { name: 'newGiftAmount', type: 'uint256' }
     ],
@@ -36,7 +38,8 @@ const CLAIM_GIFT_ABI = [
       { indexed: true, name: 'giver', type: 'address' },
       { indexed: false, name: 'token', type: 'address' },
       { indexed: false, name: 'amount', type: 'uint256' },
-      { indexed: false, name: 'timestamp', type: 'uint256' }
+      { indexed: false, name: 'timestamp', type: 'uint256' },
+      { indexed: false, name: 'secret', type: 'bytes32' }
     ]
   },
   {
@@ -48,7 +51,9 @@ const CLAIM_GIFT_ABI = [
       { indexed: true, name: 'newGiftId', type: 'uint256' },
       { indexed: true, name: 'claimer', type: 'address' },
       { indexed: false, name: 'tokenReceived', type: 'address' },
-      { indexed: false, name: 'amountReceived', type: 'uint256' }
+      { indexed: false, name: 'amountReceived', type: 'uint256' },
+      { indexed: false, name: 'tokenGiven', type: 'address' },
+      { indexed: false, name: 'amountGiven', type: 'uint256' }
     ]
   }
 ]
@@ -68,7 +73,8 @@ const GET_GIFT_ABI = [
         { name: 'claimed', type: 'bool' },
         { name: 'claimer', type: 'address' },
         { name: 'timestamp', type: 'uint256' },
-        { name: 'claimedAt', type: 'uint256' }
+        { name: 'claimedAt', type: 'uint256' },
+        { name: 'secretHash', type: 'bytes32' }
       ]
     }]
   },
@@ -89,7 +95,7 @@ const GET_GIFT_ABI = [
 ]
 
 export default function Claim() {
-  const { giftId } = useParams()
+  const { giftId, secret } = useParams() // V2: Extract secret from URL
   const navigate = useNavigate()
   const { address, isConnected, chain } = useAccount()
   const publicClient = usePublicClient()
@@ -256,42 +262,54 @@ export default function Claim() {
         const receivedAmount = formatUnits((giftAmountBigInt * 99n) / 100n, token.decimals)
         console.log('Received amount formatted:', receivedAmount)
 
-        // Get new potato ID from logs - try multiple approaches
-        console.log('Step 3: Extracting new potato ID from logs')
+        // Get new potato ID and secret from logs - try multiple approaches
+        console.log('Step 3: Extracting new potato ID and secret from logs')
         let newGiftId = null
+        let newSecret = null
         try {
           if (receipt.logs && receipt.logs.length > 0) {
             console.log('Total logs:', receipt.logs.length)
 
-            // Look for GiftClaimed event (has newGiftId in topics[2]) or GiftCreated event (has giftId in topics[1])
+            // Look for GiftCreated event to get newSecret
             for (let i = receipt.logs.length - 1; i >= 0; i--) {
               const log = receipt.logs[i]
-              console.log(`Log ${i}:`, log)
 
-              if (log.topics && log.topics.length > 1) {
+              // Try to decode as GiftCreated event
+              try {
+                const decodedEvent = decodeEventLog({
+                  abi: CLAIM_GIFT_ABI,
+                  data: log.data,
+                  topics: log.topics,
+                })
+
+                if (decodedEvent.eventName === 'GiftCreated') {
+                  newGiftId = Number(decodedEvent.args.giftId)
+                  newSecret = decodedEvent.args.secret
+                  console.log('✅ Extracted from GiftCreated event - ID:', newGiftId, 'Secret:', newSecret)
+                  break
+                }
+              } catch (e) {
+                // Not a GiftCreated event or decode failed, try manual extraction
+              }
+
+              // Fallback: Manual extraction from topics
+              if (!newGiftId && log.topics && log.topics.length > 1) {
                 try {
-                  // GiftClaimed event structure: topics[0] = event signature, topics[1] = oldGiftId, topics[2] = newGiftId, topics[3] = claimer
-                  // GiftCreated event structure: topics[0] = event signature, topics[1] = giftId, topics[2] = giver
-
                   // Try topics[2] first (newGiftId from GiftClaimed event)
                   if (log.topics.length > 2) {
                     const potentialNewId = BigInt(log.topics[2])
-                    console.log(`Topics[2] as BigInt: ${potentialNewId}`)
                     if (potentialNewId > 0n && potentialNewId < 1000000n) {
                       newGiftId = Number(potentialNewId)
-                      console.log('✅ Extracted NEW potato ID from GiftClaimed topics[2]:', newGiftId)
-                      break
+                      console.log('✅ Extracted NEW potato ID from topics[2]:', newGiftId)
                     }
                   }
 
                   // Fallback: Try topics[1] (giftId from GiftCreated event)
-                  const potentialId = BigInt(log.topics[1])
-                  console.log(`Topics[1] as BigInt: ${potentialId}`)
-                  if (potentialId > 0n && potentialId < 1000000n) {
-                    // Only use this if we haven't found a better match from topics[2]
-                    if (!newGiftId) {
+                  if (!newGiftId) {
+                    const potentialId = BigInt(log.topics[1])
+                    if (potentialId > 0n && potentialId < 1000000n) {
                       newGiftId = Number(potentialId)
-                      console.log('✅ Extracted potato ID from GiftCreated topics[1]:', newGiftId)
+                      console.log('✅ Extracted potato ID from topics[1]:', newGiftId)
                     }
                   }
                 } catch (e) {
@@ -319,7 +337,8 @@ export default function Claim() {
           token: token.symbol,
           gave: amount,
           gaveToken: selectedToken.symbol,
-          newPotatoId: newGiftId
+          newPotatoId: newGiftId,
+          newSecret: newSecret // V2: Include new secret for share URL!
         }
 
         console.log('========== ABOUT TO SHOW SUCCESS MODAL ==========')
@@ -411,7 +430,7 @@ export default function Claim() {
         address: contractAddress,
         abi: CLAIM_GIFT_ABI,
         functionName: 'claimGift',
-        args: [BigInt(giftId), selectedToken.address, amountInWei],
+        args: [BigInt(giftId), secret || '0x0000000000000000000000000000000000000000000000000000000000000000', selectedToken.address, amountInWei], // V2: Include secret
       }
 
       // If native ETH, add value

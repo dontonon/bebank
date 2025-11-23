@@ -40,9 +40,13 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/admin" element={<Admin />} />
+                {/* V2 routes with secrets */}
+                <Route path="/claim/:giftId/:secret" element={<Claim />} />
+                <Route path="/potato/:giftId/:secret" element={<PotatoLink />} />
+                <Route path="/gift/:giftId/:secret" element={<PotatoLink />} />
+                {/* Legacy routes without secrets (backwards compatibility for old links) */}
                 <Route path="/claim/:giftId" element={<Claim />} />
                 <Route path="/potato/:giftId" element={<PotatoLink />} />
-                {/* Legacy route for backwards compatibility */}
                 <Route path="/gift/:giftId" element={<PotatoLink />} />
               </Routes>
             </Router>
