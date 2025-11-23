@@ -5,6 +5,7 @@ import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
 import NetworkGuard from '../components/NetworkGuard'
 import SuccessModal from '../components/SuccessModal'
+import TransactionProgress from '../components/TransactionProgress'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import TokenSelector from '../components/TokenSelector'
 import { TOKENS, isNativeToken } from '../config/tokens'
@@ -237,6 +238,13 @@ export default function Home() {
                 onSelect={setSelectedToken}
                 amount={amount}
                 onAmountChange={setAmount}
+              />
+
+              {/* Transaction Progress */}
+              <TransactionProgress
+                isPending={isPending}
+                isConfirming={isConfirming}
+                isSuccess={isSuccess}
               />
 
               {/* Error Message */}

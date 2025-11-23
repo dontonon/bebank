@@ -7,6 +7,7 @@ import NetworkGuard from '../components/NetworkGuard'
 import TokenSelector from '../components/TokenSelector'
 import RevealAnimation from '../components/RevealAnimation'
 import SuccessModal from '../components/SuccessModal'
+import TransactionProgress from '../components/TransactionProgress'
 import Sidebar from '../components/Sidebar'
 import { TOKENS, getTokenByAddress, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
@@ -723,6 +724,13 @@ export default function Claim() {
                 onSelect={setSelectedToken}
                 amount={amount}
                 onAmountChange={setAmount}
+              />
+
+              {/* Transaction Progress */}
+              <TransactionProgress
+                isPending={isClaiming && !isConfirming}
+                isConfirming={isConfirming}
+                isSuccess={isSuccess}
               />
 
               {/* Error Message */}
