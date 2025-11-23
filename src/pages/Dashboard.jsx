@@ -22,7 +22,8 @@ const GET_GIFT_ABI = [
         { name: 'claimed', type: 'bool' },
         { name: 'claimer', type: 'address' },
         { name: 'timestamp', type: 'uint256' },
-        { name: 'claimedAt', type: 'uint256' }
+        { name: 'claimedAt', type: 'uint256' },
+        { name: 'secretHash', type: 'bytes32' } // V2: Added secretHash field!
       ]
     }]
   },
