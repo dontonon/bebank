@@ -63,60 +63,79 @@ export default function Home() {
         let potatoId = null
         let secret = null
 
-        // Try proper event decoding first
-        try {
-          const giftCreatedLog = receipt.logs.find(log =>
-            log.address.toLowerCase() === contractAddress.toLowerCase()
-          )
+        console.log('🔍 Processing transaction receipt...')
+        console.log('📦 Receipt logs count:', receipt.logs?.length)
 
-          if (giftCreatedLog) {
-            const decodedEvent = decodeEventLog({
-              abi: CREATE_GIFT_ABI,
-              data: giftCreatedLog.data,
-              topics: giftCreatedLog.topics,
-            })
-            potatoId = decodedEvent.args.giftId.toString()
-            secret = decodedEvent.args.secret // Extract secret from event!
+        // Find the GiftCreated event log from our contract
+        const giftCreatedLog = receipt.logs?.find(log =>
+          log.address.toLowerCase() === contractAddress.toLowerCase()
+        )
+
+        if (!giftCreatedLog) {
+          console.error('❌ No GiftCreated event found in receipt!')
+          console.log('Available logs:', receipt.logs)
+          throw new Error('GiftCreated event not found')
+        }
+
+        console.log('✅ Found GiftCreated log:', giftCreatedLog)
+
+        // Decode the event to extract giftId and secret
+        try {
+          const decodedEvent = decodeEventLog({
+            abi: CREATE_GIFT_ABI,
+            data: giftCreatedLog.data,
+            topics: giftCreatedLog.topics,
+          })
+
+          console.log('✅ Decoded event:', decodedEvent)
+          console.log('📍 Event args:', decodedEvent.args)
+
+          potatoId = decodedEvent.args.giftId.toString()
+          secret = decodedEvent.args.secret
+
+          console.log('🎉 Extracted potatoId:', potatoId)
+          console.log('🔐 Extracted secret:', secret)
+
+          if (!secret || secret === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+            console.error('❌ SECRET IS MISSING OR ZERO!')
+            console.error('This means the contract did not emit a proper secret!')
           }
         } catch (decodeError) {
-          console.log('Event decode failed, trying fallback extraction:', decodeError)
-        }
+          console.error('❌ Event decode failed:', decodeError)
+          console.error('Log data:', giftCreatedLog.data)
+          console.error('Log topics:', giftCreatedLog.topics)
 
-        // Fallback: Try extracting from topics
-        if (!potatoId && receipt.logs && receipt.logs.length > 0) {
-          for (let i = receipt.logs.length - 1; i >= 0; i--) {
-            const log = receipt.logs[i]
-            if (log.topics && log.topics.length > 1) {
-              try {
-                const potentialId = BigInt(log.topics[1])
-                if (potentialId > 0n && potentialId < 1000000n) {
-                  potatoId = Number(potentialId)
-                  console.log('Extracted potato ID from topics[1]:', potatoId)
-                  break
-                }
-              } catch (e) {
-                // Try next log
-              }
-            }
+          // Fallback: Extract potatoId from topics (it's indexed at position 1)
+          try {
+            const potentialId = BigInt(giftCreatedLog.topics[1])
+            potatoId = Number(potentialId)
+            console.warn('⚠️ Using fallback extraction - potatoId:', potatoId)
+            console.warn('⚠️ Secret extraction failed - URL will not have secret!')
+          } catch (fallbackError) {
+            console.error('❌ Fallback extraction also failed:', fallbackError)
+            throw new Error('Could not extract potato ID from event')
           }
         }
 
-        // Final fallback
+        // Validate we got a potato ID
         if (!potatoId || isNaN(potatoId) || potatoId <= 0) {
-          potatoId = 1
-          console.log('Using fallback potato ID:', potatoId)
+          console.error('❌ Invalid potato ID extracted:', potatoId)
+          throw new Error('Invalid potato ID')
         }
 
         // Show success modal with secret
-        setSuccessData({
+        const modalData = {
           potatoId,
-          secret, // Include secret for share URL!
+          secret, // CRITICAL: Include secret for share URL!
           amount,
           token: selectedToken.symbol
-        })
+        }
+
+        console.log('🎊 Setting success data:', modalData)
+        setSuccessData(modalData)
         setShowSuccess(true)
       } catch (error) {
-        console.error('Error extracting potato ID and secret:', error)
+        console.error('❌ Error extracting potato ID and secret:', error)
         setError('Potato created but failed to get ID. Check your wallet.')
       }
     }
