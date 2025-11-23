@@ -30,8 +30,8 @@ export default function SuccessModal({ type, data, onClose }) {
       ? `${window.location.origin}/claim/${data.potatoId}/${data.secret || ''}`
       : `${window.location.origin}/claim/${data.newPotatoId}/${data.newSecret || ''}`
     const text = type === 'create'
-      ? `I just created a Hot Potato 🥔 with ${data.amount} ${data.token}! Can you claim it?`
-      : `I just claimed a Hot Potato and received ${data.received} ${data.token}! 🔥`
+      ? `I just created a Mystery Hot Potato 🥔🎁 Can you claim it?`
+      : `I just claimed a Hot Potato and received ${data.received} ${data.token}! 🔥 Can you claim mine?`
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`
     window.open(twitterUrl, '_blank')
   }
