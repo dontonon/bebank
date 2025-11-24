@@ -11,7 +11,7 @@ function Header() {
 
   return (
     <header className="border-b border-gray-800 bg-dark-card">
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="px-6 py-6">
         <div className="flex justify-between items-center mb-4">
           <Link to="/" className="text-3xl font-bold gradient-text hover:opacity-80 transition-opacity cursor-pointer">
             HOT POTATO 🥔

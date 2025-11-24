@@ -55,6 +55,9 @@ function Sidebar() {
   const publicClient = usePublicClient()
   const [recentActivity, setRecentActivity] = useState([])
   const [isLoadingActivity, setIsLoadingActivity] = useState(true)
+  const [feedback, setFeedback] = useState('')
+  const [isSendingFeedback, setIsSendingFeedback] = useState(false)
+  const [feedbackStatus, setFeedbackStatus] = useState(null) // 'success' or 'error'
 
   // Get total potatoes created
   const { data: nextGiftId, isError, isLoading } = useReadContract({
@@ -223,6 +226,47 @@ function Sidebar() {
     return `${Math.floor(seconds / 86400)}d ago`
   }
 
+  const handleSendFeedback = async () => {
+    if (!feedback.trim()) return
+
+    setIsSendingFeedback(true)
+    setFeedbackStatus(null)
+
+    try {
+      // Using Web3Forms - free email service
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          access_key: import.meta.env.VITE_WEB3FORMS_KEY,
+          subject: 'Hot Potato Feedback',
+          from_name: 'Hot Potato User',
+          message: feedback
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setFeedbackStatus('success')
+        setFeedback('')
+        setTimeout(() => setFeedbackStatus(null), 3000)
+      } else {
+        setFeedbackStatus('error')
+        setTimeout(() => setFeedbackStatus(null), 3000)
+      }
+    } catch (error) {
+      console.error('Error sending feedback:', error)
+      setFeedbackStatus('error')
+      setTimeout(() => setFeedbackStatus(null), 3000)
+    } finally {
+      setIsSendingFeedback(false)
+    }
+  }
+
   return (
     <div className="w-80 bg-dark-card border-l border-gray-800 p-6 overflow-y-auto">
       {/* Stats */}
@@ -280,6 +324,38 @@ function Sidebar() {
           <div>🔗 Share the link (they can't see what's inside!)</div>
           <div>🔥 They must pass on a potato to claim yours</div>
           <div>✨ Chain continues forever!</div>
+        </div>
+      </div>
+
+      {/* Feedback Box */}
+      <div className="mt-8 pt-8 border-t border-gray-800">
+        <div className="bg-gradient-to-br from-purple/10 to-toxic/10 rounded-xl p-4 border border-purple/30">
+          <div className="text-sm text-gray-300 mb-3 font-medium">💭 Got thoughts?</div>
+          <textarea
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder="Tell us what you think..."
+            className="w-full bg-dark border border-gray-700 rounded-lg p-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-toxic/50 resize-none transition-colors"
+            rows={3}
+            disabled={isSendingFeedback}
+          />
+          <button
+            onClick={handleSendFeedback}
+            disabled={!feedback.trim() || isSendingFeedback}
+            className="w-full mt-3 bg-gradient-to-r from-toxic to-purple text-dark py-2.5 rounded-lg font-bold text-sm hover:shadow-lg hover:shadow-toxic/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSendingFeedback ? '✨ Sending...' : '🚀 Drop Your Feedback'}
+          </button>
+          {feedbackStatus === 'success' && (
+            <div className="mt-2 text-xs text-green-400 text-center animate-fade-in">
+              ✅ Thanks! Feedback received!
+            </div>
+          )}
+          {feedbackStatus === 'error' && (
+            <div className="mt-2 text-xs text-red-400 text-center animate-fade-in">
+              ❌ Oops! Try again later
+            </div>
+          )}
         </div>
       </div>
     </div>
