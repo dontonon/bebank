@@ -278,7 +278,8 @@ function Sidebar() {
   }
 
   return (
-    <div className="w-80 bg-dark-card border-l border-gray-800 p-6 overflow-y-auto self-start mt-[140px]">{/* Stats */}
+    <div className="w-80 bg-dark-card border-l border-gray-800 p-6 overflow-y-auto sticky top-[140px] self-start max-h-[calc(100vh-140px)]">
+      {/* Stats */}
       <div className="mb-8">
         <h3 className="text-xl font-bold text-white mb-4">🔥 Stats</h3>
 
