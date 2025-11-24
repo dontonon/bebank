@@ -626,7 +626,7 @@ export default function Claim() {
           <div className="bg-gradient-to-r from-purple/30 to-toxic/30 border-2 border-purple rounded-2xl p-8 mb-8 text-center">
             <div className="text-7xl mb-4 animate-float">🥔</div>
             <h1 className="text-4xl font-black gradient-text mb-3">
-              CLAIM POTATO #{giftId}
+              Claim a Hot Potato
             </h1>
             <p className="text-xl text-white font-semibold mb-2">
               Someone sent you crypto! 🎁
@@ -795,9 +795,9 @@ export default function Claim() {
                 {isClaiming || isConfirming ? (
                   <span>⏳ CLAIMING... PLEASE WAIT</span>
                 ) : needsApproval() && !isNativeToken(selectedToken.address) ? (
-                  <span>2️⃣ CLAIM POTATO #{giftId} NOW! 🎯</span>
+                  <span>2️⃣ Claim Hot Potato Now 🥔</span>
                 ) : (
-                  <span>🎯 CLAIM POTATO #{giftId} NOW!</span>
+                  <span>🥔 Claim Hot Potato Now</span>
                 )}
               </button>
 
