@@ -229,6 +229,14 @@ function Sidebar() {
   const handleSendFeedback = async () => {
     if (!feedback.trim()) return
 
+    // Check if API key is configured
+    if (!import.meta.env.VITE_WEB3FORMS_KEY) {
+      console.error('Web3Forms API key not configured')
+      setFeedbackStatus('error')
+      setTimeout(() => setFeedbackStatus(null), 3000)
+      return
+    }
+
     setIsSendingFeedback(true)
     setFeedbackStatus(null)
 
@@ -249,12 +257,14 @@ function Sidebar() {
       })
 
       const data = await response.json()
+      console.log('Web3Forms response:', data)
 
       if (data.success) {
         setFeedbackStatus('success')
         setFeedback('')
         setTimeout(() => setFeedbackStatus(null), 3000)
       } else {
+        console.error('Web3Forms API error:', data.message || 'Unknown error')
         setFeedbackStatus('error')
         setTimeout(() => setFeedbackStatus(null), 3000)
       }
