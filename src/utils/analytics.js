@@ -1,0 +1,79 @@
+/**
+ * Analytics utility for tracking user events
+ * Uses Plausible Analytics for privacy-focused tracking
+ */
+
+/**
+ * Track a custom event with Plausible
+ * @param {string} eventName - Name of the event
+ * @param {object} props - Optional properties to track with the event
+ */
+export function trackEvent(eventName, props = {}) {
+  // Check if Plausible is loaded
+  if (typeof window !== 'undefined' && window.plausible) {
+    try {
+      window.plausible(eventName, { props })
+    } catch (error) {
+      console.error('Analytics tracking error:', error)
+    }
+  }
+}
+
+/**
+ * Track potato creation
+ */
+export function trackPotatoCreated(tokenSymbol, amount) {
+  trackEvent('Potato Created', {
+    token: tokenSymbol,
+    amount: parseFloat(amount).toFixed(4)
+  })
+}
+
+/**
+ * Track potato claim
+ */
+export function trackPotatoClaimed(tokenReceived, amountReceived, tokenGiven, amountGiven) {
+  trackEvent('Potato Claimed', {
+    tokenReceived,
+    amountReceived: parseFloat(amountReceived).toFixed(4),
+    tokenGiven,
+    amountGiven: parseFloat(amountGiven).toFixed(4)
+  })
+}
+
+/**
+ * Track wallet connection
+ */
+export function trackWalletConnected(walletType) {
+  trackEvent('Wallet Connected', {
+    walletType: walletType || 'unknown'
+  })
+}
+
+/**
+ * Track share button clicks
+ */
+export function trackShare(method, potatoId) {
+  trackEvent('Share Button Clicked', {
+    method, // 'copy' or 'twitter'
+    potatoId: potatoId?.toString()
+  })
+}
+
+/**
+ * Track feedback submission
+ */
+export function trackFeedbackSubmitted() {
+  trackEvent('Feedback Submitted')
+}
+
+/**
+ * Track page views (handled automatically by Plausible)
+ */
+export function trackPageView(path) {
+  // Plausible tracks page views automatically
+  // This is here for manual tracking if needed
+  if (typeof window !== 'undefined' && window.plausible) {
+    window.plausible('pageview', { u: window.location.origin + path })
+  }
+}
