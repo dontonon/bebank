@@ -38,7 +38,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.walletconnect.com https://*.walletconnect.org wss://*.walletconnect.com wss://*.walletconnect.org https://api.coingecko.com https://api.web3forms.com https://plausible.io https://sepolia.base.org https://base-sepolia.g.alchemy.com https://base-sepolia.blockpi.network https://*.base.org; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.walletconnect.com https://*.walletconnect.org wss://*.walletconnect.com wss://*.walletconnect.org https://api.coingecko.com https://api.web3forms.com https://plausible.io https://www.google-analytics.com https://analytics.google.com https://sepolia.base.org https://base-sepolia.g.alchemy.com https://base-sepolia.blockpi.network https://*.base.org; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
         }
       ]
     }

@@ -68,12 +68,30 @@ export function trackFeedbackSubmitted() {
 }
 
 /**
- * Track page views (handled automatically by Plausible)
+ * Track page views (handled automatically by Plausible and GA)
  */
 export function trackPageView(path) {
   // Plausible tracks page views automatically
-  // This is here for manual tracking if needed
   if (typeof window !== 'undefined' && window.plausible) {
     window.plausible('pageview', { u: window.location.origin + path })
+  }
+
+  // Google Analytics tracks page views automatically
+  // This is here for manual tracking if needed
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'page_view', {
+      page_path: path
+    })
+  }
+}
+
+/**
+ * Send event to Google Analytics
+ * @param {string} eventName - Name of the event
+ * @param {object} params - Event parameters
+ */
+export function trackGoogleEvent(eventName, params = {}) {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', eventName, params)
   }
 }
