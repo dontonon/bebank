@@ -5,6 +5,7 @@ import { getContractAddress } from '../config/wagmi'
 import { getTokenByAddress } from '../config/tokens'
 import { useAccount } from 'wagmi'
 import { formatUnits } from 'viem'
+import { trackFeedbackSubmitted } from '../utils/analytics'
 
 const CONTRACT_ABI = [
   {
@@ -263,6 +264,9 @@ function Sidebar() {
         setFeedbackStatus('success')
         setFeedback('')
         setTimeout(() => setFeedbackStatus(null), 3000)
+
+        // Track feedback submission
+        trackFeedbackSubmitted()
       } else {
         console.error('Web3Forms API error:', data.message || 'Unknown error')
         setFeedbackStatus('error')

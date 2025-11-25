@@ -12,6 +12,7 @@ import { TOKENS, isNativeToken } from '../config/tokens'
 import { getContractAddress } from '../config/wagmi'
 import { parseUnits, decodeEventLog } from 'viem'
 import { validateMinimumUSD } from '../utils/prices'
+import { trackPotatoCreated } from '../utils/analytics'
 
 // ABI for createGift function and GiftCreated event (V2 with secrets)
 const CREATE_GIFT_ABI = [
@@ -134,6 +135,9 @@ export default function Home() {
         console.log('🎊 Setting success data:', modalData)
         setSuccessData(modalData)
         setShowSuccess(true)
+
+        // Track potato creation
+        trackPotatoCreated(selectedToken.symbol, amount)
       } catch (error) {
         console.error('❌ Error extracting potato ID and secret:', error)
         setError('Potato created but failed to get ID. Check your wallet.')

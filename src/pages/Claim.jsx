@@ -14,6 +14,7 @@ import { getContractAddress } from '../config/wagmi'
 import { parseUnits, formatUnits, decodeEventLog, getCode } from 'viem'
 import { usePublicClient } from 'wagmi'
 import { ERC20_ABI } from '../config/abis'
+import { trackPotatoClaimed } from '../utils/analytics'
 
 // V2 ABI with secrets
 const CLAIM_GIFT_ABI = [
@@ -378,6 +379,9 @@ export default function Claim() {
         setIsClaiming(false)
         setClaimingGiftData(null) // Clear stored data after using it
         setExpectedNewPotatoId(null) // Clear expected ID
+
+        // Track potato claim
+        trackPotatoClaimed(modalData.token, modalData.received, modalData.gaveToken, modalData.gave)
       } catch (error) {
         console.error('❌ Error processing claim result:', error)
         console.error('Error stack:', error.stack)

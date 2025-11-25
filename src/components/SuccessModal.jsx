@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { trackShare } from '../utils/analytics'
 
 export default function SuccessModal({ type, data, onClose }) {
   const navigate = useNavigate()
@@ -22,6 +23,10 @@ export default function SuccessModal({ type, data, onClose }) {
       : `${window.location.origin}/claim/${data.newPotatoId}/${data.newSecret || ''}`
     navigator.clipboard.writeText(link)
     alert('Link copied! 🔗')
+
+    // Track share
+    const potatoId = type === 'create' ? data.potatoId : data.newPotatoId
+    trackShare('copy', potatoId)
   }
 
   const shareTwitter = () => {
@@ -34,6 +39,10 @@ export default function SuccessModal({ type, data, onClose }) {
       : `I just claimed a Hot Potato and received ${data.received} ${data.token}! 🔥 Can you claim mine?`
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`
     window.open(twitterUrl, '_blank')
+
+    // Track share
+    const potatoId = type === 'create' ? data.potatoId : data.newPotatoId
+    trackShare('twitter', potatoId)
   }
 
   if (type === 'create') {
