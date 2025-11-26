@@ -627,7 +627,7 @@ export default function Claim() {
         <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
           {/* CLAIMING BANNER - Simplified Single Box */}
-          <div className="bg-gradient-to-r from-purple/30 to-toxic/30 border-2 border-purple rounded-2xl p-8 mb-8 text-center">
+          <div className="glass-card bg-gradient-to-r from-purple/30 to-toxic/30 border-2 border-purple rounded-2xl p-8 mb-8 text-center glow-purple-strong">
             <div className="text-7xl mb-4 animate-float">🥔</div>
             <h1 className="text-4xl font-black gradient-text mb-3">
               Claim a Hot Potato
@@ -638,14 +638,14 @@ export default function Claim() {
             <p className="text-gray-300 mb-2">
               Pass on your own Hot Potato to claim it
             </p>
-            <p className="text-toxic font-bold text-lg">
+            <p className="text-toxic font-bold text-lg animate-glow-pulse">
               What's inside? You'll find out after! 🤔
             </p>
           </div>
 
           {/* Claim Form */}
           {!isConnected ? (
-            <div className="bg-dark-card rounded-2xl p-12 text-center border border-gray-800">
+            <div className="glass-card rounded-2xl p-12 text-center">
               <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Claim This Potato</h3>
               <p className="text-gray-500 mb-6">Connect your wallet to see what you'll receive</p>
               <div className="flex justify-center">
@@ -653,7 +653,7 @@ export default function Claim() {
               </div>
             </div>
           ) : (
-            <div className="bg-dark-card rounded-2xl p-8 border-2 border-toxic/50 space-y-6">
+            <div className="glass-card rounded-2xl p-8 border-2 border-toxic/50 space-y-6 glow-toxic-strong">
               {/* Clear Instructions */}
               <div className="bg-gradient-to-r from-purple/20 to-toxic/20 rounded-xl p-5 border border-purple/30">
                 <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">

@@ -249,7 +249,7 @@ export default function Home() {
 
           {/* Create Gift Form */}
           {!isConnected ? (
-            <div className="bg-dark-card rounded-2xl p-12 text-center border border-gray-800">
+            <div className="glass-card rounded-2xl p-12 text-center">
               <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect Your Wallet</h3>
               <p className="text-gray-500 mb-6">Connect to start your first potato chain</p>
               <div className="flex justify-center">
@@ -257,7 +257,7 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">
+            <div className="glass-card rounded-2xl p-8 space-y-6 glow-toxic-strong">
               <div>
                 <h3 className="text-2xl font-bold text-white mb-2">Create Hot Potato</h3>
                 <p className="text-gray-400">Choose what to pass on (they won't see it until they give)</p>

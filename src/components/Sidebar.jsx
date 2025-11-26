@@ -282,14 +282,14 @@ function Sidebar() {
   }
 
   return (
-    <div className="w-80 bg-dark-card border-l border-gray-800 p-6 overflow-y-auto sticky top-[140px] self-start max-h-[calc(100vh-140px)]">
+    <div className="w-80 glass border-l border-gray-800/50 p-6 overflow-y-auto sticky top-[140px] self-start max-h-[calc(100vh-140px)]">
       {/* Stats */}
       <div className="mb-8">
         <h3 className="text-xl font-bold text-white mb-4">🔥 Stats</h3>
 
-        <div className="bg-dark rounded-xl p-4 border border-gray-800">
+        <div className="glass-card rounded-xl p-4 border border-toxic/30 glow-toxic">
           <div className="text-gray-400 text-sm mb-1">Hot Potatos passed on</div>
-          <div className="text-3xl font-bold gradient-text">{totalCreated}</div>
+          <div className="text-3xl font-bold gradient-text animate-glow-pulse">{totalCreated}</div>
         </div>
       </div>
 
@@ -305,10 +305,10 @@ function Sidebar() {
             </div>
           ) : recentActivity.length > 0 ? (
             recentActivity.map((activity) => (
-              <div key={activity.id} className="bg-dark/50 rounded-lg p-3 border border-gray-800/50 animate-fade-in">
+              <div key={activity.id} className="glass-card rounded-lg p-3 border border-purple/30 animate-fade-in hover:border-toxic/50 transition-all">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="text-lg">🥔</span>
+                    <span className="text-lg animate-float">🥔</span>
                     <span className="text-sm font-semibold text-toxic">
                       Hot Potato claimed
                     </span>
