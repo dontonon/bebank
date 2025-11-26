@@ -48,7 +48,10 @@ export default function Stats() {
     tokenStats: {},
     totalValueLocked: '0',
     avgPotatoValue: '0',
-    claimsToday: 0
+    claimsToday: 0,
+    fastestClaim: null,
+    chainVelocity: 0,
+    claimsLastHour: 0
   })
   const [isLoading, setIsLoading] = useState(true)
 
@@ -99,8 +102,12 @@ export default function Stats() {
         let totalPotatoesValue = 0
         let potatoCount = 0
         let claimsToday = 0
+        let fastestClaim = null
+        let claimsLastHour = 0
 
-        const today = Date.now() / 1000 - 86400 // Last 24 hours
+        const now = Date.now() / 1000
+        const today = now - 86400 // Last 24 hours
+        const lastHour = now - 3600 // Last hour
 
         potatoes.forEach(potato => {
           const token = getTokenByAddress(potato[0])
@@ -127,6 +134,24 @@ export default function Stats() {
             // Claims today
             if (claimedAt && claimedAt > today) {
               claimsToday++
+            }
+
+            // Claims last hour
+            if (claimedAt && claimedAt > lastHour) {
+              claimsLastHour++
+            }
+
+            // Fastest claim (time between creation and claim)
+            if (claimedAt) {
+              const claimSpeed = claimedAt - timestamp // seconds between creation and claim
+              if (!fastestClaim || claimSpeed < fastestClaim.speed) {
+                fastestClaim = {
+                  id: potato.id,
+                  speed: claimSpeed,
+                  token: token.symbol,
+                  amount: parseFloat(formatUnits(amount, token.decimals))
+                }
+              }
             }
           } else {
             active++
@@ -170,6 +195,9 @@ export default function Stats() {
           potatoCount++
         })
 
+        // Calculate chain velocity (claims per day)
+        const chainVelocity = claimed > 0 ? (claimsToday / 1).toFixed(1) : '0.0' // simplified: today's claims as daily rate
+
         setStats({
           totalCreated: totalPotatoes,
           totalClaimed: claimed,
@@ -180,7 +208,10 @@ export default function Stats() {
           tokenStats: tokenCounts,
           totalValueLocked: totalValue.toFixed(4),
           avgPotatoValue: (totalPotatoesValue / potatoCount).toFixed(4),
-          claimsToday
+          claimsToday,
+          fastestClaim,
+          chainVelocity,
+          claimsLastHour
         })
         setIsLoading(false)
       } catch (error) {
@@ -198,6 +229,13 @@ export default function Stats() {
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
     return `${Math.floor(seconds / 86400)}d ago`
+  }
+
+  const formatDuration = (seconds) => {
+    if (seconds < 60) return `${seconds}s`
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
+    return `${Math.floor(seconds / 86400)}d ${Math.floor((seconds % 86400) / 3600)}h`
   }
 
   const getMostPopularToken = () => {
@@ -330,6 +368,96 @@ export default function Stats() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+              {/* NEW: Fun Creative Stats Row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Fastest Claim */}
+                <div className="glass-card rounded-xl p-6 border border-yellow-400/40 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 glow-pulse">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-4xl animate-bounce">⚡</span>
+                    <div>
+                      <div className="text-gray-400 text-sm">Fastest Claim</div>
+                      <div className="text-xs text-gray-600">Lightning speed</div>
+                    </div>
+                  </div>
+                  {stats.fastestClaim ? (
+                    <>
+                      <div className="text-3xl font-black text-yellow-400 mb-2">
+                        {formatDuration(stats.fastestClaim.speed)}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        Potato #{stats.fastestClaim.id} • {stats.fastestClaim.amount.toFixed(4)} {stats.fastestClaim.token}
+                      </div>
+                      <div className="mt-3 text-xs text-yellow-500/70">
+                        ⚡ Claimed in record time!
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-gray-500 text-sm">No claims yet</div>
+                  )}
+                </div>
+
+                {/* Chain Velocity */}
+                <div className="glass-card rounded-xl p-6 border border-cyan-400/40 bg-gradient-to-br from-cyan-500/10 to-blue-500/10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-4xl">🚀</span>
+                    <div>
+                      <div className="text-gray-400 text-sm">Chain Velocity</div>
+                      <div className="text-xs text-gray-600">Claims per day</div>
+                    </div>
+                  </div>
+                  <div className="text-3xl font-black text-cyan-400 mb-3">
+                    {stats.chainVelocity}
+                  </div>
+                  {/* Velocity Meter */}
+                  <div className="relative h-3 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className="absolute h-full bg-gradient-to-r from-cyan-500 to-blue-500 animate-pulse"
+                      style={{
+                        width: `${Math.min(100, (parseFloat(stats.chainVelocity) / 50) * 100)}%`,
+                        transition: 'width 0.5s ease-in-out'
+                      }}
+                    />
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500">
+                    {stats.chainVelocity > 10 ? '🔥 Hot!' : stats.chainVelocity > 5 ? '📈 Growing' : '🌱 Starting'}
+                  </div>
+                </div>
+
+                {/* Claims Last Hour */}
+                <div className="glass-card rounded-xl p-6 border border-green-400/40 bg-gradient-to-br from-green-500/10 to-emerald-500/10 animate-glow-pulse">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-4xl animate-pulse">⏰</span>
+                    <div>
+                      <div className="text-gray-400 text-sm">Claims Last Hour</div>
+                      <div className="text-xs text-gray-600">Real-time activity</div>
+                    </div>
+                  </div>
+                  <div className="text-3xl font-black text-green-400 mb-2">
+                    {stats.claimsLastHour}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-2 h-8 rounded-full transition-all ${
+                            i < stats.claimsLastHour
+                              ? 'bg-green-500'
+                              : 'bg-gray-800'
+                          }`}
+                          style={{
+                            animation: i < stats.claimsLastHour ? 'pulse 1s ease-in-out infinite' : 'none',
+                            animationDelay: `${i * 0.2}s`
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {stats.claimsLastHour > 0 ? '🟢 Live' : '⚪ Quiet'}
+                    </div>
                   </div>
                 </div>
               </div>
