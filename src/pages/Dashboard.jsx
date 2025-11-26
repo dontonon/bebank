@@ -233,11 +233,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-dark flex">
-      <div className="flex-1 flex flex-col">
-        <Header />
+    <div className="min-h-screen bg-dark flex flex-col">
+      <Header />
 
-        <main className="flex-1 p-8">
+      <main className="flex-1 p-8">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-4xl font-bold gradient-text mb-2">My Potatoes 🥔</h1>
             <p className="text-gray-400 mb-8">Track all the Hot Potatoes you've created and claimed</p>
@@ -404,10 +403,10 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-        </main>
-      </div>
+      </main>
 
-      <Sidebar />
+      {/* Bottom Bar */}
+      <Sidebar isBottomBar={true} />
     </div>
   )
 }

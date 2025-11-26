@@ -4,11 +4,10 @@ import Sidebar from '../components/Sidebar';
 
 function About() {
   return (
-    <div className="min-h-screen bg-dark">
+    <div className="min-h-screen bg-dark flex flex-col">
       <Header />
 
-      <div className="flex">
-        <main className="flex-1 px-4 py-8 pb-20">
+      <main className="flex-1 px-4 py-8 pb-20">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl font-bold gradient-text mb-8">About Hot Potato 🥔</h1>
 
@@ -190,10 +189,10 @@ function About() {
               </section>
             </div>
           </div>
-        </main>
+      </main>
 
-        <Sidebar />
-      </div>
+      {/* Bottom Bar */}
+      <Sidebar isBottomBar={true} />
     </div>
   );
 }

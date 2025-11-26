@@ -74,11 +74,10 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-dark flex">
-      <div className="flex-1 flex flex-col">
-        <Header />
+    <div className="min-h-screen bg-dark flex flex-col">
+      <Header />
 
-        <main className="flex-1 flex items-center justify-center p-4">
+      <main className="flex-1 flex items-center justify-center p-4">
           <div className="max-w-2xl w-full">
             <div className="text-center mb-8">
               <h2 className="text-4xl font-bold gradient-text mb-4">
@@ -203,10 +202,10 @@ export default function Admin() {
               </div>
             )}
           </div>
-        </main>
-      </div>
+      </main>
 
-      <Sidebar />
+      {/* Bottom Bar */}
+      <Sidebar isBottomBar={true} />
     </div>
   )
 }

@@ -50,12 +50,10 @@ export default function PotatoLink() {
   const randomMessage = shareMessages[Math.floor(Math.random() * shareMessages.length)]
 
   return (
-    <div className="min-h-screen bg-dark flex">
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        <Header />
+    <div className="min-h-screen bg-dark flex flex-col">
+      <Header />
 
-        <main className="flex-1 flex items-center justify-center p-4">
+      <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
           {/* Success Message */}
           <div className="text-center mb-12">
@@ -164,10 +162,9 @@ export default function PotatoLink() {
           </div>
         </div>
       </main>
-      </div>
 
-      {/* Sidebar */}
-      <Sidebar />
+      {/* Bottom Bar */}
+      <Sidebar isBottomBar={true} />
     </div>
   )
 }
