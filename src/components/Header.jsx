@@ -11,7 +11,7 @@ function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-800/50 glass backdrop-blur-xl">
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      <div className="w-full px-6 py-6">
         <div className="flex justify-between items-center mb-4">
           <Link to="/" className="text-3xl font-bold gradient-text hover:opacity-80 transition-opacity cursor-pointer">
             HOT POTATO 🥔
