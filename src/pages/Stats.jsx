@@ -225,35 +225,26 @@ export default function Stats() {
           ) : (
             <div className="space-y-8">
               {/* Top Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* 1. Total Created */}
-                <div className="glass-card rounded-xl p-6 border border-toxic/30 glow-toxic">
-                  <div className="text-gray-400 text-sm mb-2">🎯 Total Created</div>
-                  <div className="text-4xl font-black gradient-text">{stats.totalCreated}</div>
-                  <div className="text-xs text-gray-500 mt-2">All-time potatoes</div>
-                </div>
-
-                {/* 2. Total Claimed */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Total Claimed */}
                 <div className="glass-card rounded-xl p-6 border border-purple/30 glow-purple">
                   <div className="text-gray-400 text-sm mb-2">✨ Total Claimed</div>
                   <div className="text-4xl font-black text-purple">{stats.totalClaimed}</div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    {stats.totalCreated > 0 ? ((stats.totalClaimed / stats.totalCreated) * 100).toFixed(1) : 0}% claim rate
-                  </div>
+                  <div className="text-xs text-gray-500 mt-2">All-time claims</div>
                 </div>
 
-                {/* 3. Active Potatoes */}
-                <div className="glass-card rounded-xl p-6 border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-yellow-500/10">
-                  <div className="text-gray-400 text-sm mb-2">🔥 Active Now</div>
-                  <div className="text-4xl font-black text-orange-500">{stats.activePotatoes}</div>
-                  <div className="text-xs text-gray-500 mt-2">Waiting to be claimed</div>
-                </div>
-
-                {/* 4. Claims Today */}
+                {/* Claims Today */}
                 <div className="glass-card rounded-xl p-6 border border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/10">
                   <div className="text-gray-400 text-sm mb-2">📈 Last 24h</div>
                   <div className="text-4xl font-black text-green-500">{stats.claimsToday}</div>
                   <div className="text-xs text-gray-500 mt-2">Claims today</div>
+                </div>
+
+                {/* Active Potatoes */}
+                <div className="glass-card rounded-xl p-6 border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-yellow-500/10">
+                  <div className="text-gray-400 text-sm mb-2">🔥 Active Now</div>
+                  <div className="text-4xl font-black text-orange-500">{stats.activePotatoes}</div>
+                  <div className="text-xs text-gray-500 mt-2">Waiting to be claimed</div>
                 </div>
               </div>
 
@@ -315,49 +306,8 @@ export default function Stats() {
                 </div>
               </div>
 
-              {/* Latest Activity Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* 8. Latest Potato */}
-                <div className="glass-card rounded-xl p-6 border border-cyan-500/30">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-3xl">⚡</span>
-                    <div>
-                      <div className="text-lg font-bold text-white">Latest Potato</div>
-                      <div className="text-xs text-gray-500">Most recently created</div>
-                    </div>
-                  </div>
-                  {stats.latestPotato ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Potato #</span>
-                        <span className="text-white font-semibold">{stats.latestPotato.id}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Amount</span>
-                        <span className="text-cyan-400 font-bold">
-                          {stats.latestPotato.amount} {stats.latestPotato.token}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Status</span>
-                        <span className={`font-semibold ${stats.latestPotato.claimed ? 'text-green-400' : 'text-orange-400'}`}>
-                          {stats.latestPotato.claimed ? '✓ Claimed' : '⏳ Active'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Created</span>
-                        <span className="text-gray-500 text-sm">
-                          {formatTimeAgo(stats.latestPotato.timestamp)}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-gray-500">No potatoes yet</div>
-                  )}
-                </div>
-
-                {/* 9. Token Distribution */}
-                <div className="glass-card rounded-xl p-6 border border-indigo-500/30">
+              {/* Token Distribution */}
+              <div className="glass-card rounded-xl p-6 border border-indigo-500/30">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="text-3xl">💎</span>
                     <div>
@@ -428,43 +378,6 @@ export default function Stats() {
                       <div className="text-sm">No claims yet</div>
                     </div>
                   )}
-                </div>
-              </div>
-
-              {/* Additional Fun Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* 11. Success Rate Card */}
-                <div className="glass-card rounded-xl p-6 border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-teal-500/5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-4xl">🎯</span>
-                    <div>
-                      <div className="text-lg font-bold text-white">Chain Success</div>
-                      <div className="text-xs text-gray-500">Claim completion rate</div>
-                    </div>
-                  </div>
-                  <div className="text-5xl font-black text-emerald-400 mb-2">
-                    {stats.totalCreated > 0 ? ((stats.totalClaimed / stats.totalCreated) * 100).toFixed(1) : 0}%
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {stats.totalClaimed} out of {stats.totalCreated} potatoes claimed
-                  </div>
-                </div>
-
-                {/* 12. Total Value Locked */}
-                <div className="glass-card rounded-xl p-6 border border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-4xl">💰</span>
-                    <div>
-                      <div className="text-lg font-bold text-white">Value in Motion</div>
-                      <div className="text-xs text-gray-500">Active potatoes TVL</div>
-                    </div>
-                  </div>
-                  <div className="text-5xl font-black text-amber-400 mb-2">
-                    {stats.totalValueLocked}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    Mixed tokens ({stats.activePotatoes} active)
-                  </div>
                 </div>
               </div>
 
