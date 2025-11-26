@@ -34,6 +34,16 @@ function Header() {
             Create
           </Link>
           <Link
+            to="/stats"
+            className={`text-sm font-medium transition-colors ${
+              isActive('/stats')
+                ? 'text-orange-500'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Hot Potatos
+          </Link>
+          <Link
             to="/dashboard"
             className={`text-sm font-medium transition-colors ${
               isActive('/dashboard')
