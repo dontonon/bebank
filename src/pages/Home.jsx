@@ -214,13 +214,12 @@ export default function Home() {
 
   return (
     <NetworkGuard>
-      <div className="min-h-screen bg-dark flex">
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          <Header />
+      <div className="min-h-screen bg-dark flex flex-col">
+        <Header />
 
+        {/* Main Content */}
         <main className="flex-1 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full">
+          <div className="max-w-2xl w-full">
           {/* Hero Section */}
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold gradient-text mb-6">
@@ -314,12 +313,11 @@ export default function Home() {
               </div>
             </div>
           )}
-        </div>
-      </main>
-      </div>
+          </div>
+        </main>
 
-        {/* Sidebar */}
-        <Sidebar />
+        {/* Bottom Bar (formerly Sidebar) */}
+        <Sidebar isBottomBar={true} />
       </div>
 
       {/* Success Modal */}

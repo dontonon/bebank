@@ -51,7 +51,7 @@ const EVENT_ABIS = [
   }
 ]
 
-function Sidebar() {
+function Sidebar({ isBottomBar = false }) {
   const { chain } = useAccount()
   const publicClient = usePublicClient()
   const [recentActivity, setRecentActivity] = useState([])
@@ -281,6 +281,81 @@ function Sidebar() {
     }
   }
 
+  // Bottom bar horizontal layout
+  if (isBottomBar) {
+    return (
+      <div className="glass border-t border-gray-800/50 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Stats Section */}
+            <div className="glass-card rounded-xl p-4 border border-toxic/30">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🔥</span>
+                <div>
+                  <div className="text-gray-400 text-xs">Hot Potatos passed on</div>
+                  <div className="text-2xl font-bold gradient-text">{totalCreated}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Activity Feed */}
+            <div className="glass-card rounded-xl p-4 border border-purple/30">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-bold text-white">⚡ Live Activity</span>
+              </div>
+              <div className="overflow-x-auto">
+                {isLoadingActivity ? (
+                  <div className="text-center text-gray-500 py-2">
+                    <span className="text-2xl animate-spin inline-block">🥔</span>
+                  </div>
+                ) : recentActivity.length > 0 ? (
+                  <div className="text-xs text-gray-300">
+                    <span className="text-toxic font-semibold">🥔 {parseFloat(recentActivity[0].amount).toFixed(4)} {recentActivity[0].token}</span> claimed {formatTimeAgo(recentActivity[0].timestamp)}
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-500">No activity yet</div>
+                )}
+              </div>
+            </div>
+
+            {/* Feedback Box */}
+            <div className="glass-card rounded-xl p-4 border border-purple/30">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  placeholder="💭 Got feedback?"
+                  className="flex-1 bg-dark border border-gray-700 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-toxic/50"
+                  disabled={isSendingFeedback}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && feedback.trim()) {
+                      handleSendFeedback()
+                    }
+                  }}
+                />
+                <button
+                  onClick={handleSendFeedback}
+                  disabled={!feedback.trim() || isSendingFeedback}
+                  className="bg-gradient-to-r from-toxic to-purple text-dark px-4 py-2 rounded-lg font-bold text-xs hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  {isSendingFeedback ? '✨' : '🚀'}
+                </button>
+              </div>
+              {feedbackStatus === 'success' && (
+                <div className="mt-1 text-xs text-green-400 animate-fade-in">✅ Thanks!</div>
+              )}
+              {feedbackStatus === 'error' && (
+                <div className="mt-1 text-xs text-red-400 animate-fade-in">❌ Error</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Original vertical sidebar layout
   return (
     <div className="w-80 glass border-l border-gray-800/50 p-6 overflow-y-auto sticky top-[140px] self-start max-h-[calc(100vh-140px)]">
       {/* Stats */}

@@ -610,7 +610,7 @@ export default function Claim() {
           </main>
         </div>
       ) : (
-      <div className="min-h-screen bg-dark flex">
+      <div className="min-h-screen bg-dark flex flex-col">
         {/* Reveal Animation */}
         {showReveal && revealedGift && (
           <RevealAnimation
@@ -620,9 +620,7 @@ export default function Claim() {
           />
         )}
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          <Header />
+        <Header />
 
         <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
@@ -844,10 +842,9 @@ export default function Claim() {
           </div>
         </div>
         </main>
-        </div>
 
-        {/* Sidebar */}
-        <Sidebar />
+        {/* Bottom Bar (formerly Sidebar) */}
+        <Sidebar isBottomBar={true} />
 
         {/* Success Modal */}
         {showSuccess && successData && (
