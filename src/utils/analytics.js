@@ -20,20 +20,20 @@ export function trackEvent(eventName, props = {}) {
 }
 
 /**
- * Track potato creation
+ * Track link creation
  */
 export function trackPotatoCreated(tokenSymbol, amount) {
-  trackEvent('Potato Created', {
+  trackEvent('Link Created', {
     token: tokenSymbol,
     amount: parseFloat(amount).toFixed(4)
   })
 }
 
 /**
- * Track potato claim
+ * Track link claim
  */
 export function trackPotatoClaimed(tokenReceived, amountReceived, tokenGiven, amountGiven) {
-  trackEvent('Potato Claimed', {
+  trackEvent('Link Claimed', {
     tokenReceived,
     amountReceived: parseFloat(amountReceived).toFixed(4),
     tokenGiven,
@@ -56,7 +56,7 @@ export function trackWalletConnected(walletType) {
 export function trackShare(method, potatoId) {
   trackEvent('Share Button Clicked', {
     method, // 'copy' or 'twitter'
-    potatoId: potatoId?.toString()
+    linkId: potatoId?.toString()
   })
 }
 

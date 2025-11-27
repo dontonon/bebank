@@ -38,9 +38,9 @@ export default function GiftLink() {
         <main className="flex-1 flex items-center justify-center p-4">
           <div className="text-center max-w-md">
             <div className="text-6xl mb-4">❌</div>
-            <h2 className="text-3xl font-bold text-white mb-4">Invalid Potato ID</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">Invalid Link ID</h2>
             <p className="text-gray-400 mb-6">
-              The potato ID "{giftId}" is not valid.
+              The link ID "{giftId}" is not valid.
             </p>
             <button
               onClick={() => navigate('/')}

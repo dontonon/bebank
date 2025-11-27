@@ -17,8 +17,8 @@ export default function PotatoLink() {
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-red-500/50 text-center">
           <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-white mb-3">Invalid Potato Link</h2>
-          <p className="text-gray-400 mb-6">This potato link is invalid. Please check the URL.</p>
+          <h2 className="text-2xl font-bold text-white mb-3">Invalid Link</h2>
+          <p className="text-gray-400 mb-6">This link is invalid. Please check the URL.</p>
           <button
             onClick={() => navigate('/')}
             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
@@ -41,7 +41,7 @@ export default function PotatoLink() {
 
   const shareMessages = [
     "I just passed on something... claim it 👀",
-    "Mystery potato waiting for you 🥔",
+    "Mystery link waiting for you 🔗",
     "Someone's gonna get lucky... is it you? 🍀",
     "I dare you to claim this blindly 😈",
     "Passed on a little something... what will you get? 🎲"
@@ -59,17 +59,17 @@ export default function PotatoLink() {
           <div className="text-center mb-12">
             <div className="text-8xl mb-6">✨</div>
             <h2 className="text-5xl font-bold gradient-text mb-4">
-              Potato Created!
+              Link Created!
             </h2>
             <p className="text-xl text-gray-400">
-              Share your mystery potato link and watch someone claim it
+              Share your mystery link and watch someone claim it
             </p>
           </div>
 
           {/* Share Card */}
           <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">
             <div>
-              <h3 className="text-2xl font-bold text-white mb-2">Your Potato Link</h3>
+              <h3 className="text-2xl font-bold text-white mb-2">Your Link</h3>
               <p className="text-gray-400">Share this with anyone. They won't see what it is!</p>
             </div>
 
@@ -126,8 +126,8 @@ export default function PotatoLink() {
               <h4 className="font-bold text-white">What happens next?</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li>✅ Someone clicks your link</li>
-                <li>🥔 They see "Mystery Potato" (no preview!)</li>
-                <li>💰 To claim yours, they must give their own</li>
+                <li>🔗 They see "Mystery Link" (no preview!)</li>
+                <li>💰 To claim yours, they must pass on their own</li>
                 <li>✨ They receive 99% of what you gave</li>
                 <li>🔗 They get their own link to share</li>
                 <li>♻️ The chain continues...</li>
@@ -141,7 +141,7 @@ export default function PotatoLink() {
               onClick={() => navigate('/')}
               className="flex-1 bg-gradient-to-r from-toxic to-purple text-dark py-4 rounded-xl font-bold hover:shadow-lg transition-all"
             >
-              Create Another Potato
+              Pass On Another
             </button>
             <button
               onClick={() => {
@@ -154,10 +154,10 @@ export default function PotatoLink() {
             </button>
           </div>
 
-          {/* Potato ID Badge */}
+          {/* Link ID Badge */}
           <div className="mt-8 text-center">
             <span className="inline-block bg-dark-card border border-gray-800 px-6 py-3 rounded-full text-gray-400">
-              Potato #{giftId}
+              Link #{giftId}
             </span>
           </div>
         </div>
