@@ -251,13 +251,13 @@ export default function Stats() {
         <div className="max-w-7xl mx-auto">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-5xl font-black gradient-text mb-3">🥔 Hot Potatos</h1>
-            <p className="text-gray-400 text-lg">Real-time stats from the potato chain</p>
+            <h1 className="text-5xl font-black gradient-text mb-3">🔗 The Chain</h1>
+            <p className="text-gray-400 text-lg">Real-time stats from the network</p>
           </div>
 
           {isLoading ? (
             <div className="text-center py-20">
-              <div className="text-8xl mb-4 animate-spin inline-block">🥔</div>
+              <div className="text-8xl mb-4 animate-spin inline-block">🔗</div>
               <p className="text-gray-400">Loading stats...</p>
             </div>
           ) : (
@@ -281,12 +281,12 @@ export default function Stats() {
 
               {/* Middle Stats Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 5. Biggest Potato */}
+                {/* 5. Biggest Gift */}
                 <div className="glass-card rounded-xl p-6 border border-yellow-500/30">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-3xl">👑</span>
                     <div>
-                      <div className="text-gray-400 text-sm">Biggest Potato</div>
+                      <div className="text-gray-400 text-sm">Biggest Gift</div>
                       <div className="text-xs text-gray-600">All-time record</div>
                     </div>
                   </div>
@@ -296,7 +296,7 @@ export default function Stats() {
                         {stats.biggestPotato.amount} {stats.biggestPotato.token}
                       </div>
                       <div className="text-xs text-gray-500 mt-2">
-                        Potato #{stats.biggestPotato.id}
+                        Link #{stats.biggestPotato.id}
                       </div>
                     </>
                   ) : (
@@ -310,7 +310,7 @@ export default function Stats() {
                     <span className="text-3xl">📊</span>
                     <div>
                       <div className="text-gray-400 text-sm">Average Value</div>
-                      <div className="text-xs text-gray-600">Per potato</div>
+                      <div className="text-xs text-gray-600">Per gift</div>
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-blue-400">
@@ -332,7 +332,7 @@ export default function Stats() {
                     {getMostPopularToken()}
                   </div>
                   <div className="text-xs text-gray-500 mt-2">
-                    {stats.tokenStats[getMostPopularToken()] || 0} potatoes
+                    {stats.tokenStats[getMostPopularToken()] || 0} gifts
                   </div>
                 </div>
               </div>
@@ -399,7 +399,7 @@ export default function Stats() {
                   <span className="text-3xl">📜</span>
                   <div>
                     <div className="text-xl font-bold text-white">Recent Claims</div>
-                    <div className="text-xs text-gray-500">Last 10 claimed potatoes</div>
+                    <div className="text-xs text-gray-500">Last 10 claimed gifts</div>
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -412,10 +412,10 @@ export default function Stats() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="text-2xl animate-float">🥔</div>
+                            <div className="text-2xl animate-float">🔗</div>
                             <div>
                               <div className="text-white font-semibold">
-                                Potato #{claim.id}
+                                Link #{claim.id}
                               </div>
                               <div className="text-xs text-gray-500">
                                 {formatTimeAgo(claim.claimedAt)}
@@ -445,13 +445,13 @@ export default function Stats() {
                 <div className="text-6xl mb-4">🚀</div>
                 <h3 className="text-2xl font-bold text-white mb-2">Ready to Join?</h3>
                 <p className="text-gray-400 mb-6">
-                  Create your own Hot Potato and become part of the chain!
+                  Create your link and become part of the chain!
                 </p>
                 <a
                   href="/"
                   className="inline-block bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-toxic/30 transition-all"
                 >
-                  Create Hot Potato ✨
+                  Pass It On ✨
                 </a>
               </div>
             </div>

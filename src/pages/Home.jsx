@@ -229,7 +229,7 @@ export default function Home() {
             {/* How It Works */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="text-center">
-                <div className="text-3xl mb-2">🥔</div>
+                <div className="text-3xl mb-2">🔗</div>
                 <h4 className="font-bold text-white mb-1 text-sm">1. You Give</h4>
                 <p className="text-xs text-gray-400">Choose token + amount</p>
               </div>
@@ -250,7 +250,7 @@ export default function Home() {
           {!isConnected ? (
             <div className="glass-card rounded-2xl p-12 text-center">
               <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect Your Wallet</h3>
-              <p className="text-gray-500 mb-6">Connect to start your first potato chain</p>
+              <p className="text-gray-500 mb-6">Connect to start a new chain</p>
               <div className="flex justify-center">
                 <ConnectButton />
               </div>
@@ -258,7 +258,7 @@ export default function Home() {
           ) : (
             <div className="glass-card rounded-2xl p-8 space-y-6 glow-toxic-strong">
               <div>
-                <h3 className="text-2xl font-bold text-white mb-2">Create Hot Potato</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">Create Your Link</h3>
                 <p className="text-gray-400">Choose what to pass on (they won't see it until they give)</p>
               </div>
 
@@ -290,8 +290,8 @@ export default function Home() {
                 className="w-full bg-gradient-to-r from-toxic to-purple text-dark py-4 rounded-xl font-bold text-xl hover:shadow-lg hover:shadow-toxic/50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isPending && <span>Confirm in wallet... 👛</span>}
-                {isConfirming && <span>Creating potato... ⏳</span>}
-                {!isLoading && <span>Create Hot Potato ✨</span>}
+                {isConfirming && <span>Creating your link... ⏳</span>}
+                {!isLoading && <span>Pass It On ✨</span>}
               </button>
 
               {/* Info */}

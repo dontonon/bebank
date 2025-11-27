@@ -14,7 +14,7 @@ function Header() {
       <div className="w-full px-6 py-6">
         <div className="flex justify-between items-center mb-4">
           <Link to="/" className="text-3xl font-bold gradient-text hover:opacity-80 transition-opacity cursor-pointer">
-            HOT POTATO 🥔
+            PASS IT ON 🔗
           </Link>
           <div>
             <ConnectButton />
@@ -27,7 +27,7 @@ function Header() {
             to="/"
             className={`text-sm font-medium transition-colors ${
               isActive('/')
-                ? 'text-orange-500'
+                ? 'text-cyan-500'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -37,27 +37,27 @@ function Header() {
             to="/stats"
             className={`text-sm font-medium transition-colors ${
               isActive('/stats')
-                ? 'text-orange-500'
+                ? 'text-cyan-500'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            Hot Potatos
+            The Chain
           </Link>
           <Link
             to="/dashboard"
             className={`text-sm font-medium transition-colors ${
               isActive('/dashboard')
-                ? 'text-orange-500'
+                ? 'text-cyan-500'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            My Potatoes
+            My Links
           </Link>
           <Link
             to="/about"
             className={`text-sm font-medium transition-colors ${
               isActive('/about')
-                ? 'text-orange-500'
+                ? 'text-cyan-500'
                 : 'text-gray-400 hover:text-white'
             }`}
           >

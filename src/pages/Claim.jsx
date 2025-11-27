@@ -626,15 +626,15 @@ export default function Claim() {
         <div className="max-w-2xl w-full">
           {/* CLAIMING BANNER - Simplified Single Box */}
           <div className="glass-card bg-gradient-to-r from-purple/30 to-toxic/30 border-2 border-purple rounded-2xl p-8 mb-8 text-center glow-purple-strong">
-            <div className="text-7xl mb-4 animate-float">🥔</div>
+            <div className="text-7xl mb-4 animate-float">🔗</div>
             <h1 className="text-4xl font-black gradient-text mb-3">
-              Claim a Hot Potato
+              Claim Your Gift
             </h1>
             <p className="text-xl text-white font-semibold mb-2">
               Someone sent you crypto! 🎁
             </p>
             <p className="text-gray-300 mb-2">
-              Pass on your own Hot Potato to claim it
+              Pass on your own gift to claim theirs
             </p>
             <p className="text-toxic font-bold text-lg animate-glow-pulse">
               What's inside? You'll find out after! 🤔
@@ -644,7 +644,7 @@ export default function Claim() {
           {/* Claim Form */}
           {!isConnected ? (
             <div className="glass-card rounded-2xl p-12 text-center">
-              <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Claim This Potato</h3>
+              <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Claim Your Gift</h3>
               <p className="text-gray-500 mb-6">Connect your wallet to see what you'll receive</p>
               <div className="flex justify-center">
                 <ConnectButton />
@@ -660,21 +660,21 @@ export default function Claim() {
                 </h3>
                 <div className="space-y-2 text-sm text-gray-300">
                   <p>1️⃣ You choose a token & amount to pass on</p>
-                  <p>2️⃣ Click "CLAIM NOW" - this creates YOUR potato AND claims theirs</p>
+                  <p>2️⃣ Click "CLAIM NOW" - this creates YOUR link AND claims theirs</p>
                   <p>3️⃣ You instantly receive their crypto (99% of it)</p>
                   <p>4️⃣ Get your new link to share with someone else!</p>
                 </div>
               </div>
 
-              {/* Can't Claim Own Potato Warning */}
+              {/* Can't Claim Own Gift Warning */}
               {isCreator && (
                 <div className="bg-yellow-900/40 border-2 border-yellow-500 rounded-xl p-5">
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">🚫</div>
                     <div>
-                      <p className="text-yellow-400 font-bold text-lg mb-2">YOU CAN'T CLAIM YOUR OWN POTATO!</p>
+                      <p className="text-yellow-400 font-bold text-lg mb-2">YOU CAN'T CLAIM YOUR OWN GIFT!</p>
                       <p className="text-yellow-300 text-sm mb-3">
-                        You created this potato. You need to share it with someone else to claim it!
+                        You created this gift. You need to share it with someone else to claim it!
                       </p>
                       <p className="text-yellow-200 text-sm font-semibold">
                         👉 Share the link with a friend and they can claim it.
@@ -690,9 +690,9 @@ export default function Claim() {
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">😢</div>
                     <div>
-                      <p className="text-red-400 font-bold text-lg mb-2">POTATO ALREADY CLAIMED!</p>
+                      <p className="text-red-400 font-bold text-lg mb-2">GIFT ALREADY CLAIMED!</p>
                       <p className="text-red-300 text-sm mb-3">
-                        Someone else already claimed this potato at {new Date(Number(giftData[6] * 1000n)).toLocaleString()}
+                        Someone else already claimed this gift at {new Date(Number(giftData[6] * 1000n)).toLocaleString()}
                       </p>
                       <p className="text-red-200 text-sm">
                         Claimed by: <span className="font-mono text-xs">{giftData[4]}</span>
@@ -707,7 +707,7 @@ export default function Claim() {
                 <>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-2">Choose What to Pass On:</h3>
-                    <p className="text-gray-400 text-sm">This will be YOUR Hot Potato that you give to claim theirs</p>
+                    <p className="text-gray-400 text-sm">This will be YOUR gift that you give to claim theirs</p>
                   </div>
 
                   {/* Smart Contract Wallet Warning */}
@@ -797,9 +797,9 @@ export default function Claim() {
                 {isClaiming || isConfirming ? (
                   <span>⏳ CLAIMING... PLEASE WAIT</span>
                 ) : needsApproval() && !isNativeToken(selectedToken.address) ? (
-                  <span>2️⃣ Claim Hot Potato Now 🥔</span>
+                  <span>2️⃣ Claim Your Gift Now 🔗</span>
                 ) : (
-                  <span>🥔 Claim Hot Potato Now</span>
+                  <span>🔗 Claim Your Gift Now</span>
                 )}
               </button>
 
