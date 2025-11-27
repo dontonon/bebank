@@ -263,7 +263,7 @@ export default function Stats() {
           ) : (
             <div className="space-y-8">
               {/* Top Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Total Claimed */}
                 <div className="glass-card rounded-xl p-6 border border-purple/30 glow-purple">
                   <div className="text-gray-400 text-sm mb-2">✨ Total Claimed</div>
@@ -276,13 +276,6 @@ export default function Stats() {
                   <div className="text-gray-400 text-sm mb-2">📈 Last 24h</div>
                   <div className="text-4xl font-black text-green-500">{stats.claimsToday}</div>
                   <div className="text-xs text-gray-500 mt-2">Claims today</div>
-                </div>
-
-                {/* Active Potatoes */}
-                <div className="glass-card rounded-xl p-6 border border-orange-500/30 bg-gradient-to-br from-orange-500/10 to-yellow-500/10">
-                  <div className="text-gray-400 text-sm mb-2">🔥 Active Now</div>
-                  <div className="text-4xl font-black text-orange-500">{stats.activePotatoes}</div>
-                  <div className="text-xs text-gray-500 mt-2">Waiting to be claimed</div>
                 </div>
               </div>
 
@@ -371,35 +364,8 @@ export default function Stats() {
                   </div>
                 </div>
 
-              {/* NEW: Fun Creative Stats Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Fastest Claim */}
-                <div className="glass-card rounded-xl p-6 border border-yellow-400/40 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 glow-pulse">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-4xl animate-bounce">⚡</span>
-                    <div>
-                      <div className="text-gray-400 text-sm">Fastest Claim</div>
-                      <div className="text-xs text-gray-600">Lightning speed</div>
-                    </div>
-                  </div>
-                  {stats.fastestClaim ? (
-                    <>
-                      <div className="text-3xl font-black text-yellow-400 mb-2">
-                        {formatDuration(stats.fastestClaim.speed)}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        Potato #{stats.fastestClaim.id} • {stats.fastestClaim.amount.toFixed(4)} {stats.fastestClaim.token}
-                      </div>
-                      <div className="mt-3 text-xs text-yellow-500/70">
-                        ⚡ Claimed in record time!
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-gray-500 text-sm">No claims yet</div>
-                  )}
-                </div>
-
-                {/* Chain Velocity */}
+              {/* Chain Velocity */}
+              <div className="max-w-md mx-auto">
                 <div className="glass-card rounded-xl p-6 border border-cyan-400/40 bg-gradient-to-br from-cyan-500/10 to-blue-500/10">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-4xl">🚀</span>
@@ -423,41 +389,6 @@ export default function Stats() {
                   </div>
                   <div className="mt-2 text-xs text-gray-500">
                     {stats.chainVelocity > 10 ? '🔥 Hot!' : stats.chainVelocity > 5 ? '📈 Growing' : '🌱 Starting'}
-                  </div>
-                </div>
-
-                {/* Claims Last Hour */}
-                <div className="glass-card rounded-xl p-6 border border-green-400/40 bg-gradient-to-br from-green-500/10 to-emerald-500/10 animate-glow-pulse">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-4xl animate-pulse">⏰</span>
-                    <div>
-                      <div className="text-gray-400 text-sm">Claims Last Hour</div>
-                      <div className="text-xs text-gray-600">Real-time activity</div>
-                    </div>
-                  </div>
-                  <div className="text-3xl font-black text-green-400 mb-2">
-                    {stats.claimsLastHour}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <div
-                          key={i}
-                          className={`w-2 h-8 rounded-full transition-all ${
-                            i < stats.claimsLastHour
-                              ? 'bg-green-500'
-                              : 'bg-gray-800'
-                          }`}
-                          style={{
-                            animation: i < stats.claimsLastHour ? 'pulse 1s ease-in-out infinite' : 'none',
-                            animationDelay: `${i * 0.2}s`
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {stats.claimsLastHour > 0 ? '🟢 Live' : '⚪ Quiet'}
-                    </div>
                   </div>
                 </div>
               </div>
