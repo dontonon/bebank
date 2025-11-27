@@ -290,9 +290,9 @@ function Sidebar({ isBottomBar = false }) {
             {/* Stats Section */}
             <div className="glass-card rounded-xl p-4 border border-toxic/30">
               <div className="flex items-center gap-3">
-                <span className="text-3xl">🔥</span>
+                <span className="text-3xl">🔗</span>
                 <div>
-                  <div className="text-gray-400 text-xs">Hot Potatos passed on</div>
+                  <div className="text-gray-400 text-xs">Gifts passed on</div>
                   <div className="text-2xl font-bold gradient-text">{totalCreated}</div>
                 </div>
               </div>
@@ -306,11 +306,11 @@ function Sidebar({ isBottomBar = false }) {
               <div className="overflow-x-auto">
                 {isLoadingActivity ? (
                   <div className="text-center text-gray-500 py-2">
-                    <span className="text-2xl animate-spin inline-block">🥔</span>
+                    <span className="text-2xl animate-spin inline-block">🔗</span>
                   </div>
                 ) : recentActivity.length > 0 ? (
                   <div className="text-xs text-gray-300">
-                    <span className="text-toxic font-semibold">🥔 {parseFloat(recentActivity[0].amount).toFixed(4)} {recentActivity[0].token}</span> claimed {formatTimeAgo(recentActivity[0].timestamp)}
+                    <span className="text-toxic font-semibold">🔗 {parseFloat(recentActivity[0].amount).toFixed(4)} {recentActivity[0].token}</span> claimed {formatTimeAgo(recentActivity[0].timestamp)}
                   </div>
                 ) : (
                   <div className="text-xs text-gray-500">No activity yet</div>
