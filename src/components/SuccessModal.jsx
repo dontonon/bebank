@@ -35,8 +35,8 @@ export default function SuccessModal({ type, data, onClose }) {
       ? `${window.location.origin}/claim/${data.potatoId}/${data.secret || ''}`
       : `${window.location.origin}/claim/${data.newPotatoId}/${data.newSecret || ''}`
     const text = type === 'create'
-      ? `I just created a Mystery Hot Potato 🥔🎁 Can you claim it?`
-      : `I just claimed a Hot Potato and received ${data.received} ${data.token}! 🔥 Can you claim mine?`
+      ? `I just passed on a mystery gift 🔗✨ Can you claim it?`
+      : `I just claimed ${data.received} ${data.token} and passed it on! 🔥 Can you claim mine?`
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`
     window.open(twitterUrl, '_blank')
 
@@ -53,18 +53,18 @@ export default function SuccessModal({ type, data, onClose }) {
           {/* Success Icon */}
           <div className="text-center mb-6">
             <div className="text-7xl mb-4 animate-bounce">🎉</div>
-            <h2 className="text-3xl font-bold text-toxic mb-2">✅ Hot Potato CREATED!</h2>
-            <p className="text-gray-400">Your gift is ready to be passed on</p>
+            <h2 className="text-3xl font-bold text-toxic mb-2">✅ LINK CREATED!</h2>
+            <p className="text-gray-400">Your gift is ready to pass on</p>
           </div>
 
           {/* Gift Info */}
           <div className="bg-dark rounded-xl p-6 mb-6 border border-gray-800">
             <div className="text-center">
-              <div className="text-gray-400 text-sm mb-1">Your Hot Potato</div>
+              <div className="text-gray-400 text-sm mb-1">Your Gift</div>
               <div className="text-4xl font-bold gradient-text mb-2">
                 {data.amount} {data.token}
               </div>
-              <div className="text-gray-500 text-sm">Potato #{data.potatoId}</div>
+              <div className="text-gray-500 text-sm">Link #{data.potatoId}</div>
             </div>
           </div>
 
@@ -75,7 +75,7 @@ export default function SuccessModal({ type, data, onClose }) {
               {window.location.origin}/claim/{data.potatoId}/{data.secret || '...'}
             </div>
             <div className="text-xs text-gray-400">
-              💡 They won't see what's inside until they pass on their own potato!
+              💡 They won't see what's inside until they pass on their own gift!
             </div>
           </div>
 
@@ -100,7 +100,7 @@ export default function SuccessModal({ type, data, onClose }) {
                 onClick={() => navigate('/dashboard')}
                 className="bg-dark-card text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all border border-gray-700"
               >
-                My Potatoes
+                My Links
               </button>
               <button
                 onClick={() => { onClose(); navigate('/') }}
@@ -152,7 +152,7 @@ export default function SuccessModal({ type, data, onClose }) {
             <div className="text-6xl font-black text-dark mb-2">
               {data.received} {data.token}
             </div>
-            <div className="text-dark text-sm font-bold">Successfully claimed potato!</div>
+            <div className="text-dark text-sm font-bold">Successfully claimed!</div>
           </div>
 
           {/* Summary Box */}
@@ -160,22 +160,22 @@ export default function SuccessModal({ type, data, onClose }) {
             <div className="text-center text-sm space-y-2">
               <div className="text-gray-400">Transaction Summary:</div>
               <div className="text-white">
-                ✅ Claimed potato & received <span className="text-toxic font-bold">{data.received} {data.token}</span>
+                ✅ Claimed & received <span className="text-toxic font-bold">{data.received} {data.token}</span>
               </div>
               <div className="text-gray-400">
-                ✅ Passed on <span className="text-white font-semibold">{data.gave} {data.gaveToken}</span> (your new potato)
+                ✅ Passed on <span className="text-white font-semibold">{data.gave} {data.gaveToken}</span> (your new link)
               </div>
             </div>
           </div>
 
-          {/* Your New Potato */}
+          {/* Your New Link */}
           <div className="bg-gradient-to-r from-purple/30 to-toxic/30 rounded-xl p-5 mb-6 border-2 border-purple">
-            <div className="text-base text-white mb-2 font-black text-center">🔗 NOW SHARE YOUR POTATO!</div>
+            <div className="text-base text-white mb-2 font-black text-center">🔗 NOW SHARE YOUR LINK!</div>
             <div className="bg-dark rounded-lg p-3 mb-3 font-mono text-xs text-white break-all">
               {window.location.origin}/claim/{data.newPotatoId}/{data.newSecret || '...'}
             </div>
             <div className="text-xs text-center text-gray-300 font-semibold">
-              ⬆️ This is YOUR new potato #{data.newPotatoId} - share it to continue the chain!
+              ⬆️ This is YOUR new link #{data.newPotatoId} - share it to keep the chain alive!
             </div>
           </div>
 
@@ -185,17 +185,17 @@ export default function SuccessModal({ type, data, onClose }) {
               onClick={() => {
                 const link = `${window.location.origin}/claim/${data.newPotatoId}/${data.newSecret || ''}`
                 navigator.clipboard.writeText(link)
-                alert('New potato link copied! Share it to pass on your ' + data.gave + ' ' + data.gaveToken + ' 🔗')
+                alert('Link copied! Share it to pass on your ' + data.gave + ' ' + data.gaveToken + ' 🔗')
               }}
               className="w-full bg-gradient-to-r from-purple to-toxic text-dark py-4 rounded-xl font-black text-lg hover:shadow-lg hover:shadow-purple/50 transition-all transform hover:scale-105"
             >
-              📋 Copy NEW Potato Link (#{data.newPotatoId})
+              📋 Copy Link to Share (#{data.newPotatoId})
             </button>
 
             <button
               onClick={() => {
                 const link = `${window.location.origin}/claim/${data.newPotatoId}/${data.newSecret || ''}`
-                const text = `I just claimed a Hot Potato and got ${data.received} ${data.token}! 🔥 Can you claim mine?`
+                const text = `I just claimed ${data.received} ${data.token} and passed it on! 🔥 Can you claim mine?`
                 const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`
                 window.open(twitterUrl, '_blank')
               }}
@@ -209,7 +209,7 @@ export default function SuccessModal({ type, data, onClose }) {
                 onClick={() => navigate('/dashboard')}
                 className="bg-dark-card text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all border border-gray-700"
               >
-                My Potatoes
+                My Links
               </button>
               <button
                 onClick={() => { onClose(); navigate('/') }}
