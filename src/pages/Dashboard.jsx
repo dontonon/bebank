@@ -206,9 +206,32 @@ export default function Dashboard() {
   }, [address, chain, nextGiftId, publicClient])
 
   const copyLink = (linkId) => {
-    const link = `${window.location.origin}/claim/${linkId}`
+    // Try to get secret from localStorage
+    let secret = ''
+    try {
+      const secrets = JSON.parse(localStorage.getItem('linkSecrets') || '{}')
+      secret = secrets[linkId] || ''
+      if (secret) {
+        console.log(`✅ Found secret for link #${linkId} in localStorage`)
+      } else {
+        console.warn(`⚠️ No secret found for link #${linkId} in localStorage`)
+      }
+    } catch (error) {
+      console.error('Failed to retrieve secret from localStorage:', error)
+    }
+
+    // Generate link with secret if available
+    const link = secret
+      ? `${window.location.origin}/claim/${linkId}/${secret}`
+      : `${window.location.origin}/claim/${linkId}`
+
     navigator.clipboard.writeText(link)
-    alert('Link copied! Share it to keep the chain going! 🔗')
+
+    if (secret) {
+      alert('Link copied! Share it to keep the chain going! 🔗')
+    } else {
+      alert('Link copied! ⚠️ Note: Secret not found. Link may not work for new claims.')
+    }
   }
 
   const filteredCreated = myLinks.created.filter(p => {

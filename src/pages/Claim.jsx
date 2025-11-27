@@ -362,6 +362,18 @@ export default function Claim() {
           newSecret: newSecret // V2: Include new secret for share URL!
         }
 
+        // Save new secret to localStorage for later retrieval in Dashboard
+        if (newGiftId && newSecret) {
+          try {
+            const secrets = JSON.parse(localStorage.getItem('linkSecrets') || '{}')
+            secrets[newGiftId] = newSecret
+            localStorage.setItem('linkSecrets', JSON.stringify(secrets))
+            console.log(`💾 Saved secret for new link #${newGiftId} to localStorage`)
+          } catch (error) {
+            console.error('Failed to save secret to localStorage:', error)
+          }
+        }
+
         console.log('========== ABOUT TO SHOW SUCCESS MODAL ==========')
         console.log('Modal will show with TYPE: "claim"')
         console.log('Modal data being passed:', modalData)

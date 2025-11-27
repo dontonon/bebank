@@ -133,6 +133,16 @@ export default function Home() {
           token: selectedToken.symbol
         }
 
+        // Save secret to localStorage for later retrieval in Dashboard
+        try {
+          const secrets = JSON.parse(localStorage.getItem('linkSecrets') || '{}')
+          secrets[potatoId] = secret
+          localStorage.setItem('linkSecrets', JSON.stringify(secrets))
+          console.log(`💾 Saved secret for link #${potatoId} to localStorage`)
+        } catch (error) {
+          console.error('Failed to save secret to localStorage:', error)
+        }
+
         console.log('🎊 Setting success data:', modalData)
         setSuccessData(modalData)
         setShowSuccess(true)
