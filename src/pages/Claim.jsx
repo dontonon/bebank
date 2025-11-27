@@ -433,7 +433,7 @@ export default function Claim() {
 
     // Check if trying to claim own potato
     if (isCreator) {
-      setClaimError("You can't claim your own Hot Potato! Share it with someone else.")
+      setClaimError("You can't claim your own link! Share it with someone else.")
       return
     }
 
@@ -473,9 +473,9 @@ export default function Claim() {
       if (errStr.includes('InsufficientValue')) {
         errorMsg = 'Amount too small. Minimum is 0.0001 ETH'
       } else if (errStr.includes('GiftAlreadyClaimed')) {
-        errorMsg = 'This Hot Potato has already been claimed!'
+        errorMsg = 'This link has already been claimed!'
       } else if (errStr.includes('GiftDoesNotExist')) {
-        errorMsg = 'This Hot Potato does not exist.'
+        errorMsg = 'This link does not exist.'
       } else if (errStr.includes('TransferFailed') || errStr.includes('f;')) {
         if (isClaimerContract) {
           errorMsg = `Transfer failed! Your wallet (${address?.substring(0, 10)}...) is a SMART CONTRACT WALLET and cannot receive ETH transfers from the contract. Please use a regular wallet (MetaMask, Rainbow, etc.) to claim.`
