@@ -223,25 +223,25 @@ export default function Home() {
           {/* Hero Section */}
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold gradient-text mb-6">
-              Give Mystery. Receive Wonder.
+              Pass One. Claim One. Keep The Chain Alive.
             </h2>
 
             {/* How It Works */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="text-center">
                 <div className="text-3xl mb-2">🔗</div>
-                <h4 className="font-bold text-white mb-1 text-sm">1. You Give</h4>
-                <p className="text-xs text-gray-400">Choose token + amount</p>
+                <h4 className="font-bold text-white mb-1 text-sm">1. You Create</h4>
+                <p className="text-xs text-gray-400">Lock crypto in the chain</p>
               </div>
               <div className="text-center">
                 <div className="text-3xl mb-2">❓</div>
-                <h4 className="font-bold text-white mb-1 text-sm">2. They Claim in Mystery</h4>
-                <p className="text-xs text-gray-400">Must give to receive</p>
+                <h4 className="font-bold text-white mb-1 text-sm">2. They Pass It On</h4>
+                <p className="text-xs text-gray-400">Must create to claim</p>
               </div>
               <div className="text-center">
                 <div className="text-3xl mb-2">✨</div>
-                <h4 className="font-bold text-white mb-1 text-sm">3. Reveal & Repeat</h4>
-                <p className="text-xs text-gray-400">Pass it on forever</p>
+                <h4 className="font-bold text-white mb-1 text-sm">3. Chain Grows Forever</h4>
+                <p className="text-xs text-gray-400">Endless cycle of passing</p>
               </div>
             </div>
           </div>
