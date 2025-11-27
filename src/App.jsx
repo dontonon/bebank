@@ -13,6 +13,7 @@ import Admin from './pages/Admin'
 import Dashboard from './pages/Dashboard'
 import Stats from './pages/Stats'
 import ChainExplorer from './pages/ChainExplorer'
+import SecretRecovery from './pages/SecretRecovery'
 import ErrorBoundary from './components/ErrorBoundary'
 
 const queryClient = new QueryClient({
@@ -41,6 +42,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/stats" element={<Stats />} />
                 <Route path="/explorer" element={<ChainExplorer />} />
+                <Route path="/recover" element={<SecretRecovery />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/admin" element={<Admin />} />
