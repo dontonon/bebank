@@ -6,6 +6,7 @@ import Sidebar from '../components/Sidebar'
 import NetworkGuard from '../components/NetworkGuard'
 import SuccessModal from '../components/SuccessModal'
 import TransactionProgress from '../components/TransactionProgress'
+import ChainBackground from '../components/ChainBackground'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import TokenSelector from '../components/TokenSelector'
 import { TOKENS, isNativeToken } from '../config/tokens'
@@ -214,7 +215,8 @@ export default function Home() {
 
   return (
     <NetworkGuard>
-      <div className="min-h-screen bg-dark flex flex-col">
+      <div className="min-h-screen bg-dark flex flex-col relative overflow-hidden">
+        <ChainBackground />
         <Header />
 
         {/* Main Content */}

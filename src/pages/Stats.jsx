@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useAccount, useReadContract, usePublicClient } from 'wagmi'
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
+import ChainBackground from '../components/ChainBackground'
+import CircularProgress from '../components/CircularProgress'
 import { getContractAddress } from '../config/wagmi'
 import { getTokenByAddress } from '../config/tokens'
 import { formatUnits } from 'viem'
@@ -244,7 +246,8 @@ export default function Stats() {
   }
 
   return (
-    <div className="min-h-screen bg-dark flex flex-col">
+    <div className="min-h-screen bg-dark flex flex-col relative overflow-hidden">
+      <ChainBackground />
       <Header />
 
       <main className="flex-1 p-8">
@@ -262,13 +265,28 @@ export default function Stats() {
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Top Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Top Stats Grid with Circular Progress */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Claim Rate Visualization */}
+                <div className="glass-card rounded-xl p-6 border border-purple/30 glow-purple flex items-center justify-center">
+                  <CircularProgress
+                    percentage={stats.totalCreated > 0 ? Math.round((stats.totalClaimed / stats.totalCreated) * 100) : 0}
+                    label="Claim Rate"
+                    value={`${stats.totalClaimed}/${stats.totalCreated}`}
+                  />
+                </div>
+
                 {/* Total Claimed */}
-                <div className="glass-card rounded-xl p-6 border border-purple/30 glow-purple">
+                <div className="glass-card rounded-xl p-6 border border-purple/30">
                   <div className="text-gray-400 text-sm mb-2">✨ Total Claimed</div>
                   <div className="text-4xl font-black text-purple">{stats.totalClaimed}</div>
                   <div className="text-xs text-gray-500 mt-2">All-time claims</div>
+                  <div className="mt-4 h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-purple to-pink-500 animate-pulse"
+                      style={{ width: `${stats.totalCreated > 0 ? (stats.totalClaimed / stats.totalCreated) * 100 : 0}%` }}
+                    />
+                  </div>
                 </div>
 
                 {/* Claims Today */}
@@ -276,6 +294,17 @@ export default function Stats() {
                   <div className="text-gray-400 text-sm mb-2">📈 Last 24h</div>
                   <div className="text-4xl font-black text-green-500">{stats.claimsToday}</div>
                   <div className="text-xs text-gray-500 mt-2">Claims today</div>
+                  <div className="mt-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-green-500 to-emerald-500 animate-pulse"
+                          style={{ width: `${Math.min(100, (stats.claimsToday / Math.max(1, stats.totalClaimed)) * 100 * 10)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500">{((stats.claimsToday / Math.max(1, stats.totalClaimed)) * 100).toFixed(1)}%</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
