@@ -40,11 +40,11 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const { address, isConnected, chain } = useAccount()
   const publicClient = usePublicClient()
-  const [myPotatoes, setMyPotatoes] = useState({ created: [], claimed: [] })
+  const [myLinks, setMyLinks] = useState({ created: [], claimed: [] })
   const [isLoading, setIsLoading] = useState(false)
   const [filter, setFilter] = useState('all') // all, active, claimed
 
-  // Get total number of potatoes
+  // Get total number of links in the chain
   const { data: nextGiftId } = useReadContract({
     address: chain?.id ? getContractAddress(chain.id) : undefined,
     abi: GET_GIFT_ABI,
@@ -52,9 +52,9 @@ export default function Dashboard() {
     enabled: !!chain?.id && isConnected
   })
 
-  // Fetch all user's potatoes
+  // Fetch all user's links
   useEffect(() => {
-    async function fetchMyPotatoes() {
+    async function fetchMyLinks() {
       if (!address || !chain || !nextGiftId || !publicClient) {
         console.log('Dashboard: Waiting for data...', {
           hasAddress: !!address,
@@ -67,36 +67,36 @@ export default function Dashboard() {
 
       setIsLoading(true)
       try {
-        const totalPotatoes = Number(nextGiftId)
+        const totalLinks = Number(nextGiftId)
         const created = []
         const claimed = []
 
         console.log('==================== DASHBOARD DEBUG ====================')
         console.log('nextGiftId (raw):', nextGiftId)
-        console.log('Total potatoes in contract:', totalPotatoes)
+        console.log('Total links in contract:', totalLinks)
         console.log('Your wallet address:', address)
 
-        // Edge case: No potatoes created yet
-        if (totalPotatoes <= 1) {
-          console.log('⚠️ No potatoes exist yet (nextGiftId <= 1)')
-          setMyPotatoes({ created: [], claimed: [] })
+        // Edge case: No links created yet
+        if (totalLinks <= 1) {
+          console.log('⚠️ No links exist yet (nextGiftId <= 1)')
+          setMyLinks({ created: [], claimed: [] })
           setIsLoading(false)
           return
         }
 
-        // Potato IDs start from 1 and go up to (but not including) nextGiftId
-        // So if nextGiftId is 35, the last potato is ID 34
-        // If there are many potatoes, we'll limit to last 200 for performance
-        const lastPotatoId = totalPotatoes - 1
-        const startId = Math.max(1, lastPotatoId - 199) // Scan up to 200 potatoes
+        // Link IDs start from 1 and go up to (but not including) nextGiftId
+        // So if nextGiftId is 35, the last link is ID 34
+        // If there are many links, we'll limit to last 200 for performance
+        const lastLinkId = totalLinks - 1
+        const startId = Math.max(1, lastLinkId - 199) // Scan up to 200 links
 
-        console.log('Scanning potatoes from', startId, 'to', lastPotatoId, '(inclusive)')
-        console.log('Total potatoes to scan:', lastPotatoId - startId + 1)
+        console.log('Scanning links from', startId, 'to', lastLinkId, '(inclusive)')
+        console.log('Total links to scan:', lastLinkId - startId + 1)
         console.log('========================================================')
 
-        // Create array of promises to fetch all potatoes in parallel
+        // Create array of promises to fetch all links in parallel
         const fetchPromises = []
-        for (let i = startId; i <= lastPotatoId; i++) {
+        for (let i = startId; i <= lastLinkId; i++) {
           fetchPromises.push(
             publicClient.readContract({
               address: getContractAddress(chain.id),
@@ -143,7 +143,7 @@ export default function Dashboard() {
               const timestamp = giftData[5] || giftData.timestamp
               const claimedAt = giftData[6] || giftData.claimedAt
 
-              const potatoInfo = {
+              const linkInfo = {
                 id: i,
                 token: getTokenByAddress(tokenAddr),
                 amount: amount,
@@ -154,38 +154,38 @@ export default function Dashboard() {
                 claimedAt: claimedAt ? Number(claimedAt) : null
               }
 
-              // Check if user created this potato
+              // Check if user created this link
               const isCreator = giver.toLowerCase() === address.toLowerCase()
               if (isCreator) {
-                console.log('✅ FOUND CREATED POTATO #' + i)
+                console.log('✅ FOUND CREATED LINK #' + i)
                 console.log('   Creator:', giver)
                 console.log('   Your address:', address)
-                created.push(potatoInfo)
+                created.push(linkInfo)
               }
 
-              // Check if user claimed this potato
+              // Check if user claimed this link
               const isClaimer = isClaimed && claimer && claimer.toLowerCase() === address.toLowerCase()
               if (isClaimer) {
-                console.log('✅ FOUND CLAIMED POTATO #' + i)
+                console.log('✅ FOUND CLAIMED LINK #' + i)
                 console.log('   Claimer:', claimer)
                 console.log('   Your address:', address)
                 console.log('   Pushing to claimed array')
-                claimed.push(potatoInfo)
+                claimed.push(linkInfo)
               }
             } else {
-              if (i <= startId + 5 || i >= lastPotatoId - 2) {
-                console.log(`⚠️ Potato #${i} - Invalid or empty (creator: ${creator})`)
+              if (i <= startId + 5 || i >= lastLinkId - 2) {
+                console.log(`⚠️ Link #${i} - Invalid or empty (creator: ${creator})`)
               }
             }
           } catch (error) {
-            console.error(`❌ Error processing potato ${i}:`, error)
+            console.error(`❌ Error processing link ${i}:`, error)
           }
         }
 
         console.log('==================== SCAN COMPLETE ====================')
         console.log('📊 Final results:')
-        console.log('   ✅ Created potatoes found:', created.length)
-        console.log('   ✅ Claimed potatoes found:', claimed.length)
+        console.log('   ✅ Created links found:', created.length)
+        console.log('   ✅ Claimed links found:', claimed.length)
         if (created.length > 0) {
           console.log('   Created IDs:', created.map(p => p.id).join(', '))
         }
@@ -193,25 +193,25 @@ export default function Dashboard() {
           console.log('   Claimed IDs:', claimed.map(p => p.id).join(', '))
         }
         console.log('======================================================')
-        setMyPotatoes({ created, claimed })
+        setMyLinks({ created, claimed })
       } catch (error) {
-        console.error('❌ Error fetching potatoes:', error)
+        console.error('❌ Error fetching links:', error)
         console.error('Error details:', error.message)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchMyPotatoes()
+    fetchMyLinks()
   }, [address, chain, nextGiftId, publicClient])
 
-  const copyLink = (potatoId) => {
-    const link = `${window.location.origin}/claim/${potatoId}`
+  const copyLink = (linkId) => {
+    const link = `${window.location.origin}/claim/${linkId}`
     navigator.clipboard.writeText(link)
     alert('Link copied! Share it to keep the chain going! 🔗')
   }
 
-  const filteredCreated = myPotatoes.created.filter(p => {
+  const filteredCreated = myLinks.created.filter(p => {
     if (filter === 'active') return !p.claimed
     if (filter === 'claimed') return p.claimed
     return true
@@ -225,7 +225,7 @@ export default function Dashboard() {
           <div className="text-center">
             <div className="text-6xl mb-4">🔐</div>
             <h2 className="text-2xl font-bold text-white mb-4">Connect Your Wallet</h2>
-            <p className="text-gray-400">Connect to see your Hot Potato history</p>
+            <p className="text-gray-400">Connect to see your chain history</p>
           </div>
         </main>
       </div>
@@ -238,23 +238,23 @@ export default function Dashboard() {
 
       <main className="flex-1 p-8">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-4xl font-bold gradient-text mb-2">My Potatoes 🥔</h1>
-            <p className="text-gray-400 mb-8">Track all the Hot Potatoes you've created and claimed</p>
+            <h1 className="text-4xl font-bold gradient-text mb-2">My Links 🔗</h1>
+            <p className="text-gray-400 mb-8">Track all the links you've created and claimed in the chain</p>
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="bg-dark-card rounded-xl p-6 border border-gray-800">
                 <div className="text-gray-400 text-sm mb-1">Total Created</div>
-                <div className="text-3xl font-bold text-toxic">{myPotatoes.created.length}</div>
+                <div className="text-3xl font-bold text-toxic">{myLinks.created.length}</div>
               </div>
               <div className="bg-dark-card rounded-xl p-6 border border-gray-800">
                 <div className="text-gray-400 text-sm mb-1">Total Claimed</div>
-                <div className="text-3xl font-bold text-purple">{myPotatoes.claimed.length}</div>
+                <div className="text-3xl font-bold text-purple">{myLinks.claimed.length}</div>
               </div>
               <div className="bg-dark-card rounded-xl p-6 border border-gray-800">
                 <div className="text-gray-400 text-sm mb-1">Active (Unclaimed)</div>
-                <div className="text-3xl font-bold text-orange-500">
-                  {myPotatoes.created.filter(p => !p.claimed).length}
+                <div className="text-3xl font-bold text-cyan-500">
+                  {myLinks.created.filter(p => !p.claimed).length}
                 </div>
               </div>
             </div>
@@ -293,39 +293,39 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* Created Potatoes */}
+            {/* Created Links */}
             <div className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4">🎁 Potatoes I Created</h2>
+              <h2 className="text-2xl font-bold text-white mb-4">🔗 Links I Created</h2>
               {isLoading ? (
                 <div className="text-center py-12 text-gray-400">
-                  <div className="text-4xl mb-4 animate-spin">🥔</div>
-                  <p>Loading your potatoes...</p>
+                  <div className="text-4xl mb-4 animate-spin">🔗</div>
+                  <p>Loading your links...</p>
                 </div>
               ) : filteredCreated.length === 0 ? (
                 <div className="bg-dark-card rounded-xl p-12 text-center border border-gray-800">
                   <div className="text-4xl mb-4">🤷</div>
-                  <p className="text-gray-400 mb-4">No potatoes found</p>
+                  <p className="text-gray-400 mb-4">No links found</p>
                   <button
                     onClick={() => navigate('/')}
                     className="bg-gradient-to-r from-toxic to-purple text-dark px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
                   >
-                    Create Your First Potato
+                    Create Your First Link
                   </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {filteredCreated.map((potato) => (
+                  {filteredCreated.map((link) => (
                     <div
-                      key={potato.id}
+                      key={link.id}
                       className="bg-dark-card rounded-xl p-6 border border-gray-800 hover:border-toxic transition-all"
                     >
                       <div className="flex justify-between items-start mb-4">
                         <div>
-                          <div className="text-sm text-gray-400 mb-1">Potato #{potato.id}</div>
-                          {potato.claimed ? (
+                          <div className="text-sm text-gray-400 mb-1">Link #{link.id}</div>
+                          {link.claimed ? (
                             <div className="text-2xl font-bold text-white">
-                              {formatUnits(BigInt(potato.amount), potato.token?.decimals || 18)}{' '}
-                              {potato.token?.symbol || '???'}
+                              {formatUnits(BigInt(link.amount), link.token?.decimals || 18)}{' '}
+                              {link.token?.symbol || '???'}
                             </div>
                           ) : (
                             <div className="text-2xl font-bold text-gray-500">
@@ -334,7 +334,7 @@ export default function Dashboard() {
                           )}
                         </div>
                         <div>
-                          {potato.claimed ? (
+                          {link.claimed ? (
                             <span className="bg-purple/20 text-purple px-3 py-1 rounded-full text-sm font-semibold">
                               Claimed
                             </span>
@@ -347,22 +347,22 @@ export default function Dashboard() {
                       </div>
 
                       <div className="text-xs text-gray-500 mb-4">
-                        Created {new Date(potato.timestamp * 1000).toLocaleDateString()}
+                        Created {new Date(link.timestamp * 1000).toLocaleDateString()}
                       </div>
 
-                      {potato.claimed ? (
+                      {link.claimed ? (
                         <div className="bg-dark/50 rounded-lg p-3 mb-4">
                           <div className="text-xs text-gray-400 mb-1">Claimed by:</div>
                           <div className="text-xs text-toxic font-mono">
-                            {potato.claimer.substring(0, 10)}...{potato.claimer.substring(38)}
+                            {link.claimer.substring(0, 10)}...{link.claimer.substring(38)}
                           </div>
                           <div className="text-xs text-gray-500 mt-2">
-                            {new Date(potato.claimedAt * 1000).toLocaleDateString()}
+                            {new Date(link.claimedAt * 1000).toLocaleDateString()}
                           </div>
                         </div>
                       ) : (
                         <button
-                          onClick={() => copyLink(potato.id)}
+                          onClick={() => copyLink(link.id)}
                           className="w-full bg-gradient-to-r from-toxic to-purple text-dark py-3 rounded-lg font-bold hover:shadow-lg transition-all"
                         >
                           📋 Copy Link to Share
@@ -374,28 +374,28 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Claimed Potatoes */}
+            {/* Claimed Links */}
             <div>
-              <h2 className="text-2xl font-bold text-white mb-4">🔥 Potatoes I Claimed</h2>
-              {myPotatoes.claimed.length === 0 ? (
+              <h2 className="text-2xl font-bold text-white mb-4">✨ Links I Claimed</h2>
+              {myLinks.claimed.length === 0 ? (
                 <div className="bg-dark-card rounded-xl p-12 text-center border border-gray-800">
                   <div className="text-4xl mb-4">👀</div>
-                  <p className="text-gray-400">You haven't claimed any potatoes yet!</p>
+                  <p className="text-gray-400">You haven't claimed any links yet!</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {myPotatoes.claimed.map((potato) => (
+                  {myLinks.claimed.map((link) => (
                     <div
-                      key={potato.id}
+                      key={link.id}
                       className="bg-dark-card rounded-xl p-6 border border-gray-800 hover:border-purple transition-all"
                     >
-                      <div className="text-sm text-gray-400 mb-1">Claimed Potato #{potato.id}</div>
+                      <div className="text-sm text-gray-400 mb-1">Claimed Link #{link.id}</div>
                       <div className="text-2xl font-bold text-toxic mb-2">
-                        Received: {formatUnits(BigInt(potato.amount) * 99n / 100n, potato.token?.decimals || 18)}{' '}
-                        {potato.token?.symbol || '???'}
+                        Received: {formatUnits(BigInt(link.amount) * 99n / 100n, link.token?.decimals || 18)}{' '}
+                        {link.token?.symbol || '???'}
                       </div>
                       <div className="text-xs text-gray-500">
-                        Claimed on {new Date(potato.claimedAt * 1000).toLocaleDateString()}
+                        Claimed on {new Date(link.claimedAt * 1000).toLocaleDateString()}
                       </div>
                     </div>
                   ))}
