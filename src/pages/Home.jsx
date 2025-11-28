@@ -271,7 +271,7 @@ export default function Home() {
             <div className="glass-card rounded-2xl p-8 space-y-6 glow-toxic-strong">
               <div>
                 <h3 className="text-2xl font-bold text-white mb-2">Create Your Link</h3>
-                <p className="text-gray-400">Choose what to pass on (they won't see it until they give)</p>
+                <p className="text-gray-400">Choose what to pass on (they won't see it until they pass it on)</p>
               </div>
 
               <TokenSelector

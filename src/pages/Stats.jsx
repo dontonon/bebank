@@ -44,20 +44,19 @@ export default function Stats() {
     totalCreated: 0,
     totalClaimed: 0,
     activePotatoes: 0,
-    recentClaims: [],
-    biggestPotato: null,
-    latestPotato: null,
+    biggestGift: null,
     tokenStats: {},
-    totalValueLocked: '0',
-    avgPotatoValue: '0',
+    avgGiftValue: '0',
     claimsToday: 0,
-    fastestClaim: null,
-    chainVelocity: 0,
-    claimsLastHour: 0
+    // New chain stats
+    longestChain: null,
+    biggestChain: null,
+    activeChains: 0,
+    totalChainValue: 0,
+    chainLeaderboard: []
   })
   const [isLoading, setIsLoading] = useState(true)
 
-  // Get total number of potatoes
   const { data: nextGiftId } = useReadContract({
     address: chain?.id ? getContractAddress(chain.id) : undefined,
     abi: CONTRACT_ABI,
@@ -74,14 +73,14 @@ export default function Stats() {
 
       try {
         const contractAddress = getContractAddress(chain.id)
-        const totalPotatoes = Number(nextGiftId)
+        const totalLinks = Number(nextGiftId)
 
-        // Load last 20 potatoes for efficiency (not all of them)
-        const startId = Math.max(0, totalPotatoes - 20)
-        const potatoPromises = []
+        // Load all links for chain analysis
+        const startId = Math.max(1, totalLinks - 100) // Analyze last 100 links
+        const linkPromises = []
 
-        for (let i = totalPotatoes - 1; i >= startId && i >= 0; i--) {
-          potatoPromises.push(
+        for (let i = totalLinks - 1; i >= startId && i >= 1; i--) {
+          linkPromises.push(
             publicClient.readContract({
               address: contractAddress,
               abi: CONTRACT_ABI,
@@ -91,129 +90,122 @@ export default function Stats() {
           )
         }
 
-        const potatoes = await Promise.all(potatoPromises)
+        const links = await Promise.all(linkPromises)
 
-        // Calculate stats
+        // Calculate basic stats
         let claimed = 0
         let active = 0
-        let recentClaims = []
-        let biggestPotato = null
-        let latestPotato = null
+        let biggestGift = null
         let tokenCounts = {}
         let totalValue = 0
-        let totalPotatoesValue = 0
-        let potatoCount = 0
+        let giftCount = 0
         let claimsToday = 0
-        let fastestClaim = null
-        let claimsLastHour = 0
 
         const now = Date.now() / 1000
-        const today = now - 86400 // Last 24 hours
-        const lastHour = now - 3600 // Last hour
+        const today = now - 86400
 
-        potatoes.forEach(potato => {
-          const token = getTokenByAddress(potato[0])
-          const amount = potato[1]
-          const isClaimed = potato[3]
-          const timestamp = Number(potato[5])
-          const claimedAt = potato[6] ? Number(potato[6]) : null
+        // Build chain data structure
+        const chains = []
+        let currentChain = null
 
-          // Count claimed vs active
+        // Process links in order (oldest to newest)
+        const sortedLinks = [...links].sort((a, b) => a.id - b.id)
+
+        sortedLinks.forEach(link => {
+          const token = getTokenByAddress(link[0])
+          const amount = link[1]
+          const isClaimed = link[3]
+          const timestamp = Number(link[5])
+          const claimedAt = link[6] ? Number(link[6]) : null
+
+          const amountFloat = parseFloat(formatUnits(amount, token.decimals))
+
           if (isClaimed) {
             claimed++
+            if (claimedAt && claimedAt > today) claimsToday++
 
-            // Recent claims (last 10)
-            if (recentClaims.length < 10) {
-              recentClaims.push({
-                id: potato.id,
+            // Add to current chain
+            if (!currentChain) {
+              currentChain = {
+                startId: link.id,
+                endId: link.id,
+                length: 1,
+                value: amountFloat,
                 token: token.symbol,
-                amount: formatUnits(amount, token.decimals),
-                claimedAt: claimedAt,
-                timestamp: timestamp
-              })
-            }
-
-            // Claims today
-            if (claimedAt && claimedAt > today) {
-              claimsToday++
-            }
-
-            // Claims last hour
-            if (claimedAt && claimedAt > lastHour) {
-              claimsLastHour++
-            }
-
-            // Fastest claim (time between creation and claim)
-            if (claimedAt) {
-              const claimSpeed = claimedAt - timestamp // seconds between creation and claim
-              if (!fastestClaim || claimSpeed < fastestClaim.speed) {
-                fastestClaim = {
-                  id: potato.id,
-                  speed: claimSpeed,
-                  token: token.symbol,
-                  amount: parseFloat(formatUnits(amount, token.decimals))
-                }
+                links: [link.id]
               }
+            } else {
+              currentChain.endId = link.id
+              currentChain.length++
+              currentChain.value += amountFloat
+              currentChain.links.push(link.id)
             }
           } else {
             active++
+            // Chain broken, save current chain
+            if (currentChain && currentChain.length > 0) {
+              chains.push(currentChain)
+              currentChain = null
+            }
           }
 
           // Token statistics
-          if (!tokenCounts[token.symbol]) {
-            tokenCounts[token.symbol] = 0
-          }
+          if (!tokenCounts[token.symbol]) tokenCounts[token.symbol] = 0
           tokenCounts[token.symbol]++
 
-          // Biggest potato
-          const amountFloat = parseFloat(formatUnits(amount, token.decimals))
-          if (!biggestPotato || amountFloat > biggestPotato.amount) {
-            biggestPotato = {
-              id: potato.id,
+          // Biggest gift
+          if (!biggestGift || amountFloat > biggestGift.amount) {
+            biggestGift = {
+              id: link.id,
               token: token.symbol,
               amount: amountFloat,
               timestamp: timestamp
             }
           }
 
-          // Latest potato
-          if (!latestPotato || timestamp > latestPotato.timestamp) {
-            latestPotato = {
-              id: potato.id,
-              token: token.symbol,
-              amount: amountFloat,
-              timestamp: timestamp,
-              claimed: isClaimed
-            }
-          }
-
-          // Total value (only active potatoes for TVL)
-          if (!isClaimed) {
-            totalValue += amountFloat
-          }
-
-          // Average calculation (all potatoes)
-          totalPotatoesValue += amountFloat
-          potatoCount++
+          totalValue += amountFloat
+          giftCount++
         })
 
-        // Calculate chain velocity (claims per day)
-        const chainVelocity = claimed > 0 ? (claimsToday / 1).toFixed(1) : '0.0' // simplified: today's claims as daily rate
+        // Save final chain if exists
+        if (currentChain && currentChain.length > 0) {
+          chains.push(currentChain)
+        }
+
+        // Find longest and biggest chains
+        const longestChain = chains.length > 0
+          ? chains.reduce((max, chain) => chain.length > max.length ? chain : max, chains[0])
+          : null
+
+        const biggestChain = chains.length > 0
+          ? chains.reduce((max, chain) => chain.value > max.value ? chain : max, chains[0])
+          : null
+
+        // Calculate total chain value (only claimed gifts)
+        const totalChainValue = chains.reduce((sum, chain) => sum + chain.value, 0)
+
+        // Create chain leaderboard (top 5 by length)
+        const chainLeaderboard = chains
+          .sort((a, b) => b.length - a.length)
+          .slice(0, 5)
+          .map((chain, idx) => ({
+            rank: idx + 1,
+            ...chain
+          }))
 
         setStats({
-          totalCreated: totalPotatoes,
+          totalCreated: totalLinks - 1, // Subtract 1 because IDs start at 1
           totalClaimed: claimed,
           activePotatoes: active,
-          recentClaims,
-          biggestPotato,
-          latestPotato,
+          biggestGift,
           tokenStats: tokenCounts,
-          totalValueLocked: totalValue.toFixed(4),
-          avgPotatoValue: (totalPotatoesValue / potatoCount).toFixed(4),
+          avgGiftValue: (totalValue / giftCount).toFixed(4),
           claimsToday,
-          fastestClaim,
-          chainVelocity,
-          claimsLastHour
+          longestChain,
+          biggestChain,
+          activeChains: chains.filter(c => c.length > 0).length,
+          totalChainValue: totalChainValue.toFixed(4),
+          chainLeaderboard
         })
         setIsLoading(false)
       } catch (error) {
@@ -233,13 +225,6 @@ export default function Stats() {
     return `${Math.floor(seconds / 86400)}d ago`
   }
 
-  const formatDuration = (seconds) => {
-    if (seconds < 60) return `${seconds}s`
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
-    return `${Math.floor(seconds / 86400)}d ${Math.floor((seconds % 86400) / 3600)}h`
-  }
-
   const getMostPopularToken = () => {
     if (!stats.tokenStats || Object.keys(stats.tokenStats).length === 0) return 'N/A'
     return Object.entries(stats.tokenStats).sort((a, b) => b[1] - a[1])[0][0]
@@ -254,20 +239,20 @@ export default function Stats() {
         <div className="max-w-7xl mx-auto">
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-5xl font-black gradient-text mb-3">🔗 The Chain</h1>
-            <p className="text-gray-400 text-lg">Real-time stats from the network</p>
+            <h1 className="text-5xl font-black gradient-text mb-3">⛓️ The Chain</h1>
+            <p className="text-gray-400 text-lg">Watch the chain grow as people pass it on</p>
           </div>
 
           {isLoading ? (
             <div className="text-center py-20">
               <div className="text-8xl mb-4 animate-spin inline-block">🔗</div>
-              <p className="text-gray-400">Loading stats...</p>
+              <p className="text-gray-400">Loading chain stats...</p>
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Top Stats Grid with Circular Progress */}
+              {/* Top Chain Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Claim Rate Visualization */}
+                {/* Claim Rate */}
                 <div className="glass-card rounded-xl p-6 border border-purple/30 glow-purple flex items-center justify-center">
                   <CircularProgress
                     percentage={stats.totalCreated > 0 ? Math.round((stats.totalClaimed / stats.totalCreated) * 100) : 0}
@@ -276,56 +261,86 @@ export default function Stats() {
                   />
                 </div>
 
-                {/* Total Claimed */}
-                <div className="glass-card rounded-xl p-6 border border-purple/30">
-                  <div className="text-gray-400 text-sm mb-2">✨ Total Claimed</div>
-                  <div className="text-4xl font-black text-purple">{stats.totalClaimed}</div>
-                  <div className="text-xs text-gray-500 mt-2">All-time claims</div>
-                  <div className="mt-4 h-2 bg-gray-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-purple to-pink-500 animate-pulse"
-                      style={{ width: `${stats.totalCreated > 0 ? (stats.totalClaimed / stats.totalCreated) * 100 : 0}%` }}
-                    />
+                {/* Longest Chain */}
+                <div className="glass-card rounded-xl p-6 border border-toxic/30 bg-gradient-to-br from-toxic/10 to-green-500/10">
+                  <div className="text-gray-400 text-sm mb-2">🏆 Longest Chain</div>
+                  <div className="text-4xl font-black text-toxic">
+                    {stats.longestChain ? stats.longestChain.length : 0}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    {stats.longestChain ? `Links #${stats.longestChain.startId}-${stats.longestChain.endId}` : 'No chains yet'}
                   </div>
                 </div>
 
-                {/* Claims Today */}
-                <div className="glass-card rounded-xl p-6 border border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/10">
-                  <div className="text-gray-400 text-sm mb-2">📈 Last 24h</div>
-                  <div className="text-4xl font-black text-green-500">{stats.claimsToday}</div>
-                  <div className="text-xs text-gray-500 mt-2">Claims today</div>
-                  <div className="mt-4">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-green-500 to-emerald-500 animate-pulse"
-                          style={{ width: `${Math.min(100, (stats.claimsToday / Math.max(1, stats.totalClaimed)) * 100 * 10)}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-500">{((stats.claimsToday / Math.max(1, stats.totalClaimed)) * 100).toFixed(1)}%</span>
-                    </div>
-                  </div>
+                {/* Active Chains */}
+                <div className="glass-card rounded-xl p-6 border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-blue-500/10">
+                  <div className="text-gray-400 text-sm mb-2">⛓️ Active Chains</div>
+                  <div className="text-4xl font-black text-cyan-400">{stats.activeChains}</div>
+                  <div className="text-xs text-gray-500 mt-2">Chains in progress</div>
                 </div>
               </div>
 
+              {/* Chain Leaderboard */}
+              {stats.chainLeaderboard.length > 0 && (
+                <div className="glass-card rounded-xl p-6 border border-yellow-500/30">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-3xl">🏅</span>
+                    <div>
+                      <div className="text-xl font-bold text-white">Chain Leaderboard</div>
+                      <div className="text-xs text-gray-500">Longest unbroken chains</div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {stats.chainLeaderboard.map((chain) => (
+                      <div
+                        key={chain.startId}
+                        className="glass-card rounded-lg p-4 border border-yellow-500/20 hover:border-yellow-500/50 transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl font-black text-yellow-500">
+                              #{chain.rank}
+                            </div>
+                            <div>
+                              <div className="text-white font-semibold">
+                                {chain.length} Links Passed On
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Chain #{chain.startId} → #{chain.endId}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-toxic">
+                              {chain.value.toFixed(4)}
+                            </div>
+                            <div className="text-xs text-gray-500">Total Value</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Middle Stats Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 5. Biggest Gift */}
+                {/* Biggest Gift */}
                 <div className="glass-card rounded-xl p-6 border border-yellow-500/30">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-3xl">👑</span>
+                    <span className="text-3xl">💎</span>
                     <div>
                       <div className="text-gray-400 text-sm">Biggest Gift</div>
                       <div className="text-xs text-gray-600">All-time record</div>
                     </div>
                   </div>
-                  {stats.biggestPotato ? (
+                  {stats.biggestGift ? (
                     <>
                       <div className="text-2xl font-bold text-yellow-500">
-                        {stats.biggestPotato.amount} {stats.biggestPotato.token}
+                        {stats.biggestGift.amount} {stats.biggestGift.token}
                       </div>
                       <div className="text-xs text-gray-500 mt-2">
-                        Link #{stats.biggestPotato.id}
+                        Link #{stats.biggestGift.id}
                       </div>
                     </>
                   ) : (
@@ -333,7 +348,7 @@ export default function Stats() {
                   )}
                 </div>
 
-                {/* 6. Average Value */}
+                {/* Average Gift Value */}
                 <div className="glass-card rounded-xl p-6 border border-blue-500/30">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-3xl">📊</span>
@@ -343,138 +358,63 @@ export default function Stats() {
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-blue-400">
-                    {stats.avgPotatoValue}
+                    {stats.avgGiftValue}
                   </div>
                   <div className="text-xs text-gray-500 mt-2">Mixed tokens</div>
                 </div>
 
-                {/* 7. Most Popular Token */}
-                <div className="glass-card rounded-xl p-6 border border-pink-500/30">
+                {/* Total Chain Value */}
+                <div className="glass-card rounded-xl p-6 border border-green-500/30">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-3xl">🏆</span>
+                    <span className="text-3xl">💰</span>
                     <div>
-                      <div className="text-gray-400 text-sm">Popular Token</div>
-                      <div className="text-xs text-gray-600">Most used</div>
+                      <div className="text-gray-400 text-sm">Chain Value</div>
+                      <div className="text-xs text-gray-600">All claimed</div>
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-pink-400">
-                    {getMostPopularToken()}
+                  <div className="text-2xl font-bold text-green-400">
+                    {stats.totalChainValue}
                   </div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    {stats.tokenStats[getMostPopularToken()] || 0} gifts
-                  </div>
+                  <div className="text-xs text-gray-500 mt-2">Total passed on</div>
                 </div>
               </div>
 
               {/* Token Distribution */}
               <div className="glass-card rounded-xl p-6 border border-indigo-500/30">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-3xl">💎</span>
-                    <div>
-                      <div className="text-lg font-bold text-white">Token Distribution</div>
-                      <div className="text-xs text-gray-500">Usage breakdown</div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {Object.entries(stats.tokenStats).sort((a, b) => b[1] - a[1]).map(([token, count]) => (
-                      <div key={token} className="flex items-center justify-between">
-                        <span className="text-gray-300 font-medium">{token}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 bg-gray-800 rounded-full overflow-hidden" style={{ width: '100px' }}>
-                            <div
-                              className="h-full bg-gradient-to-r from-toxic to-purple"
-                              style={{ width: `${(count / stats.totalCreated) * 100}%` }}
-                            />
-                          </div>
-                          <span className="text-gray-500 text-sm w-8 text-right">{count}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              {/* Chain Velocity */}
-              <div className="max-w-md mx-auto">
-                <div className="glass-card rounded-xl p-6 border border-cyan-400/40 bg-gradient-to-br from-cyan-500/10 to-blue-500/10">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-4xl">🚀</span>
-                    <div>
-                      <div className="text-gray-400 text-sm">Chain Velocity</div>
-                      <div className="text-xs text-gray-600">Claims per day</div>
-                    </div>
-                  </div>
-                  <div className="text-3xl font-black text-cyan-400 mb-3">
-                    {stats.chainVelocity}
-                  </div>
-                  {/* Velocity Meter */}
-                  <div className="relative h-3 bg-gray-800 rounded-full overflow-hidden">
-                    <div
-                      className="absolute h-full bg-gradient-to-r from-cyan-500 to-blue-500 animate-pulse"
-                      style={{
-                        width: `${Math.min(100, (parseFloat(stats.chainVelocity) / 50) * 100)}%`,
-                        transition: 'width 0.5s ease-in-out'
-                      }}
-                    />
-                  </div>
-                  <div className="mt-2 text-xs text-gray-500">
-                    {stats.chainVelocity > 10 ? '🔥 Hot!' : stats.chainVelocity > 5 ? '📈 Growing' : '🌱 Starting'}
-                  </div>
-                </div>
-              </div>
-
-              {/* 10. Recent Claims Feed */}
-              <div className="glass-card rounded-xl p-6 border border-purple/30">
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="text-3xl">📜</span>
+                  <span className="text-3xl">🪙</span>
                   <div>
-                    <div className="text-xl font-bold text-white">Recent Claims</div>
-                    <div className="text-xs text-gray-500">Last 10 claimed gifts</div>
+                    <div className="text-lg font-bold text-white">Token Leaderboard</div>
+                    <div className="text-xs text-gray-500">Most passed on</div>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  {stats.recentClaims.length > 0 ? (
-                    stats.recentClaims.map((claim, idx) => (
-                      <div
-                        key={claim.id}
-                        className="glass-card rounded-lg p-4 border border-purple/20 hover:border-toxic/50 transition-all animate-fade-in"
-                        style={{ animationDelay: `${idx * 0.05}s` }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="text-2xl animate-float">🔗</div>
-                            <div>
-                              <div className="text-white font-semibold">
-                                Link #{claim.id}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {formatTimeAgo(claim.claimedAt)}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-green-400">
-                              {parseFloat(claim.amount).toFixed(4)} {claim.token}
-                            </div>
-                            <div className="text-xs text-gray-500">claimed</div>
-                          </div>
-                        </div>
+                <div className="space-y-2">
+                  {Object.entries(stats.tokenStats).sort((a, b) => b[1] - a[1]).map(([token, count], idx) => (
+                    <div key={token} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 font-mono text-sm w-6">#{idx + 1}</span>
+                        <span className="text-gray-300 font-medium">{token}</span>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-gray-500 py-8">
-                      <div className="text-4xl mb-2">👀</div>
-                      <div className="text-sm">No claims yet</div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden" style={{ width: '100px' }}>
+                          <div
+                            className="h-full bg-gradient-to-r from-toxic to-purple"
+                            style={{ width: `${(count / stats.totalCreated) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-toxic font-semibold text-sm w-12 text-right">{count}</span>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
 
               {/* Call to Action */}
               <div className="glass-card rounded-xl p-8 border border-toxic/30 bg-gradient-to-r from-toxic/10 to-purple/10 text-center">
                 <div className="text-6xl mb-4">🚀</div>
-                <h3 className="text-2xl font-bold text-white mb-2">Ready to Join?</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">Join The Chain</h3>
                 <p className="text-gray-400 mb-6">
-                  Create your link and become part of the chain!
+                  Create your link and help build the longest chain!
                 </p>
                 <a
                   href="/"
@@ -488,7 +428,6 @@ export default function Stats() {
         </div>
       </main>
 
-      {/* Bottom Bar */}
       <Sidebar isBottomBar={true} />
     </div>
   )
