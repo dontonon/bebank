@@ -14,6 +14,8 @@ import Dashboard from './pages/Dashboard'
 import Stats from './pages/Stats'
 import ChainExplorer from './pages/ChainExplorer'
 import SecretRecovery from './pages/SecretRecovery'
+import Terms from './pages/Terms'
+import Privacy from './pages/Privacy'
 import ErrorBoundary from './components/ErrorBoundary'
 
 const queryClient = new QueryClient({
@@ -46,6 +48,8 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
                 {/* V2 routes with secrets */}
                 <Route path="/claim/:giftId/:secret" element={<Claim />} />
                 <Route path="/potato/:giftId/:secret" element={<PotatoLink />} />

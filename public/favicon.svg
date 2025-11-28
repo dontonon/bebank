@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00FF88;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A855F7;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Chain link icon -->
+  <path d="M35 25 L35 35 Q35 40 40 40 L60 40 Q65 40 65 35 L65 25 Q65 20 60 20 L40 20 Q35 20 35 25 Z"
+        fill="none" stroke="url(#grad)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M35 65 L35 75 Q35 80 40 80 L60 80 Q65 80 65 75 L65 65 Q65 60 60 60 L40 60 Q35 60 35 65 Z"
+        fill="none" stroke="url(#grad)" stroke-width="6" stroke-linecap="round"/>
+  <line x1="50" y1="40" x2="50" y2="60" stroke="url(#grad)" stroke-width="6" stroke-linecap="round"/>
+</svg>

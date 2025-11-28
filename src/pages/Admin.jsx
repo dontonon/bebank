@@ -96,6 +96,17 @@ export default function Admin() {
                   <ConnectButton />
                 </div>
               </div>
+            ) : !isTreasuryOwner ? (
+              <div className="bg-dark-card rounded-2xl p-12 border border-red-500/50 text-center">
+                <div className="text-6xl mb-6">🔒</div>
+                <h3 className="text-3xl font-bold text-white mb-4">Access Denied</h3>
+                <p className="text-gray-400 mb-6">
+                  This admin panel is restricted to authorized addresses only.
+                </p>
+                <p className="text-gray-500 text-sm">
+                  Connected wallet: <code className="text-white">{address?.substring(0, 10)}...{address?.substring(address.length - 8)}</code>
+                </p>
+              </div>
             ) : (
               <div className="space-y-6">
                 {/* Current Treasury Info */}
@@ -114,15 +125,13 @@ export default function Admin() {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-400">You are treasury owner:</span>
-                      <span className={isTreasuryOwner ? 'text-green-400' : 'text-red-400'}>
-                        {isTreasuryOwner ? '✅ Yes' : '❌ No'}
-                      </span>
+                      <span className="text-green-400">✅ Yes</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Update Treasury */}
-                {isTreasuryOwner && (
+                {(
                   <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">
                     <div>
                       <h3 className="text-xl font-bold text-white mb-2">Update Treasury Address</h3>
@@ -172,20 +181,6 @@ export default function Admin() {
                       {isConfirming && <span>Updating treasury... ⏳</span>}
                       {!isPending && !isConfirming && <span>Update Treasury Address</span>}
                     </button>
-                  </div>
-                )}
-
-                {/* Not Treasury Owner */}
-                {!isTreasuryOwner && (
-                  <div className="bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">
-                    <div className="text-4xl mb-4">🔒</div>
-                    <h3 className="text-xl font-bold text-white mb-2">Not Authorized</h3>
-                    <p className="text-gray-400">
-                      Only the current treasury address can update the treasury settings.
-                    </p>
-                    <p className="text-gray-500 text-sm mt-4">
-                      Connect with the treasury wallet to manage these settings.
-                    </p>
                   </div>
                 )}
 
