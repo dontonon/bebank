@@ -64,18 +64,18 @@ export default function GiftLink() {
           <div className="text-center mb-12">
             <div className="text-8xl mb-6">✨</div>
             <h2 className="text-5xl font-bold gradient-text mb-4">
-              Gift Created!
+              Link Created!
             </h2>
             <p className="text-xl text-gray-400">
-              Share your mystery gift link and watch someone claim it
+              Share your mystery link and watch someone pass it on
             </p>
           </div>
 
           {/* Share Card */}
           <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">
             <div>
-              <h3 className="text-2xl font-bold text-white mb-2">Your Gift Link</h3>
-              <p className="text-gray-400">Share this with anyone. They won't see what it is!</p>
+              <h3 className="text-2xl font-bold text-white mb-2">Your Chain Link</h3>
+              <p className="text-gray-400">Share this to keep the chain alive. They won't see what's inside until they pass it on!</p>
             </div>
 
             {/* URL Box */}
@@ -146,7 +146,7 @@ export default function GiftLink() {
               onClick={() => navigate('/')}
               className="flex-1 bg-gradient-to-r from-toxic to-purple text-dark py-4 rounded-xl font-bold hover:shadow-lg transition-all"
             >
-              Create Another Gift
+              Pass On Another
             </button>
             <button
               onClick={() => navigate('/stats')}
@@ -156,10 +156,10 @@ export default function GiftLink() {
             </button>
           </div>
 
-          {/* Gift ID Badge */}
+          {/* Link ID Badge */}
           <div className="mt-8 text-center">
             <span className="inline-block bg-dark-card border border-gray-800 px-6 py-3 rounded-full text-gray-400">
-              Gift #{giftId}
+              Link #{giftId}
             </span>
           </div>
         </div>

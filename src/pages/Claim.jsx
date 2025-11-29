@@ -535,13 +535,13 @@ export default function Claim() {
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-red-500/50 text-center">
           <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-white mb-3">Potato Not Found</h2>
-          <p className="text-gray-400 mb-6">This Hot Potato ID does not exist. Check the link and try again.</p>
+          <h2 className="text-2xl font-bold text-white mb-3">Link Not Found</h2>
+          <p className="text-gray-400 mb-6">This link does not exist. Check the link and try again.</p>
           <button
             onClick={() => navigate('/')}
             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
           >
-            Create Your Own Gift
+            Pass On Your Own
           </button>
         </div>
       </div>
@@ -553,8 +553,8 @@ export default function Claim() {
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">
           <div className="text-6xl mb-4">🚫</div>
-          <h2 className="text-2xl font-bold text-white mb-3">Can't Claim Your Own Potato!</h2>
-          <p className="text-gray-400 mb-6">You created this Hot Potato. Share it with someone else to keep the chain going!</p>
+          <h2 className="text-2xl font-bold text-white mb-3">Can't Claim Your Own Link!</h2>
+          <p className="text-gray-400 mb-6">You created this link. Pass it on to someone else to keep the chain alive!</p>
           <button
             onClick={() => navigate(`/potato/${giftId}`)}
             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all mb-3"
@@ -565,7 +565,7 @@ export default function Claim() {
             onClick={() => navigate('/')}
             className="block w-full bg-gray-700 text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-600 transition-all"
           >
-            Create New Potato
+            Pass On Another
           </button>
         </div>
       </div>
@@ -580,8 +580,8 @@ export default function Claim() {
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-yellow-500/50 text-center">
           <div className="text-6xl mb-4">😢</div>
-          <h2 className="text-2xl font-bold text-white mb-3">Already Claimed</h2>
-          <p className="text-gray-400 mb-4">This Hot Potato has already been passed on.</p>
+          <h2 className="text-2xl font-bold text-white mb-3">Already Passed On</h2>
+          <p className="text-gray-400 mb-4">This link has already been claimed and passed on to keep the chain going.</p>
           <div className="bg-dark/50 rounded-xl p-4 mb-6 text-sm text-left">
             <div className="text-gray-500 mb-1">Claimed by:</div>
             <div className="text-toxic font-mono text-xs break-all">{claimedBy}</div>
@@ -640,13 +640,13 @@ export default function Claim() {
           <div className="glass-card bg-gradient-to-r from-purple/30 to-toxic/30 border-2 border-purple rounded-2xl p-8 mb-8 text-center glow-purple-strong">
             <div className="text-7xl mb-4 animate-float">🔗</div>
             <h1 className="text-4xl font-black gradient-text mb-3">
-              Claim Your Gift
+              Pass It On!
             </h1>
             <p className="text-xl text-white font-semibold mb-2">
-              Someone sent you crypto! 🎁
+              Someone passed crypto to you! 🔗
             </p>
             <p className="text-gray-300 mb-2">
-              Pass on your own gift to claim theirs
+              Pass on your own to claim theirs and keep the chain alive!
             </p>
             <p className="text-toxic font-bold text-lg animate-glow-pulse">
               What's inside? You'll find out after! 🤔
@@ -656,8 +656,8 @@ export default function Claim() {
           {/* Claim Form */}
           {!isConnected ? (
             <div className="glass-card rounded-2xl p-12 text-center">
-              <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Claim Your Gift</h3>
-              <p className="text-gray-500 mb-6">Connect your wallet to see what you'll receive</p>
+              <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect to Continue the Chain</h3>
+              <p className="text-gray-500 mb-6">Connect your wallet to pass it on and claim yours</p>
               <div className="flex justify-center">
                 <ConnectButton />
               </div>
@@ -678,18 +678,18 @@ export default function Claim() {
                 </div>
               </div>
 
-              {/* Can't Claim Own Gift Warning */}
+              {/* Can't Claim Own Link Warning */}
               {isCreator && (
                 <div className="bg-yellow-900/40 border-2 border-yellow-500 rounded-xl p-5">
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">🚫</div>
                     <div>
-                      <p className="text-yellow-400 font-bold text-lg mb-2">YOU CAN'T CLAIM YOUR OWN GIFT!</p>
+                      <p className="text-yellow-400 font-bold text-lg mb-2">YOU CAN'T CLAIM YOUR OWN LINK!</p>
                       <p className="text-yellow-300 text-sm mb-3">
-                        You created this gift. You need to share it with someone else to claim it!
+                        You created this link. Pass it on to someone else to keep the chain going!
                       </p>
                       <p className="text-yellow-200 text-sm font-semibold">
-                        👉 Share the link with a friend and they can claim it.
+                        👉 Share the link and keep the chain alive! 🔗
                       </p>
                     </div>
                   </div>
@@ -702,9 +702,9 @@ export default function Claim() {
                   <div className="flex items-start gap-3">
                     <div className="text-3xl">😢</div>
                     <div>
-                      <p className="text-red-400 font-bold text-lg mb-2">GIFT ALREADY CLAIMED!</p>
+                      <p className="text-red-400 font-bold text-lg mb-2">ALREADY PASSED ON!</p>
                       <p className="text-red-300 text-sm mb-3">
-                        Someone else already claimed this gift at {new Date(Number(giftData[6] * 1000n)).toLocaleString()}
+                        Someone else already claimed this and passed it on at {new Date(Number(giftData[6] * 1000n)).toLocaleString()}
                       </p>
                       <p className="text-red-200 text-sm">
                         Claimed by: <span className="font-mono text-xs">{giftData[4]}</span>
@@ -757,7 +757,7 @@ export default function Claim() {
                         ❌ This is a CRITICAL BUG in the smart contract!
                       </p>
                       <p className="text-yellow-300 text-sm mt-2">
-                        The potato creator's ETH should be in the contract. Check the contract on BaseScan.
+                        The link creator's ETH should be in the contract. Check the contract on BaseScan.
                       </p>
                     </div>
                   </div>
@@ -847,9 +847,9 @@ export default function Claim() {
             <ul className="space-y-2 text-gray-300 text-sm">
               <li>🎁 <strong>Surprise factor:</strong> You don't know what you're getting!</li>
               <li>🤝 <strong>Fair trade:</strong> You give something to receive something</li>
-              <li>⛓️ <strong>Endless chain:</strong> Your potato continues the game</li>
+              <li>⛓️ <strong>Endless chain:</strong> Your link keeps the chain alive!</li>
               <li>💰 <strong>Real value:</strong> Actual crypto, not fake internet points</li>
-              <li>⚡ <strong>Instant:</strong> One click = claim + create new potato</li>
+              <li>⚡ <strong>Instant:</strong> One click = claim + pass on your own</li>
             </ul>
           </div>
         </div>
