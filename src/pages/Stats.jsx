@@ -78,7 +78,13 @@ export default function Stats() {
 
   useEffect(() => {
     async function loadStats() {
+      console.log('📊 loadStats called')
+      console.log('  publicClient:', !!publicClient)
+      console.log('  nextGiftId:', nextGiftId?.toString())
+      console.log('  activeChain.id:', activeChain?.id)
+
       if (!publicClient || !nextGiftId) {
+        console.log('⚠️ Missing publicClient or nextGiftId, stopping')
         setIsLoading(false)
         return
       }
@@ -86,6 +92,30 @@ export default function Stats() {
       try {
         const contractAddress = getContractAddress(activeChain.id)
         const totalLinks = Number(nextGiftId)
+
+        console.log('📍 Contract address:', contractAddress)
+        console.log('📍 Total links:', totalLinks)
+
+        if (totalLinks <= 1) {
+          console.log('⚠️ No links created yet (nextGiftId <= 1)')
+          setStats({
+            totalCreated: 0,
+            totalClaimed: 0,
+            activePotatoes: 0,
+            biggestLink: null,
+            tokenStats: {},
+            avgValue: '0',
+            claimsToday: 0,
+            longestChain: null,
+            biggestChain: null,
+            activeChains: 0,
+            totalChainValue: 0,
+            chainLeaderboard: [],
+            recentLinks: []
+          })
+          setIsLoading(false)
+          return
+        }
 
         // Load links for analysis
         const startId = Math.max(1, totalLinks - 100)
@@ -218,8 +248,13 @@ export default function Stats() {
           recentLinks
         })
         setIsLoading(false)
+        console.log('✅ Stats loaded successfully:', {
+          totalCreated: totalLinks - 1,
+          totalClaimed: claimed,
+          recentLinksCount: recentLinks.length
+        })
       } catch (error) {
-        console.error('Error loading stats:', error)
+        console.error('❌ Error loading stats:', error)
         setIsLoading(false)
       }
     }
@@ -302,6 +337,18 @@ export default function Stats() {
             <div className="text-center py-20">
               <div className="text-8xl mb-4 animate-spin inline-block">🔗</div>
               <p className="text-gray-400">Loading chain stats...</p>
+            </div>
+          ) : stats.totalCreated === 0 ? (
+            <div className="text-center py-20">
+              <div className="text-8xl mb-4">🔗</div>
+              <h2 className="text-3xl font-bold text-white mb-4">No Chains Yet!</h2>
+              <p className="text-gray-400 mb-6">Be the first to start the chain by creating a link</p>
+              <button
+                onClick={() => window.location.href = '/'}
+                className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+              >
+                Create First Link
+              </button>
             </div>
           ) : (
             <div className="space-y-8">
