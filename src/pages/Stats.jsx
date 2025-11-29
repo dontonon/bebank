@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAccount, useReadContract, usePublicClient } from 'wagmi'
+import { base } from 'wagmi/chains'
+import { createPublicClient, http } from 'viem'
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
 import ChainBackground from '../components/ChainBackground'
@@ -39,7 +41,7 @@ const CONTRACT_ABI = [
 
 export default function Stats() {
   const { chain } = useAccount()
-  const publicClient = usePublicClient()
+  const connectedPublicClient = usePublicClient()
   const canvasRef = useRef(null)
   const [selectedLink, setSelectedLink] = useState(null)
   const [stats, setStats] = useState({
@@ -60,22 +62,29 @@ export default function Stats() {
   })
   const [isLoading, setIsLoading] = useState(true)
 
+  // Use Base mainnet by default if not connected
+  const activeChain = chain || base
+  const publicClient = connectedPublicClient || createPublicClient({
+    chain: base,
+    transport: http()
+  })
+
   const { data: nextGiftId } = useReadContract({
-    address: chain?.id ? getContractAddress(chain.id) : undefined,
+    address: getContractAddress(activeChain.id),
     abi: CONTRACT_ABI,
     functionName: 'nextGiftId',
-    enabled: !!chain?.id
+    chainId: activeChain.id
   })
 
   useEffect(() => {
     async function loadStats() {
-      if (!chain || !publicClient || !nextGiftId) {
+      if (!publicClient || !nextGiftId) {
         setIsLoading(false)
         return
       }
 
       try {
-        const contractAddress = getContractAddress(chain.id)
+        const contractAddress = getContractAddress(activeChain.id)
         const totalLinks = Number(nextGiftId)
 
         // Load links for analysis
@@ -216,7 +225,7 @@ export default function Stats() {
     }
 
     loadStats()
-  }, [chain, publicClient, nextGiftId])
+  }, [activeChain, publicClient, nextGiftId])
 
   // Draw chain visualization
   useEffect(() => {
