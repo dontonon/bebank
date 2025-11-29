@@ -12,7 +12,6 @@ import About from './pages/About'
 import Admin from './pages/Admin'
 import Dashboard from './pages/Dashboard'
 import Stats from './pages/Stats'
-import ChainExplorer from './pages/ChainExplorer'
 import SecretRecovery from './pages/SecretRecovery'
 import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
@@ -43,7 +42,6 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/stats" element={<Stats />} />
-                <Route path="/explorer" element={<ChainExplorer />} />
                 <Route path="/recover" element={<SecretRecovery />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/dashboard" element={<Dashboard />} />

@@ -16,10 +16,10 @@ function About() {
               <section className="glass-card p-6">
                 <h2 className="text-2xl font-bold text-white mb-4">What is Pass It On?</h2>
                 <p className="text-gray-300 leading-relaxed">
-                  Pass It On is a viral, on-chain gifting game built on Base. It's like a chain letter,
+                  Pass It On is an on-chain crypto chain game built on Base. It's like a chain letter,
                   but with real cryptocurrency! Send crypto to a friend, but there's a catch - they can
                   only claim it by passing on their own link to someone else. This creates an
-                  endless chain of giving that spreads across the network.
+                  endless chain that keeps growing across the network.
                 </p>
               </section>
 

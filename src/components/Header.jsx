@@ -44,16 +44,6 @@ function Header() {
             The Chain
           </Link>
           <Link
-            to="/explorer"
-            className={`text-sm font-medium transition-colors ${
-              isActive('/explorer')
-                ? 'text-cyan-500'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Explorer
-          </Link>
-          <Link
             to="/dashboard"
             className={`text-sm font-medium transition-colors ${
               isActive('/dashboard')
