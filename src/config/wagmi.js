@@ -7,7 +7,11 @@ export const config = getDefaultConfig({
   projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID,
   chains: [base, baseSepolia],
   transports: {
-    [base.id]: http(),
+    [base.id]: http(
+      import.meta.env.VITE_ALCHEMY_API_KEY
+        ? `https://base-mainnet.g.alchemy.com/v2/${import.meta.env.VITE_ALCHEMY_API_KEY}`
+        : 'https://base.publicnode.com' // Free public RPC with better rate limits
+    ),
     [baseSepolia.id]: http(),
   },
   ssr: false,
