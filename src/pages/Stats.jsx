@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAccount, useReadContract, usePublicClient } from 'wagmi'
 import { base } from 'wagmi/chains'
 import { createPublicClient, http } from 'viem'
@@ -9,6 +9,12 @@ import CircularProgress from '../components/CircularProgress'
 import { getContractAddress } from '../config/wagmi'
 import { getTokenByAddress } from '../config/tokens'
 import { formatUnits } from 'viem'
+
+// Create fallback client ONCE outside component
+const fallbackClient = createPublicClient({
+  chain: base,
+  transport: http()
+})
 
 const CONTRACT_ABI = [
   {
@@ -70,13 +76,10 @@ export default function Stats() {
 
   // Use Base mainnet by default if not connected
   const activeChain = chain || base
-  const publicClient = connectedPublicClient || createPublicClient({
-    chain: base,
-    transport: http()
-  })
+  const publicClient = connectedPublicClient || fallbackClient
 
-  console.log('⚙️ Active chain:', activeChain.name, 'ID:', activeChain.id)
-  console.log('⚙️ Contract:', getContractAddress(activeChain.id))
+  console.log('⚙️ Active chain:', activeChain?.name, 'ID:', activeChain?.id)
+  console.log('⚙️ Contract:', getContractAddress(activeChain?.id))
   console.log('⚙️ PublicClient exists:', !!publicClient)
 
   const { data: nextGiftId, isError, error } = useReadContract({
