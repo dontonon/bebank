@@ -40,8 +40,14 @@ const CONTRACT_ABI = [
 ]
 
 export default function Stats() {
+  console.log('🚀 Stats component rendering')
+
   const { chain } = useAccount()
   const connectedPublicClient = usePublicClient()
+
+  console.log('🔌 Wallet connected:', !!chain)
+  console.log('🔌 Chain:', chain?.name || 'Not connected', 'ID:', chain?.id || 'N/A')
+
   const canvasRef = useRef(null)
   const [selectedLink, setSelectedLink] = useState(null)
   const [stats, setStats] = useState({
@@ -69,11 +75,21 @@ export default function Stats() {
     transport: http()
   })
 
-  const { data: nextGiftId } = useReadContract({
+  console.log('⚙️ Active chain:', activeChain.name, 'ID:', activeChain.id)
+  console.log('⚙️ Contract:', getContractAddress(activeChain.id))
+  console.log('⚙️ PublicClient exists:', !!publicClient)
+
+  const { data: nextGiftId, isError, error } = useReadContract({
     address: getContractAddress(activeChain.id),
     abi: CONTRACT_ABI,
     functionName: 'nextGiftId',
     chainId: activeChain.id
+  })
+
+  console.log('📖 Contract Read:', {
+    nextGiftId: nextGiftId?.toString(),
+    isError,
+    errorMessage: error?.message
   })
 
   useEffect(() => {
