@@ -28,7 +28,7 @@ export default function RevealAnimation({ token, amount, onComplete }) {
             className="space-y-6"
           >
             <div className="text-8xl animate-float">🎁</div>
-            <h2 className="text-3xl font-bold text-gray-300">Opening your gift...</h2>
+            <h2 className="text-3xl font-bold text-gray-300">Opening your potato...</h2>
           </motion.div>
         )}
 
@@ -65,7 +65,7 @@ export default function RevealAnimation({ token, amount, onComplete }) {
               transition={{ delay: 0.5 }}
               className="text-toxic text-xl font-semibold"
             >
-              🎉 Gift claimed successfully!
+              🎉 Potato claimed successfully!
             </motion.div>
           </motion.div>
         )}

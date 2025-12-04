@@ -1,120 +1,14 @@
-import { useState, useEffect } from 'react'
-import { useAccount, useReadContract } from 'wagmi'
+import { useAccount } from 'wagmi'
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
-import { getContractAddress } from '../config/wagmi'
+import { useUserStats, calculateAchievements } from '../services/eventIndexer'
 import { getTokenByAddress } from '../config/tokens'
 import { formatUnits } from 'viem'
 
-const PASS_IT_ON_ABI = [
-  {
-    name: 'nextGiftId',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }]
-  },
-  {
-    name: 'getGift',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'giftId', type: 'uint256' }],
-    outputs: [{
-      type: 'tuple',
-      components: [
-        { name: 'token', type: 'address' },
-        { name: 'amount', type: 'uint256' },
-        { name: 'giver', type: 'address' },
-        { name: 'claimed', type: 'bool' },
-        { name: 'claimer', type: 'address' },
-        { name: 'timestamp', type: 'uint256' },
-        { name: 'claimedAt', type: 'uint256' }
-      ]
-    }]
-  }
-]
-
 export default function Stats() {
-  const { address, chain, isConnected } = useAccount()
-  const [userGifts, setUserGifts] = useState({ given: [], received: [] })
-  const [isLoading, setIsLoading] = useState(true)
-  const [stats, setStats] = useState({
-    totalGiven: 0,
-    totalReceived: 0,
-    activeGifts: 0,
-    valueGiven: 0,
-    valueReceived: 0
-  })
-
-  const { data: nextGiftId } = useReadContract({
-    address: chain?.id ? getContractAddress(chain.id) : undefined,
-    abi: PASS_IT_ON_ABI,
-    functionName: 'nextGiftId',
-    enabled: !!chain?.id
-  })
-
-  useEffect(() => {
-    async function loadUserGifts() {
-      if (!isConnected || !address || !chain?.id || !nextGiftId) {
-        setIsLoading(false)
-        return
-      }
-
-      setIsLoading(true)
-      const contractAddress = getContractAddress(chain.id)
-      const totalGifts = Number(nextGiftId)
-
-      const given = []
-      const received = []
-      let valueGiven = 0
-      let valueReceived = 0
-      let activeCount = 0
-
-      try {
-        // Query all gifts to find user's activity
-        // In production, use event logs for better performance
-        for (let i = 0; i < Math.min(totalGifts, 100); i++) {
-          try {
-            const response = await fetch(chain.rpcUrls.default.http[0], {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                jsonrpc: '2.0',
-                id: i,
-                method: 'eth_call',
-                params: [{
-                  to: contractAddress,
-                  data: '0xf4c714b4' + i.toString(16).padStart(64, '0') // getGift(uint256)
-                }, 'latest']
-              })
-            })
-
-            const data = await response.json()
-            if (data.result && data.result !== '0x') {
-              // Parse the gift data (simplified, would need proper ABI decoding)
-              // For now, just show the count
-            }
-          } catch (err) {
-            console.error('Error fetching gift', i, err)
-          }
-        }
-
-        setStats({
-          totalGiven: given.length,
-          totalReceived: received.length,
-          activeGifts: activeCount,
-          valueGiven,
-          valueReceived
-        })
-      } catch (error) {
-        console.error('Error loading gifts:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadUserGifts()
-  }, [address, chain?.id, nextGiftId, isConnected])
+  const { address, isConnected } = useAccount()
+  const userStats = useUserStats(address)
+  const achievements = calculateAchievements(userStats)
 
   if (!isConnected) {
     return (
@@ -152,28 +46,28 @@ export default function Stats() {
               <div className="bg-dark-card rounded-xl p-6 border border-gray-800">
                 <div className="text-gray-400 text-sm mb-2">Potatoes Given</div>
                 <div className="text-4xl font-bold text-toxic">
-                  {isLoading ? '...' : stats.totalGiven}
+                  {userStats.isLoading ? '...' : userStats.potatoesGiven}
                 </div>
               </div>
 
               <div className="bg-dark-card rounded-xl p-6 border border-gray-800">
                 <div className="text-gray-400 text-sm mb-2">Potatoes Received</div>
                 <div className="text-4xl font-bold text-purple">
-                  {isLoading ? '...' : stats.totalReceived}
+                  {userStats.isLoading ? '...' : userStats.potatoesReceived}
                 </div>
               </div>
 
               <div className="bg-dark-card rounded-xl p-6 border border-gray-800">
                 <div className="text-gray-400 text-sm mb-2">Active Potatoes</div>
                 <div className="text-4xl font-bold gradient-text">
-                  {isLoading ? '...' : stats.activeGifts}
+                  {userStats.isLoading ? '...' : userStats.activePotatoes}
                 </div>
               </div>
 
               <div className="bg-dark-card rounded-xl p-6 border border-gray-800">
                 <div className="text-gray-400 text-sm mb-2">Total Value Given</div>
                 <div className="text-4xl font-bold text-green-400">
-                  ${isLoading ? '...' : stats.valueGiven.toFixed(2)}
+                  ${userStats.isLoading ? '...' : userStats.totalValueGiven.toFixed(2)}
                 </div>
               </div>
             </div>
@@ -182,12 +76,12 @@ export default function Stats() {
             <div className="bg-dark-card rounded-xl border border-gray-800 p-6">
               <h2 className="text-2xl font-bold text-white mb-4">Recent Activity</h2>
 
-              {isLoading ? (
+              {userStats.isLoading ? (
                 <div className="text-center py-12">
                   <div className="text-4xl mb-4">⏳</div>
                   <p className="text-gray-400">Loading your activity...</p>
                 </div>
-              ) : stats.totalGiven === 0 && stats.totalReceived === 0 ? (
+              ) : userStats.potatoesGiven === 0 && userStats.potatoesReceived === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-4xl mb-4">🥔</div>
                   <p className="text-gray-400 mb-4">No activity yet</p>
@@ -195,40 +89,93 @@ export default function Stats() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="text-center py-8 text-gray-500">
-                    <p>Full activity tracking coming soon!</p>
-                    <p className="text-sm mt-2">We're building event indexing to show your complete history.</p>
-                  </div>
+                  {/* Given Potatoes */}
+                  {userStats.givenPotatoes.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-bold text-toxic mb-3">🥔 Potatoes You Created</h3>
+                      <div className="space-y-2">
+                        {userStats.givenPotatoes.slice(0, 5).map(potato => {
+                          const token = getTokenByAddress(potato.token)
+                          const amount = token ? formatUnits(potato.amount, token.decimals) : '?'
+                          return (
+                            <div key={potato.potatoId} className="bg-dark/50 rounded-lg p-3 border border-gray-800/50">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-lg">🥔</span>
+                                  <span className="font-semibold text-white">Potato #{potato.potatoId}</span>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-sm text-gray-400">{amount} {token?.symbol}</div>
+                                  <div className="text-xs text-gray-600">
+                                    {new Date(potato.timestamp * 1000).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Received Potatoes */}
+                  {userStats.receivedPotatoes.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="text-lg font-bold text-purple mb-3">🔥 Potatoes You Claimed</h3>
+                      <div className="space-y-2">
+                        {userStats.receivedPotatoes.slice(0, 5).map(potato => {
+                          const token = getTokenByAddress(potato.receivedToken)
+                          const amount = token ? formatUnits(potato.receivedAmount, token.decimals) : '?'
+                          return (
+                            <div key={potato.oldPotatoId} className="bg-dark/50 rounded-lg p-3 border border-gray-800/50">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-lg">🔥</span>
+                                  <span className="font-semibold text-purple">Potato #{potato.oldPotatoId}</span>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-sm text-toxic">{amount} {token?.symbol}</div>
+                                  <div className="text-xs text-gray-600">Claimed</div>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Achievements Section (Coming Soon) */}
+            {/* Achievements Section */}
             <div className="mt-8 bg-dark-card rounded-xl border border-gray-800 p-6">
               <h2 className="text-2xl font-bold text-white mb-4">🏆 Achievements</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-dark/50 rounded-lg p-4 text-center border border-gray-800/50 opacity-50">
-                  <div className="text-3xl mb-2">🥔</div>
-                  <div className="text-sm text-gray-400">First Potato</div>
-                  <div className="text-xs text-gray-600 mt-1">Locked</div>
-                </div>
-                <div className="bg-dark/50 rounded-lg p-4 text-center border border-gray-800/50 opacity-50">
-                  <div className="text-3xl mb-2">🔥</div>
-                  <div className="text-sm text-gray-400">Hot Streak</div>
-                  <div className="text-xs text-gray-600 mt-1">Locked</div>
-                </div>
-                <div className="bg-dark/50 rounded-lg p-4 text-center border border-gray-800/50 opacity-50">
-                  <div className="text-3xl mb-2">💎</div>
-                  <div className="text-sm text-gray-400">High Roller</div>
-                  <div className="text-xs text-gray-600 mt-1">Locked</div>
-                </div>
-                <div className="bg-dark/50 rounded-lg p-4 text-center border border-gray-800/50 opacity-50">
-                  <div className="text-3xl mb-2">⚡</div>
-                  <div className="text-sm text-gray-400">Speed Demon</div>
-                  <div className="text-xs text-gray-600 mt-1">Locked</div>
-                </div>
+                {Object.values(achievements).map((achievement, idx) => (
+                  <div
+                    key={idx}
+                    className={`bg-dark/50 rounded-lg p-4 text-center border ${
+                      achievement.unlocked
+                        ? 'border-toxic/50 shadow-lg shadow-toxic/20'
+                        : 'border-gray-800/50 opacity-50'
+                    }`}
+                  >
+                    <div className="text-3xl mb-2">{achievement.emoji}</div>
+                    <div className={`text-sm font-semibold mb-1 ${achievement.unlocked ? 'text-toxic' : 'text-gray-400'}`}>
+                      {achievement.title}
+                    </div>
+                    <div className="text-xs text-gray-500 mb-2">{achievement.description}</div>
+                    {achievement.unlocked ? (
+                      <div className="text-xs text-toxic font-bold">✓ Unlocked</div>
+                    ) : (
+                      <div className="text-xs text-gray-600">
+                        {achievement.progress}/{achievement.total}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              <p className="text-center text-gray-500 text-sm mt-4">Achievement system coming soon!</p>
             </div>
           </div>
         </main>

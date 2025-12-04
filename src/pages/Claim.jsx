@@ -10,7 +10,7 @@ import { getContractAddress } from '../config/wagmi'
 import { parseUnits, formatUnits } from 'viem'
 import { ERC20_ABI } from '../config/abis'
 
-const CLAIM_GIFT_ABI = [
+const CLAIM_POTATO_ABI = [
   {
     name: 'claimGift',
     type: 'function',
@@ -24,7 +24,7 @@ const CLAIM_GIFT_ABI = [
   }
 ]
 
-const GET_GIFT_ABI = [
+const GET_POTATO_ABI = [
   {
     name: 'getGift',
     type: 'function',
@@ -55,13 +55,13 @@ export default function Claim() {
   const [isClaiming, setIsClaiming] = useState(false)
   const [isApproving, setIsApproving] = useState(false)
   const [showReveal, setShowReveal] = useState(false)
-  const [revealedGift, setRevealedGift] = useState(null)
+  const [revealedPotato, setRevealedPotato] = useState(null)
   const [claimError, setClaimError] = useState(null)
 
-  // Read gift data
-  const { data: giftData, isLoading: isLoadingGift } = useReadContract({
+  // Read potato data
+  const { data: potatoData, isLoading: isLoadingPotato } = useReadContract({
     address: getContractAddress(chain?.id),
-    abi: GET_GIFT_ABI,
+    abi: GET_POTATO_ABI,
     functionName: 'getGift',
     args: giftId ? [BigInt(giftId)] : undefined,
     enabled: isConnected && !!chain && !!giftId
@@ -79,46 +79,46 @@ export default function Claim() {
   const { writeContract, data: hash } = useWriteContract()
   const { isLoading: isConfirming, isSuccess, data: receipt } = useWaitForTransactionReceipt({ hash })
 
-  // Check if gift exists and is claimed
-  const giftExists = giftData && giftData[2] !== '0x0000000000000000000000000000000000000000'
-  const isGiftClaimed = giftData && giftData[3] // claimed boolean
-  const isCreator = giftData && giftData[2]?.toLowerCase() === address?.toLowerCase()
+  // Check if potato exists and is claimed
+  const potatoExists = potatoData && potatoData[2] !== '0x0000000000000000000000000000000000000000'
+  const isPotatoClaimed = potatoData && potatoData[3] // claimed boolean
+  const isCreator = potatoData && potatoData[2]?.toLowerCase() === address?.toLowerCase()
 
   useEffect(() => {
-    if (isSuccess && giftData && receipt) {
-      console.log('Processing claim success:', { receipt, giftData })
+    if (isSuccess && potatoData && receipt) {
+      console.log('Processing claim success:', { receipt, potatoData })
       try {
         // Show reveal animation
-        const token = getTokenByAddress(giftData[0])
+        const token = getTokenByAddress(potatoData[0])
         if (!token) {
-          console.error('Unknown token address:', giftData[0])
+          console.error('Unknown token address:', potatoData[0])
           setClaimError('Unknown token received. Please contact support.')
           setIsClaiming(false)
           return
         }
 
         // Safely handle BigInt conversion
-        // giftData[1] is already a BigInt from the contract
-        const giftAmount = giftData[1]
-        const receivedAmount = formatUnits((giftAmount * 99n) / 100n, token.decimals)
+        // potatoData[1] is already a BigInt from the contract
+        const potatoAmount = potatoData[1]
+        const receivedAmount = formatUnits((potatoAmount * 99n) / 100n, token.decimals)
 
         // Get new potato ID from logs - try multiple approaches
-        let newGiftId = null
+        let newPotatoId = null
         try {
           if (receipt.logs && receipt.logs.length > 0) {
             console.log('Analyzing transaction logs:', receipt.logs)
 
             // Try to find the GiftCreated event (should be in logs)
-            // The event signature for GiftCreated will have the giftId
+            // The event signature for GiftCreated will have the potatoId
             for (let i = receipt.logs.length - 1; i >= 0; i--) {
               const log = receipt.logs[i]
               if (log.topics && log.topics.length > 1) {
-                // Try topics[1] which often contains the first indexed parameter (giftId)
+                // Try topics[1] which often contains the first indexed parameter (potatoId)
                 try {
                   const potentialId = BigInt(log.topics[1])
                   if (potentialId > 0n && potentialId < 1000000n) { // Sanity check
-                    newGiftId = Number(potentialId)
-                    console.log('Extracted potato ID from topics[1]:', newGiftId)
+                    newPotatoId = Number(potentialId)
+                    console.log('Extracted potato ID from topics[1]:', newPotatoId)
                     break
                   }
                 } catch (e) {
@@ -132,17 +132,17 @@ export default function Claim() {
         }
 
         // Fallback: increment current giftId
-        if (!newGiftId || isNaN(newGiftId) || newGiftId <= 0) {
-          newGiftId = Number(giftId) + 1
-          console.log('Using fallback potato ID:', newGiftId)
+        if (!newPotatoId || isNaN(newPotatoId) || newPotatoId <= 0) {
+          newPotatoId = Number(giftId) + 1
+          console.log('Using fallback potato ID:', newPotatoId)
         }
 
-        console.log('Final potato ID:', newGiftId)
+        console.log('Final potato ID:', newPotatoId)
 
-        setRevealedGift({
+        setRevealedPotato({
           token,
           amount: receivedAmount,
-          newGiftId
+          newPotatoId
         })
         setShowReveal(true)
         setIsClaiming(false)
@@ -152,7 +152,7 @@ export default function Claim() {
         setIsClaiming(false)
       }
     }
-  }, [isSuccess, giftData, receipt, giftId])
+  }, [isSuccess, potatoData, receipt, giftId])
 
   const needsApproval = () => {
     if (isNativeToken(selectedToken.address)) return false
@@ -202,7 +202,7 @@ export default function Claim() {
 
       const config = {
         address: contractAddress,
-        abi: CLAIM_GIFT_ABI,
+        abi: CLAIM_POTATO_ABI,
         functionName: 'claimGift',
         args: [BigInt(giftId), selectedToken.address, amountInWei],
       }
@@ -214,8 +214,8 @@ export default function Claim() {
 
       await writeContract(config)
     } catch (error) {
-      console.error('Error claiming gift:', error)
-      let errorMsg = 'Failed to claim gift.'
+      console.error('Error claiming potato:', error)
+      let errorMsg = 'Failed to claim potato.'
 
       if (error.message?.includes('InsufficientValue')) {
         errorMsg = 'Amount too small. Minimum is 0.0001'
@@ -224,7 +224,7 @@ export default function Claim() {
       } else if (error.message?.includes('GiftDoesNotExist')) {
         errorMsg = 'This HotPotato does not exist.'
       } else if (error.message?.includes('insufficient funds')) {
-        errorMsg = 'Insufficient funds for gas + gift amount.'
+        errorMsg = 'Insufficient funds for gas + potato amount.'
       }
 
       setClaimError(errorMsg)
@@ -235,27 +235,27 @@ export default function Claim() {
   const handleRevealComplete = () => {
     setShowReveal(false)
     // Navigate to the new potato link page
-    if (revealedGift?.newGiftId && revealedGift.newGiftId > 0) {
-      console.log('Navigating to potato:', revealedGift.newGiftId)
-      navigate(`/potato/${revealedGift.newGiftId}`)
+    if (revealedPotato?.newPotatoId && revealedPotato.newPotatoId > 0) {
+      console.log('Navigating to potato:', revealedPotato.newPotatoId)
+      navigate(`/potato/${revealedPotato.newPotatoId}`)
     } else {
-      console.warn('Invalid potato ID, navigating home:', revealedGift)
+      console.warn('Invalid potato ID, navigating home:', revealedPotato)
       navigate('/')
     }
   }
 
-  if (isLoadingGift) {
+  if (isLoadingPotato) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-float">🥔</div>
-          <p className="text-gray-400">Loading gift...</p>
+          <p className="text-gray-400">Loading potato...</p>
         </div>
       </div>
     )
   }
 
-  if (!giftExists) {
+  if (!potatoExists) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-dark-card rounded-2xl p-8 border border-red-500/50 text-center">
@@ -266,7 +266,7 @@ export default function Claim() {
             onClick={() => navigate('/')}
             className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
           >
-            Create Your Own Gift
+            Create Your Own Potato
           </button>
         </div>
       </div>
@@ -297,9 +297,9 @@ export default function Claim() {
     )
   }
 
-  if (isGiftClaimed) {
-    const claimedBy = giftData[4]
-    const claimedAt = new Date(Number(giftData[6]) * 1000).toLocaleString()
+  if (isPotatoClaimed) {
+    const claimedBy = potatoData[4]
+    const claimedAt = new Date(Number(potatoData[6]) * 1000).toLocaleString()
 
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
@@ -327,10 +327,10 @@ export default function Claim() {
   return (
     <div className="min-h-screen bg-dark flex flex-col lg:flex-row">
       {/* Reveal Animation */}
-      {showReveal && revealedGift && (
+      {showReveal && revealedPotato && (
         <RevealAnimation
-          token={revealedGift.token}
-          amount={revealedGift.amount}
+          token={revealedPotato.token}
+          amount={revealedPotato.amount}
           onComplete={handleRevealComplete}
         />
       )}
@@ -367,8 +367,8 @@ export default function Claim() {
           ) : (
             <div className="bg-dark-card rounded-2xl p-8 border border-gray-800 space-y-6">
               <div>
-                <h3 className="text-2xl font-bold text-white mb-2">To Claim: Give Your Gift</h3>
-                <p className="text-gray-400">You must pass on a gift to receive this one</p>
+                <h3 className="text-2xl font-bold text-white mb-2">To Claim: Pass On a Potato</h3>
+                <p className="text-gray-400">You must pass on a potato to receive this one</p>
               </div>
 
               <TokenSelector
@@ -429,7 +429,7 @@ export default function Claim() {
                   <span className="text-toxic font-semibold">HotPotato 🥔</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">Your next gift link:</span>
+                  <span className="text-gray-400">Your next potato link:</span>
                   <span className="text-purple font-semibold">After claiming</span>
                 </div>
               </div>

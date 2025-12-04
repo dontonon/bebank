@@ -10,8 +10,8 @@ import { getContractAddress } from '../config/wagmi'
 import { parseUnits } from 'viem'
 import { ERC20_ABI } from '../config/abis'
 
-// ABI for createGift function
-const CREATE_GIFT_ABI = [
+// ABI for createGift function (contract method name)
+const CREATE_POTATO_ABI = [
   {
     name: 'createGift',
     type: 'function',
@@ -111,7 +111,7 @@ export default function Home() {
 
       const config = {
         address: contractAddress,
-        abi: CREATE_GIFT_ABI,
+        abi: CREATE_POTATO_ABI,
         functionName: 'createGift',
         args: [selectedToken.address, amountInWei],
       }
@@ -129,7 +129,7 @@ export default function Home() {
       if (error.message?.includes('User rejected')) {
         errorMsg = 'Transaction rejected by user.'
       } else if (error.message?.includes('insufficient funds')) {
-        errorMsg = 'Insufficient funds for gas + gift amount.'
+        errorMsg = 'Insufficient funds for gas + potato amount.'
       } else if (error.message?.includes('InsufficientValue')) {
         errorMsg = 'Amount too small. Minimum is 0.0001'
       }
@@ -158,7 +158,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Create Gift Form */}
+          {/* Create Potato Form */}
           {!isConnected ? (
             <div className="bg-dark-card rounded-2xl p-12 text-center border border-gray-800">
               <h3 className="text-2xl font-bold mb-4 text-gray-300">Connect Your Wallet</h3>
@@ -195,7 +195,7 @@ export default function Home() {
                 className="w-full bg-gradient-to-r from-toxic to-purple text-dark py-4 rounded-xl font-bold text-xl hover:shadow-lg hover:shadow-toxic/50 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isCreating || isConfirming ? (
-                  <span>Creating Gift... ⏳</span>
+                  <span>Creating Potato... ⏳</span>
                 ) : (
                   <span>Create HotPotato ✨</span>
                 )}
