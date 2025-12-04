@@ -39,9 +39,7 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/stats" element={<Stats />} />
                 <Route path="/claim/:giftId" element={<Claim />} />
-                <Route path="/potato/:giftId" element={<PotatoLink />} />
-                {/* Legacy route for backwards compatibility */}
-                <Route path="/gift/:giftId" element={<PotatoLink />} />
+                <Route path="/potato/:potatoId" element={<PotatoLink />} />
               </Routes>
             </Router>
           </RainbowKitProvider>
