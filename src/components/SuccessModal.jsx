@@ -181,15 +181,27 @@ export default function SuccessModal({ type, data, onClose }) {
 
           {/* Action Buttons */}
           <div className="space-y-3">
+            {/* PRIMARY: View Share Page */}
+            <button
+              onClick={() => {
+                onClose()
+                navigate(`/potato/${data.newPotatoId}/${data.newSecret || ''}`)
+              }}
+              className="w-full bg-gradient-to-r from-purple to-toxic text-dark py-5 rounded-xl font-black text-xl hover:shadow-lg hover:shadow-purple/50 transition-all transform hover:scale-105 animate-pulse"
+            >
+              🔗 View Your Share Page (#{data.newPotatoId})
+            </button>
+
+            {/* Quick Copy */}
             <button
               onClick={() => {
                 const link = `${window.location.origin}/claim/${data.newPotatoId}/${data.newSecret || ''}`
                 navigator.clipboard.writeText(link)
                 alert('Link copied! Share it to pass on your ' + data.gave + ' ' + data.gaveToken + ' 🔗')
               }}
-              className="w-full bg-gradient-to-r from-purple to-toxic text-dark py-4 rounded-xl font-black text-lg hover:shadow-lg hover:shadow-purple/50 transition-all transform hover:scale-105"
+              className="w-full bg-dark-card border-2 border-purple text-white py-3 rounded-xl font-bold hover:bg-purple/20 transition-all"
             >
-              📋 Copy Link to Share (#{data.newPotatoId})
+              📋 Copy Link
             </button>
 
             <button
@@ -207,13 +219,13 @@ export default function SuccessModal({ type, data, onClose }) {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="bg-dark-card text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all border border-gray-700"
+                className="bg-dark-card text-gray-300 py-2 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all border border-gray-700"
               >
                 My Links
               </button>
               <button
                 onClick={() => { onClose(); navigate('/') }}
-                className="bg-dark-card text-white py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all border border-gray-700"
+                className="bg-dark-card text-gray-300 py-2 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all border border-gray-700"
               >
                 Create New
               </button>
