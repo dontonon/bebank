@@ -42,6 +42,20 @@ const CONTRACT_ABI = [
         { name: 'secretHash', type: 'bytes32' }
       ]
     }]
+  },
+  {
+    name: 'GiftClaimed',
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'oldGiftId', type: 'uint256' },
+      { indexed: true, name: 'newGiftId', type: 'uint256' },
+      { indexed: true, name: 'claimer', type: 'address' },
+      { indexed: false, name: 'tokenReceived', type: 'address' },
+      { indexed: false, name: 'amountReceived', type: 'uint256' },
+      { indexed: false, name: 'tokenGiven', type: 'address' },
+      { indexed: false, name: 'amountGiven', type: 'uint256' }
+    ]
   }
 ]
 
@@ -70,7 +84,9 @@ export default function Stats() {
     activeChains: 0,
     totalChainValue: 0,
     chainLeaderboard: [],
-    recentLinks: []
+    recentLinks: [],
+    // NEW: Actual parent-child relationships
+    chainMap: {} // Maps oldGiftId -> newGiftId
   })
   const [isLoading, setIsLoading] = useState(true)
 
@@ -130,7 +146,8 @@ export default function Stats() {
             activeChains: 0,
             totalChainValue: 0,
             chainLeaderboard: [],
-            recentLinks: []
+            recentLinks: [],
+            chainMap: {}
           })
           setIsLoading(false)
           return
@@ -161,6 +178,33 @@ export default function Stats() {
         }
 
         const links = await Promise.all(linkPromises)
+
+        // Fetch GiftClaimed events to build actual chain relationships
+        console.log('📡 Fetching GiftClaimed events to build chain map...')
+        let chainMap = {}
+        try {
+          const logs = await publicClient.getLogs({
+            address: contractAddress,
+            event: CONTRACT_ABI.find(item => item.name === 'GiftClaimed'),
+            fromBlock: 'earliest',
+            toBlock: 'latest'
+          })
+
+          console.log(`📋 Found ${logs.length} GiftClaimed events`)
+
+          // Build parent→child map
+          logs.forEach(log => {
+            const oldGiftId = Number(log.args.oldGiftId)
+            const newGiftId = Number(log.args.newGiftId)
+            chainMap[oldGiftId] = newGiftId
+            console.log(`  Chain link: #${oldGiftId} → #${newGiftId}`)
+          })
+
+          console.log('✅ Chain map built:', Object.keys(chainMap).length, 'links')
+        } catch (error) {
+          console.error('❌ Error fetching GiftClaimed events:', error)
+          // Continue without chain map
+        }
 
         // Calculate stats
         let claimed = 0
@@ -264,7 +308,8 @@ export default function Stats() {
           activeChains: chains.filter(c => c.length > 0).length,
           totalChainValue: totalChainValue.toFixed(4),
           chainLeaderboard,
-          recentLinks
+          recentLinks,
+          chainMap // NEW: Parent-child relationship map
         })
         setIsLoading(false)
         console.log('✅ Stats loaded successfully:', {
@@ -281,7 +326,7 @@ export default function Stats() {
     loadStats()
   }, [activeChain, publicClient, nextGiftId])
 
-  // Draw chain visualization
+  // Draw chain visualization with parent-child relationships
   useEffect(() => {
     if (!stats.recentLinks.length || !canvasRef.current) return
 
@@ -298,22 +343,48 @@ export default function Stats() {
     const spacing = Math.min(150, width / (links.length + 1))
     const centerY = height / 2
 
+    // Create position map for quick lookup
+    const positions = {}
+    links.forEach((link, index) => {
+      positions[link.id] = {
+        x: spacing * (index + 1),
+        y: centerY + Math.sin(index * 0.5) * 50,
+        index
+      }
+    })
+
+    // Draw connections based on actual chain relationships
+    links.forEach((link) => {
+      const childId = stats.chainMap[link.id]
+      if (childId && positions[childId]) {
+        const fromPos = positions[link.id]
+        const toPos = positions[childId]
+
+        // Draw arrow from this link to its child
+        ctx.beginPath()
+        ctx.moveTo(fromPos.x + 20, fromPos.y)
+        ctx.lineTo(toPos.x - 20, toPos.y)
+        ctx.strokeStyle = 'rgba(0, 255, 136, 0.6)'
+        ctx.lineWidth = 3
+        ctx.stroke()
+
+        // Draw arrowhead
+        const angle = Math.atan2(toPos.y - fromPos.y, toPos.x - fromPos.x)
+        ctx.beginPath()
+        ctx.moveTo(toPos.x - 20, toPos.y)
+        ctx.lineTo(toPos.x - 30 * Math.cos(angle - Math.PI / 6), toPos.y - 30 * Math.sin(angle - Math.PI / 6))
+        ctx.lineTo(toPos.x - 30 * Math.cos(angle + Math.PI / 6), toPos.y - 30 * Math.sin(angle + Math.PI / 6))
+        ctx.closePath()
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.6)'
+        ctx.fill()
+      }
+    })
+
+    // Draw nodes on top
     links.forEach((link, index) => {
       const x = spacing * (index + 1)
       const y = centerY + Math.sin(index * 0.5) * 50
       const radius = 20
-
-      if (index > 0) {
-        const prevX = spacing * index
-        const prevY = centerY + Math.sin((index - 1) * 0.5) * 50
-
-        ctx.beginPath()
-        ctx.moveTo(prevX + radius, prevY)
-        ctx.lineTo(x - radius, y)
-        ctx.strokeStyle = link.claimed ? 'rgba(0, 255, 136, 0.5)' : 'rgba(157, 78, 221, 0.3)'
-        ctx.lineWidth = 3
-        ctx.stroke()
-      }
 
       ctx.beginPath()
       ctx.arc(x, y, radius, 0, Math.PI * 2)
@@ -330,7 +401,7 @@ export default function Stats() {
       ctx.textAlign = 'center'
       ctx.fillText(`#${link.id}`, x, y + 40)
     })
-  }, [stats.recentLinks])
+  }, [stats.recentLinks, stats.chainMap])
 
   const formatTimeAgo = (timestamp) => {
     const seconds = Math.floor(Date.now() / 1000 - timestamp)
@@ -688,6 +759,23 @@ export default function Stats() {
                   <div className="text-sm text-gray-400 mb-1">Passed On</div>
                   <div className="text-sm text-toxic">
                     {formatTimeAgo(selectedLink.claimedAt)}
+                  </div>
+                </div>
+              )}
+
+              {/* Show chain relationship */}
+              {stats.chainMap && stats.chainMap[selectedLink.id] && (
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <div className="text-sm text-gray-400 mb-1">⛓️ Chain Link</div>
+                  <div className="text-sm text-white bg-purple/20 rounded-lg p-3">
+                    <div className="flex items-center gap-2 justify-center">
+                      <span className="font-bold">Link #{selectedLink.id}</span>
+                      <span className="text-toxic">→</span>
+                      <span className="font-bold text-toxic">Link #{stats.chainMap[selectedLink.id]}</span>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-2 text-center">
+                      Claiming this created Link #{stats.chainMap[selectedLink.id]}
+                    </div>
                   </div>
                 </div>
               )}
