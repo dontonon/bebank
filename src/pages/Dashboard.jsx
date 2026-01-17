@@ -121,7 +121,7 @@ export default function Dashboard() {
 
           try {
             // Always log each potato scan for debugging
-            if (i <= startId + 5 || i >= lastPotatoId - 2) {
+            if (i <= startId + 5 || i >= lastLinkId - 2) {
               console.log(`[Scan] Potato #${i}:`, giftData)
               console.log(`  Type: ${typeof giftData}, IsArray: ${Array.isArray(giftData)}`)
               console.log(`  Keys:`, Object.keys(giftData || {}))
