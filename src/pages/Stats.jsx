@@ -340,7 +340,7 @@ export default function Stats() {
     ctx.clearRect(0, 0, width, height)
 
     const links = stats.recentLinks
-    const spacing = Math.min(150, width / (links.length + 1))
+    const spacing = Math.min(180, width / (links.length + 1))
     const centerY = height / 2
 
     // Create position map for quick lookup
@@ -348,7 +348,7 @@ export default function Stats() {
     links.forEach((link, index) => {
       positions[link.id] = {
         x: spacing * (index + 1),
-        y: centerY + Math.sin(index * 0.5) * 50,
+        y: centerY + Math.sin(index * 0.5) * 60,
         index
       }
     })
@@ -360,46 +360,79 @@ export default function Stats() {
         const fromPos = positions[link.id]
         const toPos = positions[childId]
 
-        // Draw arrow from this link to its child
+        // Draw glowing arrow from this link to its child
+        ctx.shadowBlur = 10
+        ctx.shadowColor = '#00FF88'
+
         ctx.beginPath()
-        ctx.moveTo(fromPos.x + 20, fromPos.y)
-        ctx.lineTo(toPos.x - 20, toPos.y)
-        ctx.strokeStyle = 'rgba(0, 255, 136, 0.6)'
-        ctx.lineWidth = 3
+        ctx.moveTo(fromPos.x + 25, fromPos.y)
+        ctx.lineTo(toPos.x - 25, toPos.y)
+        ctx.strokeStyle = 'rgba(0, 255, 136, 0.8)'
+        ctx.lineWidth = 4
         ctx.stroke()
 
-        // Draw arrowhead
+        // Draw larger arrowhead
         const angle = Math.atan2(toPos.y - fromPos.y, toPos.x - fromPos.x)
         ctx.beginPath()
-        ctx.moveTo(toPos.x - 20, toPos.y)
-        ctx.lineTo(toPos.x - 30 * Math.cos(angle - Math.PI / 6), toPos.y - 30 * Math.sin(angle - Math.PI / 6))
-        ctx.lineTo(toPos.x - 30 * Math.cos(angle + Math.PI / 6), toPos.y - 30 * Math.sin(angle + Math.PI / 6))
+        ctx.moveTo(toPos.x - 25, toPos.y)
+        ctx.lineTo(toPos.x - 35 * Math.cos(angle - Math.PI / 6), toPos.y - 35 * Math.sin(angle - Math.PI / 6))
+        ctx.lineTo(toPos.x - 35 * Math.cos(angle + Math.PI / 6), toPos.y - 35 * Math.sin(angle + Math.PI / 6))
         ctx.closePath()
-        ctx.fillStyle = 'rgba(0, 255, 136, 0.6)'
+        ctx.fillStyle = '#00FF88'
         ctx.fill()
+
+        ctx.shadowBlur = 0
       }
     })
 
-    // Draw nodes on top
+    // Draw nodes on top with glow effects
     links.forEach((link, index) => {
       const x = spacing * (index + 1)
-      const y = centerY + Math.sin(index * 0.5) * 50
-      const radius = 20
+      const y = centerY + Math.sin(index * 0.5) * 60
+      const radius = 25
+      const isHighlight = stats.chainMap[link.id] // Has a child (part of chain)
 
+      // Outer glow
+      if (link.claimed) {
+        ctx.shadowBlur = 15
+        ctx.shadowColor = '#00FF88'
+      } else if (isHighlight) {
+        ctx.shadowBlur = 15
+        ctx.shadowColor = '#9D4EDD'
+      }
+
+      // Draw node
       ctx.beginPath()
       ctx.arc(x, y, radius, 0, Math.PI * 2)
-      ctx.fillStyle = link.claimed
-        ? 'rgba(0, 255, 136, 0.3)'
-        : 'rgba(157, 78, 221, 0.3)'
+
+      // Gradient fill
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
+      if (link.claimed) {
+        gradient.addColorStop(0, 'rgba(0, 255, 136, 0.6)')
+        gradient.addColorStop(1, 'rgba(0, 255, 136, 0.2)')
+      } else {
+        gradient.addColorStop(0, 'rgba(157, 78, 221, 0.6)')
+        gradient.addColorStop(1, 'rgba(157, 78, 221, 0.2)')
+      }
+      ctx.fillStyle = gradient
       ctx.fill()
+
+      // Border
       ctx.strokeStyle = link.claimed ? '#00FF88' : '#9D4EDD'
-      ctx.lineWidth = 2
+      ctx.lineWidth = 3
       ctx.stroke()
 
+      ctx.shadowBlur = 0
+
+      // Link ID text
       ctx.fillStyle = '#ffffff'
-      ctx.font = '12px sans-serif'
+      ctx.font = 'bold 14px sans-serif'
       ctx.textAlign = 'center'
-      ctx.fillText(`#${link.id}`, x, y + 40)
+      ctx.fillText(`#${link.id}`, x, y + 45)
+
+      // Status emoji
+      ctx.font = '16px sans-serif'
+      ctx.fillText(link.claimed ? '✅' : '⏳', x, y + 5)
     })
   }, [stats.recentLinks, stats.chainMap])
 
@@ -443,24 +476,46 @@ export default function Stats() {
           ) : (
             <div className="space-y-8">
               {/* Chain Visualization */}
-              <div className="glass-card rounded-xl p-6 border border-toxic/30 overflow-x-auto">
-                <div className="mb-4">
-                  <h3 className="text-xl font-bold text-white mb-2">Live Chain Flow</h3>
-                  <p className="text-sm text-gray-400">Latest {stats.recentLinks.length} links in the chain</p>
+              <div className="glass-card rounded-xl p-6 border-2 border-toxic/50 overflow-x-auto glow-toxic">
+                <div className="mb-6 text-center">
+                  <h3 className="text-3xl font-black text-white mb-3 flex items-center justify-center gap-3">
+                    <span className="text-4xl animate-pulse">🔗</span>
+                    <span className="gradient-text">Live Chain Flow</span>
+                    <span className="text-4xl animate-pulse">🔗</span>
+                  </h3>
+                  <p className="text-lg text-gray-300 font-semibold mb-2">
+                    Latest {stats.recentLinks.length} links showing actual parent→child relationships!
+                  </p>
+                  <p className="text-sm text-toxic">
+                    Arrows show which link was created when another was claimed 🎯
+                  </p>
                 </div>
                 <canvas
                   ref={canvasRef}
-                  className="w-full"
-                  style={{ height: '300px' }}
+                  className="w-full cursor-pointer"
+                  style={{ height: '350px' }}
                 />
-                <div className="mt-4 flex items-center gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-purple"></div>
-                    <span className="text-gray-400">Waiting to be passed</span>
+                <div className="mt-6 grid grid-cols-2 gap-4">
+                  <div className="bg-purple/20 rounded-lg p-3 border border-purple/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-5 h-5 rounded-full bg-purple border-2 border-purple"></div>
+                      <span className="text-white font-bold">Active Link</span>
+                    </div>
+                    <span className="text-xs text-gray-400">⏳ Waiting for someone to claim</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded-full bg-toxic"></div>
-                    <span className="text-gray-400">Passed on ✅</span>
+                  <div className="bg-toxic/20 rounded-lg p-3 border border-toxic/50">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-5 h-5 rounded-full bg-toxic border-2 border-toxic"></div>
+                      <span className="text-white font-bold">Claimed Link</span>
+                    </div>
+                    <span className="text-xs text-gray-400">✅ Passed on & chain continues!</span>
+                  </div>
+                </div>
+                <div className="mt-4 bg-gradient-to-r from-toxic/10 to-purple/10 rounded-lg p-4 border border-toxic/30">
+                  <div className="flex items-center gap-2 text-sm text-white">
+                    <span className="text-2xl">→</span>
+                    <span className="font-bold">Green arrows</span>
+                    <span className="text-gray-400">show the actual chain flow (Link #5 was claimed → created Link #12)</span>
                   </div>
                 </div>
               </div>
@@ -494,39 +549,56 @@ export default function Stats() {
 
               {/* Chain Leaderboard */}
               {stats.chainLeaderboard.length > 0 && (
-                <div className="glass-card rounded-xl p-6 border border-yellow-500/30">
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="text-3xl">🏅</span>
-                    <div>
-                      <div className="text-xl font-bold text-white">Chain Leaderboard</div>
-                      <div className="text-xs text-gray-500">Longest unbroken chains - keep it going!</div>
+                <div className="glass-card rounded-xl p-6 border-2 border-yellow-500/50 glow-yellow bg-gradient-to-br from-yellow-500/10 to-orange-500/10">
+                  <div className="flex items-center justify-center gap-3 mb-6">
+                    <span className="text-5xl animate-bounce">🏆</span>
+                    <div className="text-center">
+                      <div className="text-3xl font-black gradient-text mb-1">Chain Champions!</div>
+                      <div className="text-sm text-gray-300">Longest unbroken chains - keep it going!</div>
                     </div>
+                    <span className="text-5xl animate-bounce">🏆</span>
                   </div>
-                  <div className="space-y-3">
-                    {stats.chainLeaderboard.map((chain) => (
+                  <div className="space-y-4">
+                    {stats.chainLeaderboard.map((chain, idx) => (
                       <div
                         key={chain.startId}
-                        className="glass-card rounded-lg p-4 border border-yellow-500/20 hover:border-yellow-500/50 transition-all"
+                        className={`glass-card rounded-xl p-5 border-2 transition-all transform hover:scale-105 cursor-pointer ${
+                          idx === 0
+                            ? 'border-yellow-500 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 glow-yellow'
+                            : idx === 1
+                            ? 'border-gray-400/50 bg-gradient-to-r from-gray-400/10 to-gray-500/10'
+                            : idx === 2
+                            ? 'border-orange-700/50 bg-gradient-to-r from-orange-700/10 to-orange-800/10'
+                            : 'border-yellow-500/20 hover:border-yellow-500/50'
+                        }`}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="text-2xl font-black text-yellow-500">
-                              #{chain.rank}
+                          <div className="flex items-center gap-4">
+                            <div className={`text-4xl font-black ${
+                              idx === 0 ? 'text-yellow-500 animate-pulse' :
+                              idx === 1 ? 'text-gray-400' :
+                              idx === 2 ? 'text-orange-700' :
+                              'text-yellow-600'
+                            }`}>
+                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${chain.rank}`}
                             </div>
                             <div>
-                              <div className="text-white font-semibold">
-                                {chain.length} Links Passed On
+                              <div className="text-white font-bold text-lg flex items-center gap-2">
+                                <span className="text-2xl">⛓️</span>
+                                {chain.length} Links Passed On!
+                                {idx === 0 && <span className="text-yellow-500 animate-pulse">👑</span>}
                               </div>
-                              <div className="text-xs text-gray-500">
-                                Chain #{chain.startId} → #{chain.endId}
+                              <div className="text-sm text-gray-400 flex items-center gap-2 mt-1">
+                                <span>Links:</span>
+                                <span className="font-mono text-toxic">#{chain.startId} → #{chain.endId}</span>
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-lg font-bold text-toxic">
+                            <div className="text-2xl font-black text-toxic">
                               {chain.value.toFixed(4)}
                             </div>
-                            <div className="text-xs text-gray-500">Total Value</div>
+                            <div className="text-xs text-gray-400">Total Value</div>
                           </div>
                         </div>
                       </div>
