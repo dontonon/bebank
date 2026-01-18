@@ -70,6 +70,7 @@ export default function Stats() {
 
   const canvasRef = useRef(null)
   const [selectedLink, setSelectedLink] = useState(null)
+  const [animationFrame, setAnimationFrame] = useState(0)
   const [stats, setStats] = useState({
     totalCreated: 0,
     totalClaimed: 0,
@@ -333,7 +334,20 @@ export default function Stats() {
     loadStats()
   }, [activeChain, publicClient, nextGiftId])
 
-  // Draw chain visualization with parent-child relationships
+  // Animation loop - trigger canvas redraw continuously
+  useEffect(() => {
+    if (!stats.recentLinks.length) return
+
+    const animate = () => {
+      setAnimationFrame(f => f + 1)
+      return requestAnimationFrame(animate)
+    }
+
+    const id = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(id)
+  }, [stats.recentLinks.length])
+
+  // EPIC Chain Visualization - Build actual chain paths
   useEffect(() => {
     if (!stats.recentLinks.length || !canvasRef.current) return
 
@@ -344,104 +358,177 @@ export default function Stats() {
     canvas.width = width
     canvas.height = height
 
+    // Build reverse map (child -> parent) to trace chains
+    const reverseMap = {}
+    Object.entries(stats.chainMap).forEach(([parent, child]) => {
+      reverseMap[child] = parseInt(parent)
+    })
+
+    // Find chain roots (links that were claimed but aren't children of anything)
+    const allLinkIds = new Set(stats.recentLinks.map(l => l.id))
+    const linkMap = {}
+    stats.recentLinks.forEach(l => linkMap[l.id] = l)
+
+    // Build actual chain structures
+    const chains = []
+    const processed = new Set()
+
+    stats.recentLinks.forEach(link => {
+      if (processed.has(link.id)) return
+
+      // Find the root of this chain
+      let current = link.id
+      let chainPath = [current]
+
+      // Trace backwards to root
+      while (reverseMap[current] && allLinkIds.has(reverseMap[current])) {
+        current = reverseMap[current]
+        chainPath.unshift(current)
+      }
+
+      // Trace forwards to end
+      current = chainPath[chainPath.length - 1]
+      while (stats.chainMap[current] && allLinkIds.has(stats.chainMap[current])) {
+        current = stats.chainMap[current]
+        chainPath.push(current)
+      }
+
+      // Mark all as processed
+      chainPath.forEach(id => processed.add(id))
+
+      if (chainPath.length > 0) {
+        chains.push(chainPath.map(id => linkMap[id]).filter(Boolean))
+      }
+    })
+
+    // Sort chains by length (longest first)
+    chains.sort((a, b) => b.length - a.length)
+
     ctx.clearRect(0, 0, width, height)
 
-    const links = stats.recentLinks
-    const spacing = Math.min(180, width / (links.length + 1))
-    const centerY = height / 2
+    // Draw each chain with unique color and vertical spacing
+    const chainSpacing = Math.min(120, height / (chains.length + 1))
+    const colors = [
+      { main: '#00FF88', glow: '#00FF88', name: 'Toxic Green' },
+      { main: '#9D4EDD', glow: '#9D4EDD', name: 'Purple' },
+      { main: '#FF006E', glow: '#FF006E', name: 'Hot Pink' },
+      { main: '#00B4D8', glow: '#00B4D8', name: 'Cyan' },
+      { main: '#FFD60A', glow: '#FFD60A', name: 'Gold' },
+      { main: '#FF5400', glow: '#FF5400', name: 'Orange' }
+    ]
 
-    // Create position map for quick lookup
-    const positions = {}
-    links.forEach((link, index) => {
-      positions[link.id] = {
-        x: spacing * (index + 1),
-        y: centerY + Math.sin(index * 0.5) * 60,
-        index
-      }
-    })
+    chains.forEach((chain, chainIndex) => {
+      const y = chainSpacing * (chainIndex + 1)
+      const color = colors[chainIndex % colors.length]
+      const nodeSpacing = Math.min(140, (width - 100) / (chain.length + 1))
 
-    // Draw connections based on actual chain relationships
-    links.forEach((link) => {
-      const childId = stats.chainMap[link.id]
-      if (childId && positions[childId]) {
-        const fromPos = positions[link.id]
-        const toPos = positions[childId]
+      // Draw connecting lines with glow
+      for (let i = 0; i < chain.length - 1; i++) {
+        const x1 = 50 + nodeSpacing * (i + 1)
+        const x2 = 50 + nodeSpacing * (i + 2)
 
-        // Draw glowing arrow from this link to its child
-        ctx.shadowBlur = 10
-        ctx.shadowColor = '#00FF88'
-
+        // Curved path
+        ctx.shadowBlur = 15
+        ctx.shadowColor = color.glow
         ctx.beginPath()
-        ctx.moveTo(fromPos.x + 25, fromPos.y)
-        ctx.lineTo(toPos.x - 25, toPos.y)
-        ctx.strokeStyle = 'rgba(0, 255, 136, 0.8)'
-        ctx.lineWidth = 4
+        ctx.moveTo(x1 + 30, y)
+
+        const ctrlX = (x1 + x2) / 2
+        const ctrlY = y - 30
+        ctx.quadraticCurveTo(ctrlX, ctrlY, x2 - 30, y)
+
+        ctx.strokeStyle = color.main
+        ctx.lineWidth = 5
         ctx.stroke()
 
-        // Draw larger arrowhead
-        const angle = Math.atan2(toPos.y - fromPos.y, toPos.x - fromPos.x)
+        // Animated particles flowing along the curve
+        const t = (Date.now() / 2000 + i * 0.3) % 1
+        const particleX = (1-t)*(1-t)*x1 + 2*(1-t)*t*ctrlX + t*t*x2
+        const particleY = (1-t)*(1-t)*y + 2*(1-t)*t*ctrlY + t*t*y
+
+        ctx.shadowBlur = 20
         ctx.beginPath()
-        ctx.moveTo(toPos.x - 25, toPos.y)
-        ctx.lineTo(toPos.x - 35 * Math.cos(angle - Math.PI / 6), toPos.y - 35 * Math.sin(angle - Math.PI / 6))
-        ctx.lineTo(toPos.x - 35 * Math.cos(angle + Math.PI / 6), toPos.y - 35 * Math.sin(angle + Math.PI / 6))
-        ctx.closePath()
-        ctx.fillStyle = '#00FF88'
+        ctx.arc(particleX, particleY, 4, 0, Math.PI * 2)
+        ctx.fillStyle = color.main
         ctx.fill()
 
-        ctx.shadowBlur = 0
+        // Arrowhead
+        const angle = Math.atan2(y - ctrlY, x2 - ctrlX)
+        ctx.shadowBlur = 10
+        ctx.beginPath()
+        ctx.moveTo(x2 - 30, y)
+        ctx.lineTo(x2 - 40, y - 8)
+        ctx.lineTo(x2 - 40, y + 8)
+        ctx.closePath()
+        ctx.fillStyle = color.main
+        ctx.fill()
       }
-    })
-
-    // Draw nodes on top with glow effects
-    links.forEach((link, index) => {
-      const x = spacing * (index + 1)
-      const y = centerY + Math.sin(index * 0.5) * 60
-      const radius = 25
-      const isHighlight = stats.chainMap[link.id] // Has a child (part of chain)
-
-      // Outer glow
-      if (link.claimed) {
-        ctx.shadowBlur = 15
-        ctx.shadowColor = '#00FF88'
-      } else if (isHighlight) {
-        ctx.shadowBlur = 15
-        ctx.shadowColor = '#9D4EDD'
-      }
-
-      // Draw node
-      ctx.beginPath()
-      ctx.arc(x, y, radius, 0, Math.PI * 2)
-
-      // Gradient fill
-      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
-      if (link.claimed) {
-        gradient.addColorStop(0, 'rgba(0, 255, 136, 0.6)')
-        gradient.addColorStop(1, 'rgba(0, 255, 136, 0.2)')
-      } else {
-        gradient.addColorStop(0, 'rgba(157, 78, 221, 0.6)')
-        gradient.addColorStop(1, 'rgba(157, 78, 221, 0.2)')
-      }
-      ctx.fillStyle = gradient
-      ctx.fill()
-
-      // Border
-      ctx.strokeStyle = link.claimed ? '#00FF88' : '#9D4EDD'
-      ctx.lineWidth = 3
-      ctx.stroke()
 
       ctx.shadowBlur = 0
 
-      // Link ID text
+      // Draw nodes
+      chain.forEach((link, index) => {
+        const x = 50 + nodeSpacing * (index + 1)
+        const radius = 30
+        const pulse = Math.sin(Date.now() / 500 + index) * 3
+
+        // Mega glow for claimed links
+        if (link.claimed) {
+          ctx.shadowBlur = 25 + pulse
+          ctx.shadowColor = color.glow
+        }
+
+        // Draw node with gradient
+        ctx.beginPath()
+        ctx.arc(x, y, radius, 0, Math.PI * 2)
+
+        const gradient = ctx.createRadialGradient(x - 8, y - 8, 0, x, y, radius)
+        if (link.claimed) {
+          gradient.addColorStop(0, color.main + 'EE')
+          gradient.addColorStop(0.6, color.main + '99')
+          gradient.addColorStop(1, color.main + '33')
+        } else {
+          gradient.addColorStop(0, '#555')
+          gradient.addColorStop(1, '#222')
+        }
+        ctx.fillStyle = gradient
+        ctx.fill()
+
+        // Border ring with double stroke
+        ctx.shadowBlur = 0
+        ctx.strokeStyle = color.main
+        ctx.lineWidth = 4
+        ctx.stroke()
+
+        ctx.beginPath()
+        ctx.arc(x, y, radius + 5, 0, Math.PI * 2)
+        ctx.strokeStyle = color.main + '44'
+        ctx.lineWidth = 2
+        ctx.stroke()
+
+        // Link ID
+        ctx.fillStyle = '#ffffff'
+        ctx.font = 'bold 13px monospace'
+        ctx.textAlign = 'center'
+        ctx.shadowBlur = 3
+        ctx.shadowColor = '#000'
+        ctx.fillText(`#${link.id}`, x, y + 50)
+
+        // Amount
+        ctx.font = 'bold 10px sans-serif'
+        ctx.fillStyle = color.main
+        ctx.fillText(`${parseFloat(link.amount).toFixed(2)}`, x, y + 4)
+
+        ctx.shadowBlur = 0
+      })
+
+      // Chain label
       ctx.fillStyle = '#ffffff'
       ctx.font = 'bold 14px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.fillText(`#${link.id}`, x, y + 45)
-
-      // Status emoji
-      ctx.font = '16px sans-serif'
-      ctx.fillText(link.claimed ? '✅' : '⏳', x, y + 5)
+      ctx.textAlign = 'left'
+      ctx.fillText(`⛓️ ${chain.length} links`, 10, y + 5)
     })
-  }, [stats.recentLinks, stats.chainMap])
+  }, [stats.recentLinks, stats.chainMap, animationFrame])
 
   const formatTimeAgo = (timestamp) => {
     const seconds = Math.floor(Date.now() / 1000 - timestamp)
@@ -463,52 +550,10 @@ export default function Stats() {
             <p className="text-gray-400 text-lg">Watch the chain grow as people pass it on</p>
           </div>
 
-          {isLoading ? (
+          {isLoading || !nextGiftId ? (
             <div className="text-center py-20">
               <div className="text-8xl mb-4 animate-spin inline-block">🔗</div>
-              <p className="text-gray-400">Loading chain stats...</p>
-            </div>
-          ) : isError ? (
-            <div className="text-center py-20">
-              <div className="text-8xl mb-4">⚠️</div>
-              <h2 className="text-3xl font-bold text-white mb-4">Error Loading Chain Data</h2>
-              <p className="text-gray-400 mb-4">{error?.message || 'Failed to load contract data'}</p>
-              <div className="bg-dark-card rounded-xl p-4 mb-6 max-w-2xl mx-auto text-left">
-                <div className="text-sm text-gray-400 space-y-2">
-                  <div><span className="text-toxic">Chain:</span> {activeChain?.name} (ID: {activeChain?.id})</div>
-                  <div><span className="text-toxic">Contract:</span> <code className="text-xs">{getContractAddress(activeChain?.id)}</code></div>
-                  <div><span className="text-toxic">Next Gift ID:</span> {nextGiftId?.toString() || 'undefined'}</div>
-                </div>
-              </div>
-              <p className="text-gray-500 text-sm mb-6">
-                Make sure you're connected to Base network and the contract is deployed.
-              </p>
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
-              >
-                Retry
-              </button>
-            </div>
-          ) : stats.totalCreated === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-8xl mb-4">🔗</div>
-              <h2 className="text-3xl font-bold text-white mb-4">No Chains Yet!</h2>
-              <p className="text-gray-400 mb-4">Be the first to start the chain by creating a link</p>
-              <div className="bg-dark-card rounded-xl p-4 mb-6 max-w-2xl mx-auto text-left">
-                <div className="text-sm text-gray-400 space-y-2">
-                  <div><span className="text-toxic">Chain:</span> {activeChain?.name} (ID: {activeChain?.id})</div>
-                  <div><span className="text-toxic">Contract:</span> <code className="text-xs">{getContractAddress(activeChain?.id)}</code></div>
-                  <div><span className="text-toxic">Next Gift ID:</span> {nextGiftId?.toString() || 'undefined'}</div>
-                  <div><span className="text-toxic">Total Links:</span> {nextGiftId ? Number(nextGiftId) - 1 : 0}</div>
-                </div>
-              </div>
-              <button
-                onClick={() => window.location.href = '/'}
-                className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
-              >
-                Create First Link
-              </button>
+              <p className="text-gray-400">Loading the chain...</p>
             </div>
           ) : (
             <div className="space-y-8">
@@ -516,43 +561,39 @@ export default function Stats() {
               <div className="glass-card rounded-xl p-6 border-2 border-toxic/50 overflow-x-auto glow-toxic">
                 <div className="mb-6 text-center">
                   <h3 className="text-3xl font-black text-white mb-3 flex items-center justify-center gap-3">
-                    <span className="text-4xl animate-pulse">🔗</span>
-                    <span className="gradient-text">Live Chain Flow</span>
-                    <span className="text-4xl animate-pulse">🔗</span>
+                    <span className="text-4xl">🌊</span>
+                    <span className="gradient-text">The Chain Never Ends</span>
+                    <span className="text-4xl">⚡</span>
                   </h3>
                   <p className="text-lg text-gray-300 font-semibold mb-2">
-                    Latest {stats.recentLinks.length} links showing actual parent→child relationships!
+                    {stats.recentLinks.length} coin drops flowing through the chain!
                   </p>
-                  <p className="text-sm text-toxic">
-                    Arrows show which link was created when another was claimed 🎯
+                  <p className="text-sm text-toxic animate-pulse">
+                    Watch the energy flow from link to link ✨
                   </p>
                 </div>
                 <canvas
                   ref={canvasRef}
                   className="w-full cursor-pointer"
-                  style={{ height: '350px' }}
+                  style={{ height: '500px' }}
                 />
-                <div className="mt-6 grid grid-cols-2 gap-4">
-                  <div className="bg-purple/20 rounded-lg p-3 border border-purple/50">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-5 h-5 rounded-full bg-purple border-2 border-purple"></div>
-                      <span className="text-white font-bold">Active Link</span>
+                <div className="mt-6 bg-gradient-to-r from-toxic/5 via-purple/5 to-cyan-500/5 rounded-xl p-5 border border-toxic/20">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                    <div>
+                      <div className="text-3xl mb-2">💫</div>
+                      <div className="text-white font-bold mb-1">Animated Flow</div>
+                      <div className="text-xs text-gray-400">Particles show energy moving through chains</div>
                     </div>
-                    <span className="text-xs text-gray-400">⏳ Waiting for someone to claim</span>
-                  </div>
-                  <div className="bg-toxic/20 rounded-lg p-3 border border-toxic/50">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-5 h-5 rounded-full bg-toxic border-2 border-toxic"></div>
-                      <span className="text-white font-bold">Claimed Link</span>
+                    <div>
+                      <div className="text-3xl mb-2">🎨</div>
+                      <div className="text-white font-bold mb-1">Unique Colors</div>
+                      <div className="text-xs text-gray-400">Each chain gets its own vibrant color</div>
                     </div>
-                    <span className="text-xs text-gray-400">✅ Coin drop claimed & chain continues!</span>
-                  </div>
-                </div>
-                <div className="mt-4 bg-gradient-to-r from-toxic/10 to-purple/10 rounded-lg p-4 border border-toxic/30">
-                  <div className="flex items-center gap-2 text-sm text-white">
-                    <span className="text-2xl">→</span>
-                    <span className="font-bold">Green arrows</span>
-                    <span className="text-gray-400">show the actual chain flow (Link #5 was claimed → created Link #12)</span>
+                    <div>
+                      <div className="text-3xl mb-2">⛓️</div>
+                      <div className="text-white font-bold mb-1">Real Connections</div>
+                      <div className="text-xs text-gray-400">Chains show actual parent→child links</div>
+                    </div>
                   </div>
                 </div>
               </div>
