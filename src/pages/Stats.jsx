@@ -130,6 +130,7 @@ export default function Stats() {
 
         console.log('📍 Contract address:', contractAddress)
         console.log('📍 Total links:', totalLinks)
+        console.log('📍 nextGiftId value:', nextGiftId?.toString())
 
         if (totalLinks <= 1) {
           console.log('⚠️ No links created yet (nextGiftId <= 1)')
@@ -153,8 +154,14 @@ export default function Stats() {
           return
         }
 
-        // Load links for analysis
-        const startId = Math.max(1, totalLinks - 100)
+        // Load links for analysis - get ALL links, not just last 100
+        const lastLinkId = totalLinks - 1
+        const startId = 1 // Start from link #1 to show everything
+
+        console.log('📊 Scanning ALL links from', startId, 'to', lastLinkId, '(inclusive)')
+        console.log('📊 Total links to scan:', lastLinkId - startId + 1)
+        console.log('========================================================')
+
         const linkPromises = []
 
         for (let i = totalLinks - 1; i >= startId && i >= 1; i--) {
@@ -292,8 +299,8 @@ export default function Stats() {
             ...chain
           }))
 
-        // Get recent links for visualization (last 30)
-        const recentLinks = links.slice(0, 30)
+        // Get recent links for visualization - show up to 50 for better visibility
+        const recentLinks = links.slice(0, 50)
 
         setStats({
           totalCreated: totalLinks - 1,
@@ -508,7 +515,7 @@ export default function Stats() {
                       <div className="w-5 h-5 rounded-full bg-toxic border-2 border-toxic"></div>
                       <span className="text-white font-bold">Claimed Link</span>
                     </div>
-                    <span className="text-xs text-gray-400">✅ Passed on & chain continues!</span>
+                    <span className="text-xs text-gray-400">✅ Coin drop claimed & chain continues!</span>
                   </div>
                 </div>
                 <div className="mt-4 bg-gradient-to-r from-toxic/10 to-purple/10 rounded-lg p-4 border border-toxic/30">
@@ -585,7 +592,7 @@ export default function Stats() {
                             <div>
                               <div className="text-white font-bold text-lg flex items-center gap-2">
                                 <span className="text-2xl">⛓️</span>
-                                {chain.length} Links Passed On!
+                                {chain.length} Coin Drops Passed On!
                                 {idx === 0 && <span className="text-yellow-500 animate-pulse">👑</span>}
                               </div>
                               <div className="text-sm text-gray-400 flex items-center gap-2 mt-1">
@@ -611,7 +618,7 @@ export default function Stats() {
               <div className="glass-card rounded-xl p-6 border border-purple/30">
                 <div className="mb-4">
                   <h3 className="text-xl font-bold text-white mb-2">Recent Chain Activity</h3>
-                  <p className="text-sm text-gray-400">Latest links being passed on</p>
+                  <p className="text-sm text-gray-400">Latest coin drops in the chain</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {stats.recentLinks.slice(0, 12).map((link) => (
@@ -641,7 +648,7 @@ export default function Stats() {
                         <div>Created: {formatTimeAgo(link.timestamp)}</div>
                         {link.claimed && link.claimedAt && (
                           <div className="text-toxic">
-                            Passed on: {formatTimeAgo(link.claimedAt)}
+                            Claimed: {formatTimeAgo(link.claimedAt)}
                           </div>
                         )}
                       </div>
@@ -667,7 +674,7 @@ export default function Stats() {
                     <span className="text-3xl">💎</span>
                     <div>
                       <div className="text-gray-400 text-sm">Biggest Amount</div>
-                      <div className="text-xs text-gray-600">Largest passed on</div>
+                      <div className="text-xs text-gray-600">Largest coin drop</div>
                     </div>
                   </div>
                   {stats.biggestLink ? (
@@ -703,7 +710,7 @@ export default function Stats() {
                     <span className="text-3xl">💰</span>
                     <div>
                       <div className="text-gray-400 text-sm">Chain Value</div>
-                      <div className="text-xs text-gray-600">Total passed on</div>
+                      <div className="text-xs text-gray-600">Total coin drops</div>
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-green-400">
@@ -719,7 +726,7 @@ export default function Stats() {
                   <span className="text-3xl">🪙</span>
                   <div>
                     <div className="text-lg font-bold text-white">Token Leaderboard</div>
-                    <div className="text-xs text-gray-500">Most passed on</div>
+                    <div className="text-xs text-gray-500">Most popular coins</div>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -796,7 +803,7 @@ export default function Stats() {
                 <div className="text-sm text-gray-400 mb-1">Status</div>
                 <div className="text-lg font-semibold">
                   {selectedLink.claimed ? (
-                    <span className="text-toxic">✅ Passed On</span>
+                    <span className="text-toxic">✅ Claimed</span>
                   ) : (
                     <span className="text-purple">⏳ Waiting</span>
                   )}
@@ -812,7 +819,7 @@ export default function Stats() {
 
               {selectedLink.claimed && (
                 <div>
-                  <div className="text-sm text-gray-400 mb-1">Passed to</div>
+                  <div className="text-sm text-gray-400 mb-1">Claimed by</div>
                   <div className="text-sm font-mono text-gray-300 break-all">
                     {selectedLink.claimer}
                   </div>
@@ -828,7 +835,7 @@ export default function Stats() {
 
               {selectedLink.claimed && selectedLink.claimedAt && (
                 <div>
-                  <div className="text-sm text-gray-400 mb-1">Passed On</div>
+                  <div className="text-sm text-gray-400 mb-1">Claimed</div>
                   <div className="text-sm text-toxic">
                     {formatTimeAgo(selectedLink.claimedAt)}
                   </div>
