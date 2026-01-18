@@ -172,20 +172,30 @@ export default function Stats() {
               abi: CONTRACT_ABI,
               functionName: 'getGift',
               args: [BigInt(i)]
-            }).then(data => ({
-              id: i,
-              token: getTokenByAddress(data[0]),
-              amount: formatUnits(data[1], getTokenByAddress(data[0]).decimals),
-              giver: data[2],
-              claimed: data[3],
-              claimer: data[4],
-              timestamp: Number(data[5]),
-              claimedAt: data[6] ? Number(data[6]) : null
-            }))
+            }).then(data => {
+              const tokenAddr = data[0]
+              const token = getTokenByAddress(tokenAddr)
+              console.log(`[Link #${i}] Token: ${token.symbol}, Amount: ${formatUnits(data[1], token.decimals)}, Claimed: ${data[3]}`)
+              return {
+                id: i,
+                token: token,
+                amount: formatUnits(data[1], token.decimals),
+                giver: data[2],
+                claimed: data[3],
+                claimer: data[4],
+                timestamp: Number(data[5]),
+                claimedAt: data[6] ? Number(data[6]) : null
+              }
+            }).catch(err => {
+              console.error(`❌ Failed to read link #${i}:`, err)
+              return null
+            })
           )
         }
 
-        const links = await Promise.all(linkPromises)
+        const allLinks = await Promise.all(linkPromises)
+        const links = allLinks.filter(link => link !== null)
+        console.log(`✅ Successfully loaded ${links.length} links out of ${linkPromises.length} total`)
 
         // Fetch GiftClaimed events to build actual chain relationships
         console.log('📡 Fetching GiftClaimed events to build chain map...')
@@ -303,7 +313,7 @@ export default function Stats() {
         // Get recent links for visualization - show up to 50 for better visibility
         const recentLinks = links.slice(0, 50)
 
-        setStats({
+        const finalStats = {
           totalCreated: totalLinks - 1,
           totalClaimed: claimed,
           activePotatoes: active,
@@ -318,13 +328,18 @@ export default function Stats() {
           chainLeaderboard,
           recentLinks,
           chainMap // NEW: Parent-child relationship map
-        })
+        }
+
+        console.log('✅ Stats loaded successfully!')
+        console.log('  📊 Total Created:', finalStats.totalCreated)
+        console.log('  ✅ Total Claimed:', finalStats.totalClaimed)
+        console.log('  ⏳ Active:', finalStats.activePotatoes)
+        console.log('  🔗 Recent Links:', finalStats.recentLinks.length)
+        console.log('  ⛓️ Chain Map Size:', Object.keys(finalStats.chainMap).length)
+        console.log('  🏆 Chains Found:', chains.length)
+
+        setStats(finalStats)
         setIsLoading(false)
-        console.log('✅ Stats loaded successfully:', {
-          totalCreated: totalLinks - 1,
-          totalClaimed: claimed,
-          recentLinksCount: recentLinks.length
-        })
       } catch (error) {
         console.error('❌ Error loading stats:', error)
         setIsLoading(false)
@@ -349,7 +364,16 @@ export default function Stats() {
 
   // EPIC Chain Visualization - Build actual chain paths
   useEffect(() => {
-    if (!stats.recentLinks.length || !canvasRef.current) return
+    if (!stats.recentLinks.length || !canvasRef.current) {
+      console.log('⚠️ Canvas render skipped:', {
+        hasLinks: !!stats.recentLinks.length,
+        hasCanvas: !!canvasRef.current,
+        linksCount: stats.recentLinks.length
+      })
+      return
+    }
+
+    console.log('🎨 Rendering canvas with', stats.recentLinks.length, 'links')
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
@@ -357,6 +381,8 @@ export default function Stats() {
     const height = canvas.clientHeight
     canvas.width = width
     canvas.height = height
+
+    console.log('📐 Canvas size:', width, 'x', height)
 
     // Build reverse map (child -> parent) to trace chains
     const reverseMap = {}
@@ -403,6 +429,11 @@ export default function Stats() {
 
     // Sort chains by length (longest first)
     chains.sort((a, b) => b.length - a.length)
+
+    console.log(`⛓️ Built ${chains.length} chains:`)
+    chains.forEach((chain, idx) => {
+      console.log(`  Chain ${idx + 1}: ${chain.length} links [${chain.map(l => '#' + l.id).join(' → ')}]`)
+    })
 
     ctx.clearRect(0, 0, width, height)
 
