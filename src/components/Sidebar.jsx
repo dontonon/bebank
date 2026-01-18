@@ -292,7 +292,7 @@ function Sidebar({ isBottomBar = false }) {
               <div className="flex items-center gap-3">
                 <span className="text-3xl">🔗</span>
                 <div>
-                  <div className="text-gray-400 text-xs">Gifts passed on</div>
+                  <div className="text-gray-400 text-xs">Coin drops passed on</div>
                   <div className="text-2xl font-bold gradient-text">{totalCreated}</div>
                 </div>
               </div>

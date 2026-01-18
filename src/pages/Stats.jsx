@@ -468,11 +468,41 @@ export default function Stats() {
               <div className="text-8xl mb-4 animate-spin inline-block">🔗</div>
               <p className="text-gray-400">Loading chain stats...</p>
             </div>
+          ) : isError ? (
+            <div className="text-center py-20">
+              <div className="text-8xl mb-4">⚠️</div>
+              <h2 className="text-3xl font-bold text-white mb-4">Error Loading Chain Data</h2>
+              <p className="text-gray-400 mb-4">{error?.message || 'Failed to load contract data'}</p>
+              <div className="bg-dark-card rounded-xl p-4 mb-6 max-w-2xl mx-auto text-left">
+                <div className="text-sm text-gray-400 space-y-2">
+                  <div><span className="text-toxic">Chain:</span> {activeChain?.name} (ID: {activeChain?.id})</div>
+                  <div><span className="text-toxic">Contract:</span> <code className="text-xs">{getContractAddress(activeChain?.id)}</code></div>
+                  <div><span className="text-toxic">Next Gift ID:</span> {nextGiftId?.toString() || 'undefined'}</div>
+                </div>
+              </div>
+              <p className="text-gray-500 text-sm mb-6">
+                Make sure you're connected to Base network and the contract is deployed.
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+              >
+                Retry
+              </button>
+            </div>
           ) : stats.totalCreated === 0 ? (
             <div className="text-center py-20">
               <div className="text-8xl mb-4">🔗</div>
               <h2 className="text-3xl font-bold text-white mb-4">No Chains Yet!</h2>
-              <p className="text-gray-400 mb-6">Be the first to start the chain by creating a link</p>
+              <p className="text-gray-400 mb-4">Be the first to start the chain by creating a link</p>
+              <div className="bg-dark-card rounded-xl p-4 mb-6 max-w-2xl mx-auto text-left">
+                <div className="text-sm text-gray-400 space-y-2">
+                  <div><span className="text-toxic">Chain:</span> {activeChain?.name} (ID: {activeChain?.id})</div>
+                  <div><span className="text-toxic">Contract:</span> <code className="text-xs">{getContractAddress(activeChain?.id)}</code></div>
+                  <div><span className="text-toxic">Next Gift ID:</span> {nextGiftId?.toString() || 'undefined'}</div>
+                  <div><span className="text-toxic">Total Links:</span> {nextGiftId ? Number(nextGiftId) - 1 : 0}</div>
+                </div>
+              </div>
               <button
                 onClick={() => window.location.href = '/'}
                 className="bg-gradient-to-r from-toxic to-purple text-dark px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
