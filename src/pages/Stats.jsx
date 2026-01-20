@@ -579,6 +579,19 @@ export default function Stats() {
           <div className="mb-8">
             <h1 className="text-5xl font-black gradient-text mb-3">⛓️ The Chain</h1>
             <p className="text-gray-400 text-lg">Watch the chain grow as people pass it on</p>
+            {/* DEBUG INFO */}
+            <div className="mt-4 bg-yellow-500/20 border-2 border-yellow-500 rounded-lg p-4 text-yellow-200 text-sm font-mono">
+              <div className="font-bold mb-2">🐛 DEBUG INFO:</div>
+              <div>nextGiftId: {nextGiftId?.toString() || 'undefined'}</div>
+              <div>isError: {isError ? 'true' : 'false'}</div>
+              <div>error: {error?.message || 'none'}</div>
+              <div>activeChain: {activeChain?.name} (ID: {activeChain?.id})</div>
+              <div>contract: {getContractAddress(activeChain?.id)}</div>
+              <div>publicClient exists: {publicClient ? 'yes' : 'no'}</div>
+              <div>stats.recentLinks.length: {stats.recentLinks.length}</div>
+              <div>stats.totalCreated: {stats.totalCreated}</div>
+              <div>isLoading: {isLoading ? 'true' : 'false'}</div>
+            </div>
           </div>
 
           {isLoading || !nextGiftId ? (
