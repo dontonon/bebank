@@ -71,6 +71,7 @@ export default function Stats() {
   const canvasRef = useRef(null)
   const [selectedLink, setSelectedLink] = useState(null)
   const [animationFrame, setAnimationFrame] = useState(0)
+  const [loadError, setLoadError] = useState(null)
   const [stats, setStats] = useState({
     totalCreated: 0,
     totalClaimed: 0,
@@ -171,7 +172,8 @@ export default function Stats() {
               address: contractAddress,
               abi: CONTRACT_ABI,
               functionName: 'getGift',
-              args: [BigInt(i)]
+              args: [BigInt(i)],
+              chainId: activeChain.id
             }).then(data => {
               const tokenAddr = data[0]
               const token = getTokenByAddress(tokenAddr)
@@ -193,9 +195,26 @@ export default function Stats() {
           )
         }
 
+        console.log(`⏳ Waiting for ${linkPromises.length} link reads...`)
         const allLinks = await Promise.all(linkPromises)
         const links = allLinks.filter(link => link !== null)
-        console.log(`✅ Successfully loaded ${links.length} links out of ${linkPromises.length} total`)
+        const failedCount = allLinks.filter(link => link === null).length
+        console.log(`✅ Successfully loaded ${links.length} links`)
+        console.log(`❌ Failed to load ${failedCount} links`)
+
+        if (links.length === 0 && linkPromises.length > 0) {
+          const errorMsg = `All ${linkPromises.length} link reads failed`
+          console.error('🚨 CRITICAL:', errorMsg)
+          console.log('Debug info:', {
+            contractAddress,
+            chainId: activeChain.id,
+            publicClientType: connectedPublicClient ? 'connected' : 'fallback',
+            totalPromises: linkPromises.length
+          })
+          setLoadError(errorMsg)
+        } else {
+          setLoadError(null)
+        }
 
         // Fetch GiftClaimed events to build actual chain relationships
         console.log('📡 Fetching GiftClaimed events to build chain map...')
@@ -587,10 +606,11 @@ export default function Stats() {
               <div>error: {error?.message || 'none'}</div>
               <div>activeChain: {activeChain?.name} (ID: {activeChain?.id})</div>
               <div>contract: {getContractAddress(activeChain?.id)}</div>
-              <div>publicClient exists: {publicClient ? 'yes' : 'no'}</div>
+              <div>publicClient: {connectedPublicClient ? 'connected wallet' : 'fallback'}</div>
               <div>stats.recentLinks.length: {stats.recentLinks.length}</div>
               <div>stats.totalCreated: {stats.totalCreated}</div>
               <div>isLoading: {isLoading ? 'true' : 'false'}</div>
+              {loadError && <div className="mt-2 text-red-400 font-bold">⚠️ {loadError}</div>}
             </div>
           </div>
 
