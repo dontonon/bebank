@@ -175,20 +175,26 @@ export default function Stats() {
               functionName: 'getGift',
               args: [BigInt(i)]
             }).then(data => {
-              // Validate contract data
-              if (!data || !Array.isArray(data) || data.length < 7) {
-                const msg = `Link #${i}: Invalid data structure (length: ${data?.length})`
-                console.error(`❌ ${msg}`, data)
+              // Validate contract data exists
+              if (!data) {
+                const msg = `Link #${i}: No data returned`
+                console.error(`❌ ${msg}`)
                 errorMessages.push(msg)
                 return null
               }
 
-              const tokenAddr = data[0]
-              const amountRaw = data[1]
+              // Viem returns tuple as both array and object - handle both!
+              const tokenAddr = data[0] || data.token
+              const amountRaw = data[1] || data.amount
+              const giver = data[2] || data.giver
+              const claimed = data[3] !== undefined ? data[3] : data.claimed
+              const claimer = data[4] || data.claimer
+              const timestamp = data[5] || data.timestamp
+              const claimedAt = data[6] || data.claimedAt
 
               if (!tokenAddr || amountRaw === undefined || amountRaw === null) {
                 const msg = `Link #${i}: Missing token or amount`
-                console.error(`❌ ${msg}`, { tokenAddr, amountRaw })
+                console.error(`❌ ${msg}`, { tokenAddr, amountRaw, data })
                 errorMessages.push(msg)
                 return null
               }
@@ -209,17 +215,17 @@ export default function Stats() {
               }
 
               const amount = formatUnits(amountRaw, token.decimals)
-              console.log(`[Link #${i}] Token: ${token.symbol}, Amount: ${amount}, Claimed: ${data[3]}`)
+              console.log(`[Link #${i}] Token: ${token.symbol}, Amount: ${amount}, Claimed: ${claimed}`)
 
               return {
                 id: i,
                 token: token,
                 amount: amount,
-                giver: data[2],
-                claimed: data[3],
-                claimer: data[4],
-                timestamp: Number(data[5]),
-                claimedAt: data[6] ? Number(data[6]) : null
+                giver: giver,
+                claimed: claimed,
+                claimer: claimer,
+                timestamp: Number(timestamp),
+                claimedAt: claimedAt ? Number(claimedAt) : null
               }
             }).catch(err => {
               const msg = `Link #${i}: ${err.message || err.toString()}`
