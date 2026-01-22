@@ -172,8 +172,7 @@ export default function Stats() {
               address: contractAddress,
               abi: CONTRACT_ABI,
               functionName: 'getGift',
-              args: [BigInt(i)],
-              chainId: activeChain.id
+              args: [BigInt(i)]
             }).then(data => {
               const tokenAddr = data[0]
               const token = getTokenByAddress(tokenAddr)
