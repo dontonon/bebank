@@ -177,6 +177,13 @@ export default function Stats() {
             }).then(data => {
               const tokenAddr = data[0]
               const token = getTokenByAddress(tokenAddr)
+
+              // Handle unknown tokens gracefully
+              if (!token) {
+                console.warn(`⚠️ Unknown token address for link #${i}:`, tokenAddr)
+                return null
+              }
+
               console.log(`[Link #${i}] Token: ${token.symbol}, Amount: ${formatUnits(data[1], token.decimals)}, Claimed: ${data[3]}`)
               return {
                 id: i,
