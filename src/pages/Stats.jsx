@@ -165,7 +165,7 @@ export default function Stats() {
         console.log('========================================================')
 
         const linkPromises = []
-        let firstError = null
+        const errorMessages = [] // Collect ALL error messages
 
         for (let i = totalLinks - 1; i >= startId && i >= 1; i--) {
           linkPromises.push(
@@ -177,7 +177,9 @@ export default function Stats() {
             }).then(data => {
               // Validate contract data
               if (!data || !Array.isArray(data) || data.length < 7) {
-                console.error(`❌ Invalid data structure for link #${i}:`, data)
+                const msg = `Link #${i}: Invalid data structure (length: ${data?.length})`
+                console.error(`❌ ${msg}`, data)
+                errorMessages.push(msg)
                 return null
               }
 
@@ -185,7 +187,9 @@ export default function Stats() {
               const amountRaw = data[1]
 
               if (!tokenAddr || amountRaw === undefined || amountRaw === null) {
-                console.error(`❌ Missing token or amount for link #${i}:`, { tokenAddr, amountRaw })
+                const msg = `Link #${i}: Missing token or amount`
+                console.error(`❌ ${msg}`, { tokenAddr, amountRaw })
+                errorMessages.push(msg)
                 return null
               }
 
@@ -218,10 +222,9 @@ export default function Stats() {
                 claimedAt: data[6] ? Number(data[6]) : null
               }
             }).catch(err => {
-              console.error(`❌ Failed to read link #${i}:`, err)
-              if (!firstError) {
-                firstError = err.message || err.toString()
-              }
+              const msg = `Link #${i}: ${err.message || err.toString()}`
+              console.error(`❌ ${msg}`)
+              errorMessages.push(msg)
               return null
             })
           )
@@ -235,8 +238,10 @@ export default function Stats() {
         console.log(`❌ Failed to load ${failedCount} links`)
 
         if (links.length === 0 && linkPromises.length > 0) {
-          const errorMsg = `All ${linkPromises.length} link reads failed${firstError ? ': ' + firstError : ''}`
+          const firstErr = errorMessages[0] || 'Unknown error'
+          const errorMsg = `All ${linkPromises.length} link reads failed. First error: ${firstErr}`
           console.error('🚨 CRITICAL:', errorMsg)
+          console.log('All errors:', errorMessages.slice(0, 5)) // Show first 5
           console.log('Debug info:', {
             contractAddress,
             chainId: activeChain.id,
@@ -244,6 +249,9 @@ export default function Stats() {
             totalPromises: linkPromises.length
           })
           setLoadError(errorMsg)
+        } else if (errorMessages.length > 0) {
+          console.warn(`⚠️ ${errorMessages.length} link(s) failed to load, but ${links.length} succeeded`)
+          setLoadError(null)
         } else {
           setLoadError(null)
         }
