@@ -176,12 +176,19 @@ export default function Stats() {
               args: [BigInt(i)]
             }).then(data => {
               const tokenAddr = data[0]
-              const token = getTokenByAddress(tokenAddr)
+              let token = getTokenByAddress(tokenAddr)
 
-              // Handle unknown tokens gracefully
+              // Fallback for unknown tokens - assume 18 decimals
               if (!token) {
-                console.warn(`⚠️ Unknown token address for link #${i}:`, tokenAddr)
-                return null
+                console.warn(`⚠️ Unknown token address for link #${i}:`, tokenAddr, '- using fallback')
+                token = {
+                  symbol: 'Unknown',
+                  name: 'Unknown Token',
+                  address: tokenAddr,
+                  decimals: 18,
+                  logo: '❓',
+                  color: '#999999'
+                }
               }
 
               console.log(`[Link #${i}] Token: ${token.symbol}, Amount: ${formatUnits(data[1], token.decimals)}, Claimed: ${data[3]}`)
