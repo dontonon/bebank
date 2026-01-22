@@ -165,6 +165,7 @@ export default function Stats() {
         console.log('========================================================')
 
         const linkPromises = []
+        let firstError = null
 
         for (let i = totalLinks - 1; i >= startId && i >= 1; i--) {
           linkPromises.push(
@@ -189,6 +190,9 @@ export default function Stats() {
               }
             }).catch(err => {
               console.error(`❌ Failed to read link #${i}:`, err)
+              if (!firstError) {
+                firstError = err.message || err.toString()
+              }
               return null
             })
           )
@@ -202,7 +206,7 @@ export default function Stats() {
         console.log(`❌ Failed to load ${failedCount} links`)
 
         if (links.length === 0 && linkPromises.length > 0) {
-          const errorMsg = `All ${linkPromises.length} link reads failed`
+          const errorMsg = `All ${linkPromises.length} link reads failed${firstError ? ': ' + firstError : ''}`
           console.error('🚨 CRITICAL:', errorMsg)
           console.log('Debug info:', {
             contractAddress,
