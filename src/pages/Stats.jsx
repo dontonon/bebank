@@ -175,7 +175,20 @@ export default function Stats() {
               functionName: 'getGift',
               args: [BigInt(i)]
             }).then(data => {
+              // Validate contract data
+              if (!data || !Array.isArray(data) || data.length < 7) {
+                console.error(`❌ Invalid data structure for link #${i}:`, data)
+                return null
+              }
+
               const tokenAddr = data[0]
+              const amountRaw = data[1]
+
+              if (!tokenAddr || amountRaw === undefined || amountRaw === null) {
+                console.error(`❌ Missing token or amount for link #${i}:`, { tokenAddr, amountRaw })
+                return null
+              }
+
               let token = getTokenByAddress(tokenAddr)
 
               // Fallback for unknown tokens - assume 18 decimals
@@ -191,11 +204,13 @@ export default function Stats() {
                 }
               }
 
-              console.log(`[Link #${i}] Token: ${token.symbol}, Amount: ${formatUnits(data[1], token.decimals)}, Claimed: ${data[3]}`)
+              const amount = formatUnits(amountRaw, token.decimals)
+              console.log(`[Link #${i}] Token: ${token.symbol}, Amount: ${amount}, Claimed: ${data[3]}`)
+
               return {
                 id: i,
                 token: token,
-                amount: formatUnits(data[1], token.decimals),
+                amount: amount,
                 giver: data[2],
                 claimed: data[3],
                 claimer: data[4],
